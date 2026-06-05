@@ -27,7 +27,7 @@ const SLOT_COLORS: Record<string, string> = {
 
 // ─── Surface ────────────────────────────────────────────────────────────────
 function Surface({
-  tex, color, args, position, rotation, isGlass, tileW, tileH, offsetY, stripColor, stripWidthMm, stripInterval,
+  tex, color, args, position, rotation, isGlass, tileW, tileH, offsetY, stripColor, stripWidthMm, stripInterval, bookmatchEnabled, groutWidthMm, groutColor,
 }: {
   tex: THREE.Texture | null;
   color: string;
@@ -41,6 +41,9 @@ function Surface({
   stripColor?: string | null;
   stripWidthMm?: number;
   stripInterval?: number;
+  bookmatchEnabled?: boolean;
+  groutWidthMm?: number;
+  groutColor?: string;
 }) {
   const stripOverlay = useMemo(() => {
     if (!stripColor || !stripWidthMm || !tileW || !tileH) return null;
@@ -77,11 +80,40 @@ function Surface({
     return tex;
   }, [stripColor, stripWidthMm, tileW, tileH, stripInterval, args[0], args[1]]);
 
+
+  const groutOverlay = useMemo(() => {
+    if (!groutWidthMm || !tileW || !tileH) return null;
+    const base = 1024;
+    const maxDim = Math.max(tileW, tileH);
+    const wPx = Math.round((tileW / maxDim) * base);
+    const hPx = Math.round((tileH / maxDim) * base);
+    // groutWidthMm in mm; tileW/tileH in feet (1ft = 304.8mm)
+    const groutPxW = Math.max(2, Math.round(groutWidthMm / (tileW * 304.8) * wPx));
+    const groutPxH = Math.max(2, Math.round(groutWidthMm / (tileH * 304.8) * hPx));
+    const c = document.createElement("canvas");
+    c.width = wPx;
+    c.height = hPx;
+    const ctx = c.getContext("2d")!;
+    ctx.clearRect(0, 0, wPx, hPx);
+    ctx.fillStyle = groutColor || "#aaaaaa";
+    ctx.fillRect(0, 0, wPx, groutPxH);
+    ctx.fillRect(0, hPx - groutPxH, wPx, groutPxH);
+    ctx.fillRect(0, 0, groutPxW, hPx);
+    ctx.fillRect(wPx - groutPxW, 0, groutPxW, hPx);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.minFilter = THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.repeat.set(args[0] / tileW, args[1] / tileH);
+    t.needsUpdate = true;
+    return t;
+  }, [groutWidthMm, groutColor, tileW, tileH, args[0], args[1]]);
+
   const texture = useMemo(() => {
     if (!tex) return null;
     const t = tex.clone();
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
+    t.wrapS = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
+    t.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
     t.minFilter = THREE.LinearFilter;
     t.magFilter = THREE.LinearFilter;
     t.anisotropy = 16;
@@ -93,7 +125,7 @@ function Surface({
     if (offsetY) t.offset.y = offsetY;
     t.needsUpdate = true;
     return t;
-  }, [tex, args[0], args[1], tileW, tileH, offsetY]);
+  }, [tex, args[0], args[1], tileW, tileH, offsetY, bookmatchEnabled]);
 
   if (isGlass) {
     return (
@@ -115,8 +147,14 @@ function Surface({
           side={THREE.DoubleSide}
         />
       </mesh>
-      {stripOverlay && (
+      {groutOverlay && (
         <mesh position={[0, 0, 0.001]}>
+          <planeGeometry args={args} />
+          <meshBasicMaterial map={groutOverlay} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+      {stripOverlay && (
+        <mesh position={[0, 0, 0.002]}>
           <planeGeometry args={args} />
           <meshBasicMaterial map={stripOverlay} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
         </mesh>
@@ -174,6 +212,8 @@ function Room({
   textures, slotOrder, slotRows, isShower,
   shower1OffsetY, shower2OffsetY,
   stripColor, stripWidthMm, stripInterval,
+  bookmatchEnabled,
+  groutWidthMm, groutColor,
 }: {
   roomW: number; roomL: number; roomH: number; tileSize: string | null;
   floorTex: THREE.Texture | null;
@@ -188,6 +228,9 @@ function Room({
   stripColor?: string | null;
   stripWidthMm?: number;
   stripInterval?: number;
+  bookmatchEnabled?: boolean;
+  groutWidthMm?: number;
+  groutColor?: string;
 }) {
   const bands = useMemo(
     () => getWallBands(roomH, tileH, textures, slotOrder, slotRows),
@@ -201,29 +244,29 @@ function Room({
       <Surface
         tex={floorTex} color="#e8e5e0"
         args={[roomW, roomL]} position={[roomW / 2, 0, roomL / 2]}
-        rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH}
+        rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled}
       />
 
       {/* Back Wall */}
       {isShower ? (
         <>
-          <Surface tex={showerTex1 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.25, roomH / 2, 0]} tileW={tileW} tileH={tileH} offsetY={shower1OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
-          <Surface tex={showerTex2 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.75, roomH / 2, 0]} tileW={tileW} tileH={tileH} offsetY={shower2OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+          <Surface tex={showerTex1 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.25, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower1OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+          <Surface tex={showerTex2 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.75, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower2OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
         </>
       ) : (
         bands.map((band, idx) => (
-          <Surface key={`back-${idx}`} tex={band.tex} color={band.color} args={[roomW, band.height]} position={[roomW / 2, band.yStart + band.height / 2, 0]} tileW={tileW} tileH={tileH} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+          <Surface key={`back-${idx}`} tex={band.tex} color={band.color} args={[roomW, band.height]} position={[roomW / 2, band.yStart + band.height / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
         ))
       )}
 
       {/* Left Wall */}
       {bands.map((band, idx) => (
-        <Surface key={`left-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[0, band.yStart + band.height / 2, roomL / 2]} rotation={[0, Math.PI / 2, 0]} tileW={tileW} tileH={tileH} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+        <Surface key={`left-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[0, band.yStart + band.height / 2, roomL / 2]} rotation={[0, Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
       ))}
 
       {/* Right Wall */}
       {bands.map((band, idx) => (
-        <Surface key={`right-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[roomW, band.yStart + band.height / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]} tileW={tileW} tileH={tileH} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+        <Surface key={`right-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[roomW, band.yStart + band.height / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
       ))}
 
       {/* Glass Front & Ceiling */}
@@ -242,6 +285,7 @@ export default function Bathroom3DPage() {
   const [roomWidth,     setRoomWidth]     = useState(6);
   const [tileSize,      setTileSize]      = useState<string | null>("12x18");
   const [groutWidth,    setGroutWidth]    = useState(3);
+  const [groutColor,    setGroutColor]    = useState("#cccccc");
   const [wastagePercent,setWastagePercent]= useState(10);
   const [pricePerBox,   setPricePerBox]   = useState(650);
   const [showerSplitMode, setShowerSplitMode] = useState(false);
@@ -250,6 +294,7 @@ export default function Bathroom3DPage() {
   const [stripColor, setStripColor] = useState<string>("golden");
   const [stripWidthMm, setStripWidthMm] = useState(2);
   const [stripInterval, setStripInterval] = useState(2);
+  const [bookmatchEnabled, setBookmatchEnabled] = useState(false);
   
 
   // ── Original (raw) uploads ───────────────────────────────────────────────
@@ -274,8 +319,11 @@ export default function Bathroom3DPage() {
   useEffect(() => {
     import('@/utils/textureBridge').then(({ getPendingTexture, clearPendingTexture, buildTileUrl }) => {
       const slots: [string, (v: string | null) => void, (v: string | null) => void][] = [
-        ['bathroom_floor', setOrigFloor, setFloorImg],
-        ['bathroom_wall', setOrigDark, setDarkImg],
+        ['bathroom_floor',       setOrigFloor,       setFloorImg],
+        ['bathroom_wall',        setOrigDark,        setDarkImg],        // legacy
+        ['bathroom_dark',        setOrigDark,        setDarkImg],
+        ['bathroom_light',       setOrigLight,       setLightImg],
+        ['bathroom_highlighter', setOrigHighlighter, setHighlighterImg],
       ];
       for (const [slot, setOrig, setProc] of slots) {
         const pending = getPendingTexture(slot);
@@ -680,6 +728,23 @@ export default function Bathroom3DPage() {
             {/* Shower upload removed so 2x4 uses standard bands above */}
           </div>
 
+                    {/* Bookmatch Toggle */}
+          <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Grid className="w-4 h-4 text-amber-400" />
+                <h3 className="font-bold text-white text-sm">Bookmatch (Mirror)</h3>
+              </div>
+              <button
+                onClick={() => setBookmatchEnabled(!bookmatchEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${bookmatchEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+              >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${bookmatchEnabled ? "translate-x-5" : "translate-x-1"}`} />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-400">Flips alternate tiles to create a seamless butterfly pattern.</p>
+          </div>
+
           {/* Border Strip */}
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
@@ -804,13 +869,14 @@ export default function Bathroom3DPage() {
                   tileSize={tileSize}
                   floorTex={floorTex}
                   showerTex1={showerTex1} showerTex2={showerTex2}
-                  tileW={tileW} tileH={tileH}
+                  tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled}
                   textures={wallTextures}
                   slotOrder={slotOrder}
                   slotRows={slotRows}
                   isShower={showerSplitMode}
                   shower1OffsetY={shower1OffsetY} shower2OffsetY={shower2OffsetY}
                   stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval}
+                  groutWidthMm={groutWidth} groutColor={groutColor}
                 />
                 <OrbitControls
                   enableDamping dampingFactor={0.1}

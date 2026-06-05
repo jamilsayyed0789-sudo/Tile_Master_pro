@@ -7,7 +7,10 @@ export const TEXTURE_SLOTS = {
   kitchenBacksplash: 'kitchen_backsplash',
   kitchenCountertop: 'kitchen_countertop',
   bathroomFloor: 'bathroom_floor',
-  bathroomWall: 'bathroom_wall',
+  bathroomWall: 'bathroom_wall', // legacy
+  bathroomDark: 'bathroom_dark',
+  bathroomLight: 'bathroom_light',
+  bathroomHighlighter: 'bathroom_highlighter',
   elevationWall: 'elevation_wall',
 } as const;
 

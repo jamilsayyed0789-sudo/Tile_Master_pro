@@ -132,8 +132,9 @@ function createStyleTexture(styleId: string): HTMLCanvasElement {
   return c;
 }
 
-function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, styleTex }: {
-  roomWidth: number; roomLength: number; wFeet: number; lFeet: number; patternSpan: number; groutWidth: number; groutColor: string; floorTex: THREE.Texture | null; skirtTex3d: THREE.Texture | null; skirtingHeight: number; skirtingColor: string; styleTex: THREE.Texture | null;
+function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, wallColor, styleTex, bookmatchEnabled }: {
+  roomWidth: number; roomLength: number; wFeet: number; lFeet: number; patternSpan: number; groutWidth: number; groutColor: string; floorTex: THREE.Texture | null; skirtTex3d: THREE.Texture | null; skirtingHeight: number; skirtingColor: string; wallColor: string; styleTex: THREE.Texture | null;
+  bookmatchEnabled?: boolean;
 }) {
   return (
     <group>
@@ -159,7 +160,7 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
         ctx.fillRect(0, 0, hm, c.height);
         ctx.fillRect(c.width - hm, 0, hm, c.height);
         const tex = new THREE.CanvasTexture(c);
-        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);
@@ -175,29 +176,29 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
       {/* Back wall */}
       <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]}>
         <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color="#f5f5f0" roughness={0.6} />
+        <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
       <mesh position={[roomWidth / 2, skirtingHeight / 2, 0.08]}>
         <planeGeometry args={[roomWidth, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? undefined : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
       </mesh>
       {/* Left wall */}
       <mesh position={[0, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color="#f5f5f0" roughness={0.6} />
+        <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
       <mesh position={[0.08, skirtingHeight / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? undefined : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
       </mesh>
       {/* Right wall */}
       <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color="#f5f5f0" roughness={0.6} />
+        <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
       <mesh position={[roomWidth - 0.08, skirtingHeight / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? undefined : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
       </mesh>
       {/* Ceiling */}
       <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D, roomLength / 2]} rotation={[Math.PI / 2, 0, 0]}>
@@ -234,7 +235,7 @@ export default function RoomPreviewer() {
 
   // Skirting options
   const [skirtingColor, setSkirtingColor] = useState<string>("#111111");
-  const [skirtingHeight, setSkirtingHeight] = useState<number>(0.3); // in feet
+  const [skirtingHeight, setSkirtingHeight] = useState<number>(0.4); // in feet
   const [skirtingUseTexture, setSkirtingUseTexture] = useState<boolean>(false);
 
   useEffect(() => {
@@ -249,6 +250,7 @@ export default function RoomPreviewer() {
   // Custom Image Texture
   const [originalCustomImage, setOriginalCustomImage] = useState<string | null>(null);
   const [customTileImage, setCustomTileImage] = useState<string | null>(null);
+  const [bookmatchEnabled, setBookmatchEnabled] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [selectedStyleId, setSelectedStyleId] = useState<string>("italian-marble");
 
@@ -386,7 +388,7 @@ export default function RoomPreviewer() {
     if (!customTileImage) { setFloorTex(null); return; }
     new THREE.TextureLoader().load(customTileImage, (t) => {
       const ft = t.clone();
-      ft.wrapS = ft.wrapT = THREE.RepeatWrapping;
+      ft.wrapS = ft.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
       ft.minFilter = THREE.LinearFilter;
       ft.magFilter = THREE.LinearFilter;
       ft.anisotropy = 16;
@@ -394,14 +396,14 @@ export default function RoomPreviewer() {
       ft.needsUpdate = true;
       setFloorTex(ft);
     });
-  }, [customTileImage, roomWidth, roomLength, wFeet, lFeet, patternSpan]);
+  }, [customTileImage, roomWidth, roomLength, wFeet, lFeet, patternSpan, bookmatchEnabled]);
 
   // Load skirting texture separately
   useEffect(() => {
     if (!customTileImage || !skirtingUseTexture) { setSkirtTex3d(null); return; }
     new THREE.TextureLoader().load(customTileImage, (t) => {
       const st = t.clone();
-      st.wrapS = st.wrapT = THREE.RepeatWrapping;
+      st.wrapS = st.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
       st.minFilter = THREE.LinearFilter;
       st.magFilter = THREE.LinearFilter;
       st.anisotropy = 16;
@@ -410,20 +412,20 @@ export default function RoomPreviewer() {
       st.needsUpdate = true;
       setSkirtTex3d(st);
     });
-  }, [customTileImage, skirtingUseTexture, roomWidth, wFeet, skirtingHeight, lFeet, patternSpan]);
+  }, [customTileImage, skirtingUseTexture, roomWidth, wFeet, skirtingHeight, lFeet, patternSpan, bookmatchEnabled]);
 
   // Generate style texture for 3D when no custom image
   useEffect(() => {
     const canvas = createStyleTexture(selectedStyleId);
     const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
     tex.anisotropy = 16;
     tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);
     tex.needsUpdate = true;
     setStyleTex(tex);
-  }, [selectedStyleId, roomWidth, roomLength, wFeet, lFeet]);
+  }, [selectedStyleId, roomWidth, roomLength, wFeet, lFeet, bookmatchEnabled]);
 
   // Handle local image file uploads
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -558,13 +560,17 @@ export default function RoomPreviewer() {
           tileStyle.backgroundRepeat = 'no-repeat';
           tileStyle.backgroundColor = 'transparent';
         } else {
-          // Use the full value as backgroundImage to avoid shorthand/longhand conflict.
-          // The active style's `background` string may contain gradients and url() — both
-          // are valid values for backgroundImage. We leave backgroundSize at its default
-          // ('auto') since the gradients are resolution-independent.
           tileStyle.backgroundImage = activeStyle.background;
           tileStyle.backgroundSize = 'cover';
           tileStyle.backgroundRepeat = 'no-repeat';
+        }
+
+        if (bookmatchEnabled) {
+          const flipX = Math.abs(c) % 2 === 1 ? -1 : 1;
+          const flipY = Math.abs(r) % 2 === 1 ? -1 : 1;
+          if (flipX === -1 || flipY === -1) {
+             tileStyle.transform = `scale(${flipX}, ${flipY})`;
+          }
         }
 
         tileElements.push(
@@ -811,6 +817,22 @@ export default function RoomPreviewer() {
           </div>
 
 
+                    {/* Bookmatch Toggle */}
+          <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-white text-sm">Bookmatch (Mirror)</h3>
+              </div>
+              <button
+                onClick={() => setBookmatchEnabled(!bookmatchEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${bookmatchEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+              >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${bookmatchEnabled ? "translate-x-5" : "translate-x-1"}`} />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-400">Flips alternate tiles to create a seamless butterfly pattern.</p>
+          </div>
+
           {/* 3. Tile Style Selector & Custom Image Texture Import */}
           <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative">
             <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
@@ -1052,29 +1074,31 @@ export default function RoomPreviewer() {
               <label className="block text-xs font-bold text-neutral-400 mb-2 uppercase tracking-wider">
                 Skirting Color
               </label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSkirtingColor("#111111")}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border transition ${
-                    skirtingColor === "#111111"
-                      ? 'bg-neutral-900 border-amber-500 text-white'
-                      : 'bg-neutral-600 border-neutral-800 text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded-full bg-black border border-neutral-700" />
-                  Black
-                </button>
-                <button
-                  onClick={() => setSkirtingColor("#f5f5f0")}
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border transition ${
-                    skirtingColor === "#f5f5f0"
-                      ? 'bg-neutral-900 border-amber-500 text-white'
-                      : 'bg-neutral-600 border-neutral-800 text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <span className="w-4 h-4 rounded-full bg-[#f5f5f0] border border-neutral-700" />
-                  White
-                </button>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { color: "#111111", label: "Charcoal", bg: "bg-[#111111]" },
+                  { color: "#f5f5f0", label: "Ivory", bg: "bg-[#f5f5f0]" },
+                  { color: "#5c3d2e", label: "Walnut", bg: "bg-[#5c3d2e]" },
+                  { color: "#c8a96e", label: "Champagne", bg: "bg-[#c8a96e]" },
+                  { color: "#4a5568", label: "Slate", bg: "bg-[#4a5568]" },
+                  { color: "#8b7355", label: "Sandstone", bg: "bg-[#8b7355]" },
+                  { color: "#c9a96e", label: "Gold", bg: "bg-[#c9a96e]" },
+                  { color: "#2d3748", label: "Graphite", bg: "bg-[#2d3748]" },
+                ].map(({ color, label, bg }) => (
+                  <button
+                    key={color}
+                    onClick={() => setSkirtingColor(color)}
+                    title={label}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition ${
+                      skirtingColor === color
+                        ? 'border-amber-500 bg-neutral-800'
+                        : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'
+                    }`}
+                  >
+                    <span className={`w-6 h-6 rounded-full ${bg} border border-white/10 shadow`} />
+                    <span className="text-[9px] font-bold text-neutral-400">{label}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Texture toggle (only shown when custom image is uploaded) */}
@@ -1217,7 +1241,7 @@ export default function RoomPreviewer() {
                     <ambientLight intensity={0.6} />
                     <directionalLight position={[5, 10, 5]} intensity={0.8} />
                     <directionalLight position={[-3, 5, -3]} intensity={0.3} />
-                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} styleTex={styleTex} />
+                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor="#e5e7eb" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} />
                     <OrbitControls enableDamping dampingFactor={0.1} enableRotate enableZoom target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
                   </Canvas>
                 </div>

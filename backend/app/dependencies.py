@@ -1,15 +1,19 @@
 from typing import Union
 from fastapi import Depends, HTTPException, Header, status
-from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from app.database import get_db
 from app.config import SECRET_KEY, ALGORITHM
-from app.models.user import User
+
+
+class TokenUser:
+    def __init__(self, id: str, email: str, name: str, access_status: str):
+        self.id = id
+        self.email = email
+        self.name = name
+        self.access_status = access_status
 
 
 def get_current_user(
     authorization: Union[str, None] = Header(default=None),
-    db: Session = Depends(get_db),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -21,12 +25,24 @@ def get_current_user(
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("userId")
         email: str = payload.get("sub")
-        if email is None:
+        name: str = payload.get("name", "")
+        access_status: str = payload.get("accessStatus", "active")
+        if not user_id or not email:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise credentials_exception
-    return user
+
+    if access_status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your subscription has expired. Please renew to continue.",
+        )
+
+    return TokenUser(
+        id=user_id,
+        email=email,
+        name=name,
+        access_status=access_status,
+    )

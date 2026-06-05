@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.database import Base
 from app.models.user import User
+from app.models.catalog import TileCatalog
 from app.config import DATABASE_URL
 
 config = context.config

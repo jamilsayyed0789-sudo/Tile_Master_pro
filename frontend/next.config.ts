@@ -4,8 +4,12 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: "http://127.0.0.1:8001/:path*", // Proxy to Backend
+        source: "/api/catalog/:path*",
+        destination: "http://127.0.0.1:8001/catalog/:path*",
+      },
+      {
+        source: "/api/tile-processor/:path*",
+        destination: "http://127.0.0.1:8001/tile-processor/:path*",
       },
     ];
   },
