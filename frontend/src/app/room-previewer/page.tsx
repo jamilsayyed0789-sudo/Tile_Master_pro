@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { useRoomPreviewerStore } from "@/store3d";
 import { 
   Upload, 
   Trash2, 
@@ -132,16 +133,17 @@ function createStyleTexture(styleId: string): HTMLCanvasElement {
   return c;
 }
 
-function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, wallColor, styleTex, bookmatchEnabled }: {
+function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, wallColor, styleTex, bookmatchEnabled, selectedStyleId }: {
   roomWidth: number; roomLength: number; wFeet: number; lFeet: number; patternSpan: number; groutWidth: number; groutColor: string; floorTex: THREE.Texture | null; skirtTex3d: THREE.Texture | null; skirtingHeight: number; skirtingColor: string; wallColor: string; styleTex: THREE.Texture | null;
   bookmatchEnabled?: boolean;
+  selectedStyleId?: string;
 }) {
   return (
     <group>
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]}>
         <planeGeometry args={[roomWidth, roomLength]} />
-        <meshStandardMaterial map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : "#c8b8a8"} roughness={0.7} />
+        <meshStandardMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : "#c8b8a8"} roughness={0.7} />
       </mesh>
       {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {
         const base = 2500;
@@ -178,27 +180,27 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
         <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />
         <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
-      <mesh position={[roomWidth / 2, skirtingHeight / 2, 0.08]}>
-        <planeGeometry args={[roomWidth, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+      <mesh position={[roomWidth / 2, Math.max(0.05, skirtingHeight) / 2, 0.02]}>
+        <planeGeometry args={[roomWidth, Math.max(0.05, skirtingHeight)]} />
+        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
       </mesh>
       {/* Left wall */}
       <mesh position={[0, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
         <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
-      <mesh position={[0.08, skirtingHeight / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[roomLength, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+      <mesh position={[0.02, Math.max(0.05, skirtingHeight) / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
+        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
       </mesh>
       {/* Right wall */}
       <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
         <meshStandardMaterial color={wallColor} roughness={0.6} />
       </mesh>
-      <mesh position={[roomWidth - 0.08, skirtingHeight / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[roomLength, skirtingHeight]} />
-        <meshStandardMaterial map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+      <mesh position={[roomWidth - 0.02, Math.max(0.05, skirtingHeight) / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
+        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
       </mesh>
       {/* Ceiling */}
       <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D, roomLength / 2]} rotation={[Math.PI / 2, 0, 0]}>
@@ -216,43 +218,59 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
 }
 
 export default function RoomPreviewer() {
-  // Room Slider Dimensions (in feet)
-  const [roomLength, setRoomLength] = useState<number>(14);
-  const [roomWidth, setRoomWidth] = useState<number>(12);
+  // Room Slider Dimensions (in feet) - persisted
+  const roomLength = useRoomPreviewerStore((s) => s.roomLength);
+  const setRoomLength = useRoomPreviewerStore((s) => s.setRoomLength);
+  const roomWidth = useRoomPreviewerStore((s) => s.roomWidth);
+  const setRoomWidth = useRoomPreviewerStore((s) => s.setRoomWidth);
   const patternSpan = 1;
 
-  // 2D vs 3D Mode
-  const [is3DMode, setIs3DMode] = useState<boolean>(true);
+  // 2D vs 3D Mode - persisted
+  const is3DMode = useRoomPreviewerStore((s) => s.is3DMode);
+  const setIs3DMode = useRoomPreviewerStore((s) => s.setIs3DMode);
 
-  // Theater / Showroom Mode for larger screen presentation
-  const [isTheaterMode, setIsTheaterMode] = useState<boolean>(false);
+  // Theater / Showroom Mode - persisted
+  const isTheaterMode = useRoomPreviewerStore((s) => s.isTheaterMode);
+  const setIsTheaterMode = useRoomPreviewerStore((s) => s.setIsTheaterMode);
 
-  // Grout options
-  const [groutWidth, setGroutWidth] = useState<number>(3); // in mm
-  const [groutColor, setGroutColor] = useState<string>("#c5c2bc");
+  // Grout options - persisted
+  const groutWidth = useRoomPreviewerStore((s) => s.groutWidth);
+  const setGroutWidth = useRoomPreviewerStore((s) => s.setGroutWidth);
+  const groutColor = useRoomPreviewerStore((s) => s.groutColor);
+  const setGroutColor = useRoomPreviewerStore((s) => s.setGroutColor);
   const [hexInput, setHexInput] = useState<string>("c5c2bc");
-  const [selectedPattern, setSelectedPattern] = useState<'grid' | 'brick'>('grid');
+  const selectedPattern = useRoomPreviewerStore((s) => s.selectedPattern);
+  const setSelectedPattern = useRoomPreviewerStore((s) => s.setSelectedPattern);
 
-  // Skirting options
-  const [skirtingColor, setSkirtingColor] = useState<string>("#111111");
-  const [skirtingHeight, setSkirtingHeight] = useState<number>(0.4); // in feet
-  const [skirtingUseTexture, setSkirtingUseTexture] = useState<boolean>(false);
+  // Skirting options - persisted
+  const skirtingColor = useRoomPreviewerStore((s) => s.skirtingColor);
+  const setSkirtingColor = useRoomPreviewerStore((s) => s.setSkirtingColor);
+  const skirtingHeight = useRoomPreviewerStore((s) => s.skirtingHeight);
+  const setSkirtingHeight = useRoomPreviewerStore((s) => s.setSkirtingHeight);
+  const skirtingUseTexture = useRoomPreviewerStore((s) => s.skirtingUseTexture);
+  const setSkirtingUseTexture = useRoomPreviewerStore((s) => s.setSkirtingUseTexture);
 
   useEffect(() => {
     setHexInput(groutColor.replace('#', ''));
   }, [groutColor]);
 
-  // Tile custom dimensions
-  const [sizeUnit, setSizeUnit] = useState<Unit>('inches');
-  const [tileWidthInput, setTileWidthInput] = useState<string>('24');
-  const [tileLengthInput, setTileLengthInput] = useState<string>('24');
+  // Tile custom dimensions - persisted
+  const sizeUnit = useRoomPreviewerStore((s) => s.sizeUnit);
+  const setSizeUnit = useRoomPreviewerStore((s) => s.setSizeUnit);
+  const tileWidthInput = useRoomPreviewerStore((s) => s.tileWidthInput);
+  const setTileWidthInput = useRoomPreviewerStore((s) => s.setTileWidthInput);
+  const tileLengthInput = useRoomPreviewerStore((s) => s.tileLengthInput);
+  const setTileLengthInput = useRoomPreviewerStore((s) => s.setTileLengthInput);
 
-  // Custom Image Texture
+  // Custom Image Texture (blob URLs - not persisted, reset on refresh/navigation)
   const [originalCustomImage, setOriginalCustomImage] = useState<string | null>(null);
   const [customTileImage, setCustomTileImage] = useState<string | null>(null);
-  const [bookmatchEnabled, setBookmatchEnabled] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("italian-marble");
+  const bookmatchEnabled = useRoomPreviewerStore((s) => s.bookmatchEnabled);
+  const setBookmatchEnabled = useRoomPreviewerStore((s) => s.setBookmatchEnabled);
+  const uploadedFileName = useRoomPreviewerStore((s) => s.uploadedFileName);
+  const setUploadedFileName = useRoomPreviewerStore((s) => s.setUploadedFileName);
+  const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);
+  const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);
 
   // Crop & Process States
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
@@ -272,23 +290,29 @@ export default function RoomPreviewer() {
     };
   }, [originalCustomImage, customTileImage]);
 
-  // Calculations states
-  const [wastagePercent, setWastagePercent] = useState<number>(8);
-  const [tilesPerBoxInput, setTilesPerBoxInput] = useState<string>('4');
-  const [pricePerBox, setPricePerBox] = useState<number>(650);
+  // Calculations states - persisted
+  const wastagePercent = useRoomPreviewerStore((s) => s.wastagePercent);
+  const setWastagePercent = useRoomPreviewerStore((s) => s.setWastagePercent);
+  const tilesPerBoxInput = useRoomPreviewerStore((s) => s.tilesPerBoxInput);
+  const setTilesPerBoxInput = useRoomPreviewerStore((s) => s.setTilesPerBoxInput);
+  const pricePerBox = useRoomPreviewerStore((s) => s.pricePerBox);
+  const setPricePerBox = useRoomPreviewerStore((s) => s.setPricePerBox);
 
   // Quote Generation Modal
   const [showQuoteModal, setShowQuoteModal] = useState<boolean>(false);
-  const [clientName, setClientName] = useState<string>('');
-  const [shopName, setShopName] = useState<string>('Marble Palace & Tiles');
-  const [laborCost, setLaborCost] = useState<number>(15); // INR per sqft
+  const clientName = useRoomPreviewerStore((s) => s.clientName);
+  const setClientName = useRoomPreviewerStore((s) => s.setClientName);
+  const shopName = useRoomPreviewerStore((s) => s.shopName);
+  const setShopName = useRoomPreviewerStore((s) => s.setShopName);
+  const laborCost = useRoomPreviewerStore((s) => s.laborCost);
+  const setLaborCost = useRoomPreviewerStore((s) => s.setLaborCost);
 
   // References
   const visualizerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [visualizerSize, setVisualizerSize] = useState({ width: 480, height: 360 });
 
-  // Textures for Three.js 3D room (states only; effect below after wFeet/lFeet)
+  // Textures for Three.js 3D room (not persisted - derived from blob URLs)
   const [floorTex, setFloorTex] = useState<THREE.Texture | null>(null);
   const [skirtTex3d, setSkirtTex3d] = useState<THREE.Texture | null>(null);
   const [styleTex, setStyleTex] = useState<THREE.Texture | null>(null);
@@ -387,31 +411,36 @@ export default function RoomPreviewer() {
   useEffect(() => {
     if (!customTileImage) { setFloorTex(null); return; }
     new THREE.TextureLoader().load(customTileImage, (t) => {
-      const ft = t.clone();
-      ft.wrapS = ft.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
-      ft.minFilter = THREE.LinearFilter;
-      ft.magFilter = THREE.LinearFilter;
-      ft.anisotropy = 16;
-      ft.repeat.set(roomWidth / wFeet / patternSpan, roomLength / lFeet / patternSpan);
-      ft.needsUpdate = true;
-      setFloorTex(ft);
+      t.wrapS = t.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
+      t.minFilter = THREE.LinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.anisotropy = 16;
+      t.repeat.set(roomWidth / wFeet / patternSpan, roomLength / lFeet / patternSpan);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.needsUpdate = true;
+      setFloorTex(t);
     });
   }, [customTileImage, roomWidth, roomLength, wFeet, lFeet, patternSpan, bookmatchEnabled]);
 
   // Load skirting texture separately
   useEffect(() => {
     if (!customTileImage || !skirtingUseTexture) { setSkirtTex3d(null); return; }
-    new THREE.TextureLoader().load(customTileImage, (t) => {
-      const st = t.clone();
-      st.wrapS = st.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
-      st.minFilter = THREE.LinearFilter;
-      st.magFilter = THREE.LinearFilter;
-      st.anisotropy = 16;
-      // tile width repeats along wall; show bottom portion of each tile vertically
-      st.repeat.set(roomWidth / wFeet / patternSpan, skirtingHeight / lFeet / patternSpan);
-      st.needsUpdate = true;
-      setSkirtTex3d(st);
-    });
+    new THREE.TextureLoader().load(
+      customTileImage,
+      (t) => {
+        t.wrapS = t.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
+        t.minFilter = THREE.LinearFilter;
+        t.magFilter = THREE.LinearFilter;
+        t.anisotropy = 16;
+        // tile width repeats along wall; show full tile vertically so texture is clearly visible
+        t.repeat.set(roomWidth / wFeet / patternSpan, Math.max(1, skirtingHeight / lFeet / patternSpan));
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.needsUpdate = true;
+        setSkirtTex3d(t);
+      },
+      undefined,
+      () => { setSkirtTex3d(null); }
+    );
   }, [customTileImage, skirtingUseTexture, roomWidth, wFeet, skirtingHeight, lFeet, patternSpan, bookmatchEnabled]);
 
   // Generate style texture for 3D when no custom image
@@ -1241,7 +1270,7 @@ export default function RoomPreviewer() {
                     <ambientLight intensity={0.6} />
                     <directionalLight position={[5, 10, 5]} intensity={0.8} />
                     <directionalLight position={[-3, 5, -3]} intensity={0.3} />
-                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor="#e5e7eb" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} />
+                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor="#e5e7eb" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />
                     <OrbitControls enableDamping dampingFactor={0.1} enableRotate enableZoom target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
                   </Canvas>
                 </div>

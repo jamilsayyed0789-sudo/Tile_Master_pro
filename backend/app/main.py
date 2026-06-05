@@ -3,17 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-from app.models.user import User
-from app.models.catalog import TileCatalog
+from app.models import User, Session, Subscription, TileCatalog
 from app.routers import auth_router, catalog_router
 from app.routers.tile_processor import tile_processor_router
 from app.routers.subscription import subscription_router
+from app.routers.payment import payment_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
     yield
 
 
@@ -31,8 +29,8 @@ app.include_router(auth_router)
 app.include_router(tile_processor_router)
 app.include_router(catalog_router)
 app.include_router(subscription_router)
+app.include_router(payment_router)
 
-# Mount local uploads directory for tile images
 os.makedirs(os.path.join(os.getcwd(), "uploads"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

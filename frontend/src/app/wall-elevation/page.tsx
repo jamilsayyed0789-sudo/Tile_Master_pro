@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { useWallElevationStore } from "@/store3d";
 import { Ruler, Layers, Check, Rotate3d, Upload, ImageIcon, DoorOpen, AppWindow, Search } from "lucide-react";
 
 import { applyImageAdjustments, AdjustmentSettings, DEFAULT_ADJUSTMENTS } from "../../utils/imageFilters";
@@ -263,29 +264,41 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 
 /* ─── Page ────────────────────────────────────────────────────────── */
 export default function WallElevationPage() {
-  // Wall dims
-  const [wallWidth,  setWallWidth]  = useState(10);
-  const [wallHeight, setWallHeight] = useState(9);
+  // Wall dims (persisted)
+  const wallWidth = useWallElevationStore((s) => s.wallWidth);
+  const setWallWidth = useWallElevationStore((s) => s.setWallWidth);
+  const wallHeight = useWallElevationStore((s) => s.wallHeight);
+  const setWallHeight = useWallElevationStore((s) => s.setWallHeight);
 
   // Tile
-  const [tileSize, setTileSize] = useState<string | null>("12x18");
+  const tileSize = useWallElevationStore((s) => s.tileSize);
+  const setTileSize = useWallElevationStore((s) => s.setTileSize);
   const [originalTileImg, setOriginalTileImg] = useState<string | null>(null);
   const [tileImg,  setTileImg]  = useState<string | null>(null);
   const [tileTex,  setTileTex]  = useState<THREE.Texture | null>(null);
   const [adjustments, setAdjustments] = useState<AdjustmentSettings>(DEFAULT_ADJUSTMENTS);
 
-  // Door
-  const [showDoor,  setShowDoor]  = useState(true);
-  const [doorW,     setDoorW]     = useState(3);
-  const [doorH,     setDoorH]     = useState(7);
-  const [doorPosX,  setDoorPosX]  = useState(25); // 0–100 %
+  // Door (persisted)
+  const showDoor = useWallElevationStore((s) => s.showDoor);
+  const setShowDoor = useWallElevationStore((s) => s.setShowDoor);
+  const doorW = useWallElevationStore((s) => s.doorW);
+  const setDoorW = useWallElevationStore((s) => s.setDoorW);
+  const doorH = useWallElevationStore((s) => s.doorH);
+  const setDoorH = useWallElevationStore((s) => s.setDoorH);
+  const doorPosX = useWallElevationStore((s) => s.doorPosX);
+  const setDoorPosX = useWallElevationStore((s) => s.setDoorPosX);
 
-  // Window
-  const [showWindow, setShowWindow] = useState(true);
-  const [winW,       setWinW]       = useState(3);
-  const [winH,       setWinH]       = useState(3);
-  const [winPosX,    setWinPosX]    = useState(70); // 0–100 %
-  const [winPosY,    setWinPosY]    = useState(65); // 0–100 %
+  // Window (persisted)
+  const showWindow = useWallElevationStore((s) => s.showWindow);
+  const setShowWindow = useWallElevationStore((s) => s.setShowWindow);
+  const winW = useWallElevationStore((s) => s.winW);
+  const setWinW = useWallElevationStore((s) => s.setWinW);
+  const winH = useWallElevationStore((s) => s.winH);
+  const setWinH = useWallElevationStore((s) => s.setWinH);
+  const winPosX = useWallElevationStore((s) => s.winPosX);
+  const setWinPosX = useWallElevationStore((s) => s.setWinPosX);
+  const winPosY = useWallElevationStore((s) => s.winPosY);
+  const setWinPosY = useWallElevationStore((s) => s.setWinPosY);
 
 
   // Read pending texture from storage

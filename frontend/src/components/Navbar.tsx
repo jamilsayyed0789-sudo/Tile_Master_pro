@@ -60,9 +60,6 @@ export default function Navbar() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("tilemaster_token");
-          }
           setIsOpen(false);
           router.push("/auth");
           router.refresh();

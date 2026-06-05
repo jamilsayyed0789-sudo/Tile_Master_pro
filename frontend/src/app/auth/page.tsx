@@ -38,19 +38,6 @@ export default function AuthPage() {
     }
   }, [session, router]);
 
-  const exchangeSession = async () => {
-    try {
-      const res = await fetch("/api/auth/exchange", { method: "POST" });
-      const data = await res.json();
-      if (data.token) {
-        localStorage.setItem("tilemaster_token", data.token);
-      }
-      return data;
-    } catch {
-      return null;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -89,7 +76,6 @@ export default function AuthPage() {
           throw new Error(signInError.message || "Invalid email or password");
         }
 
-        await exchangeSession();
         setSuccess("Login successful! Redirecting...");
 
         setTimeout(() => {
@@ -109,9 +95,8 @@ export default function AuthPage() {
           );
         }
 
-        await exchangeSession();
         setSuccess(
-          "Account registered successfully! Your 3-day free trial has started."
+          "Account registered successfully! Your 3-Day free trial has started."
         );
 
         setTimeout(() => {
@@ -244,7 +229,7 @@ export default function AuthPage() {
         >
           <div className="glass-card p-8 rounded-3xl w-full max-w-md mx-auto gold-glow-border relative">
             {!isLogin && (
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-4 py-1 rounded-full text-xs font-extrabold shadow-lg animate-bounce flex items-center gap-1.5">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-4 py-1 rounded-full text-xs font-extrabold shadow-lg animate-bounce flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 fill-black" /> 3-Day Free
                 Trial
               </div>
@@ -514,7 +499,7 @@ export default function AuthPage() {
 
                 <p className="text-[10px] text-muted-foreground/50 text-center mt-6">
                   By accessing TileMaster Pro, you agree to our Terms and agree
-                  that the 3-day free trial limit applies per email account.
+                   that the 3-day free trial limit applies per email account.
                 </p>
               </>
             )}

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { useKitchen3DStore } from "@/store3d";
 import { Upload, ImageIcon, CookingPot, LayoutGrid, Paintbrush, Rotate3d, Maximize2, Minimize2, Search, Ruler } from "lucide-react";
 
 
@@ -357,29 +358,45 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
   };
 
 export default function Kitchen3DPage() {
-  const [roomWidth, setRoomWidth] = useState(10);
-  const [roomLength, setRoomLength] = useState(12);
-  const [roomHeight, setRoomHeight] = useState(8);
-  const [counterDepth, setCounterDepth] = useState(2.5);
+  // Persisted state
+  const roomWidth = useKitchen3DStore((s) => s.roomWidth);
+  const setRoomWidth = useKitchen3DStore((s) => s.setRoomWidth);
+  const roomLength = useKitchen3DStore((s) => s.roomLength);
+  const setRoomLength = useKitchen3DStore((s) => s.setRoomLength);
+  const roomHeight = useKitchen3DStore((s) => s.roomHeight);
+  const setRoomHeight = useKitchen3DStore((s) => s.setRoomHeight);
+  const counterDepth = useKitchen3DStore((s) => s.counterDepth);
+  const setCounterDepth = useKitchen3DStore((s) => s.setCounterDepth);
   const [backsplashImg, setBacksplashImg] = useState<string | null>(null);
   const [backsplashTex, setBacksplashTex] = useState<THREE.Texture | null>(null);
-  const [tileSize, setTileSize] = useState("12x18");
-  const [tileRotation, setTileRotation] = useState(0);
-  const [countertopColor, setCountertopColor] = useState("#8b7355");
+  const tileSize = useKitchen3DStore((s) => s.tileSize);
+  const setTileSize = useKitchen3DStore((s) => s.setTileSize);
+  const tileRotation = useKitchen3DStore((s) => s.tileRotation);
+  const setTileRotation = useKitchen3DStore((s) => s.setTileRotation);
+  const countertopColor = useKitchen3DStore((s) => s.countertopColor);
+  const setCountertopColor = useKitchen3DStore((s) => s.setCountertopColor);
   const [countertopImg, setCountertopImg] = useState<string | null>(null);
   const [countertopTex, setCountertopTex] = useState<THREE.Texture | null>(null);
-  const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [slabMode, setSlabMode] = useState(true);
+  const isTheaterMode = useKitchen3DStore((s) => s.isTheaterMode);
+  const setIsTheaterMode = useKitchen3DStore((s) => s.setIsTheaterMode);
+  const slabMode = useKitchen3DStore((s) => s.slabMode);
+  const setSlabMode = useKitchen3DStore((s) => s.setSlabMode);
   const [highlighterImg, setHighlighterImg] = useState<string | null>(null);
   const [highlighterTex, setHighlighterTex] = useState<THREE.Texture | null>(null);
-  const [highlighterRows, setHighlighterRows] = useState(2);
+  const highlighterRows = useKitchen3DStore((s) => s.highlighterRows);
+  const setHighlighterRows = useKitchen3DStore((s) => s.setHighlighterRows);
   const [floorImg, setFloorImg] = useState<string | null>(null);
   const [floorTex, setFloorTex] = useState<THREE.Texture | null>(null);
-  const [floorTileSize, setFloorTileSize] = useState("2x4");
-  const [stripEnabled, setStripEnabled] = useState(false);
-  const [stripColor, setStripColor] = useState<string>("golden");
-  const [stripWidthMm, setStripWidthMm] = useState(2);
-  const [stripInterval, setStripInterval] = useState(2);
+  const floorTileSize = useKitchen3DStore((s) => s.floorTileSize);
+  const setFloorTileSize = useKitchen3DStore((s) => s.setFloorTileSize);
+  const stripEnabled = useKitchen3DStore((s) => s.stripEnabled);
+  const setStripEnabled = useKitchen3DStore((s) => s.setStripEnabled);
+  const stripColor = useKitchen3DStore((s) => s.stripColor);
+  const setStripColor = useKitchen3DStore((s) => s.setStripColor);
+  const stripWidthMm = useKitchen3DStore((s) => s.stripWidthMm);
+  const setStripWidthMm = useKitchen3DStore((s) => s.setStripWidthMm);
+  const stripInterval = useKitchen3DStore((s) => s.stripInterval);
+  const setStripInterval = useKitchen3DStore((s) => s.setStripInterval);
   
 
   // Read pending texture from storage
@@ -627,7 +644,7 @@ export default function Kitchen3DPage() {
             <div className="flex items-center justify-between bg-neutral-900 p-2 rounded-lg border border-neutral-800">
               <span className="text-xs text-neutral-400 flex items-center gap-1"><Rotate3d className="w-3 h-3"/> Rotate Tile</span>
               <button 
-                onClick={() => setTileRotation(r => r === 0 ? 90 : 0)} 
+                onClick={() => setTileRotation(tileRotation === 0 ? 90 : 0)} 
                 className={`px-3 py-1 border rounded text-xs font-bold transition-colors ${tileRotation === 90 ? "bg-amber-500/10 border-amber-500 text-amber-400" : "bg-neutral-800 border-neutral-700 text-neutral-400"}`}
               >
                 {tileRotation}°

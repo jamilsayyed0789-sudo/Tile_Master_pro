@@ -1,7 +1,9 @@
+from datetime import datetime
 from typing import Union
 from fastapi import Depends, HTTPException, Header, status
-from jose import JWTError, jwt
-from app.config import SECRET_KEY, ALGORITHM
+from sqlalchemy.orm import Session as DBSession
+from app.database import get_db
+from app.models.user import User, Session, Subscription
 
 
 class TokenUser:
@@ -14,6 +16,7 @@ class TokenUser:
 
 def get_current_user(
     authorization: Union[str, None] = Header(default=None),
+    db: DBSession = Depends(get_db),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -22,27 +25,75 @@ def get_current_user(
     )
     if not authorization or not authorization.startswith("Bearer "):
         raise credentials_exception
+
     token = authorization.split(" ")[1]
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("userId")
-        email: str = payload.get("sub")
-        name: str = payload.get("name", "")
-        access_status: str = payload.get("accessStatus", "active")
-        if not user_id or not email:
-            raise credentials_exception
-    except JWTError:
+
+    # Better-Auth sends token as <session_id>.<signature>
+    # DB stores just the session_id in the token column
+    session_token = token.split(".")[0]
+
+    # Look up session by token
+    session = db.query(Session).filter(Session.token == session_token).first()
+    if not session:
         raise credentials_exception
 
-    if access_status != "active":
+    # Check if session is expired
+    if session.expires_at < datetime.utcnow():
+        db.delete(session)
+        db.commit()
+        raise credentials_exception
+
+    # Look up user
+    user = db.query(User).filter(User.id == session.user_id).first()
+    if not user:
+        raise credentials_exception
+
+    # Check subscription status
+    subscription = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == user.id)
+        .order_by(Subscription.created_at.desc())
+        .first()
+    )
+
+    access_status = "active"
+    if subscription:
+        if subscription.account_status == "blocked":
+            access_status = "blocked"
+        elif subscription.account_status == "expired":
+            access_status = "expired"
+        elif (
+            subscription.plan_type == "trial"
+            and subscription.trial_end_date
+            and subscription.trial_end_date < datetime.utcnow()
+        ):
+            subscription.account_status = "expired"
+            subscription.updated_at = datetime.utcnow()
+            db.commit()
+            access_status = "expired"
+        elif (
+            subscription.subscription_end_date
+            and subscription.subscription_end_date < datetime.utcnow()
+        ):
+            subscription.account_status = "expired"
+            subscription.updated_at = datetime.utcnow()
+            db.commit()
+            access_status = "expired"
+
+    if access_status == "blocked":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been blocked. Please contact support.",
+        )
+    if access_status == "expired":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your subscription has expired. Please renew to continue.",
         )
 
     return TokenUser(
-        id=user_id,
-        email=email,
-        name=name,
+        id=user.id,
+        email=user.email,
+        name=user.name,
         access_status=access_status,
     )

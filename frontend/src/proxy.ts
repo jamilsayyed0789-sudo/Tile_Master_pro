@@ -30,6 +30,32 @@ export async function proxy(request: NextRequest) {
     if (!sessionCookie?.value) {
       return NextResponse.redirect(new URL("/auth", request.url));
     }
+
+    try {
+      const cookieValue = sessionCookie.value.includes(".")
+        ? sessionCookie.value.split(".")[0]
+        : sessionCookie.value;
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"}/auth/subscription`,
+        {
+          headers: {
+            Authorization: `Bearer ${cookieValue}`,
+          },
+        }
+      );
+
+      if (res.status === 403) {
+        return NextResponse.redirect(
+          new URL("/pricing?reason=expired", request.url)
+        );
+      }
+      if (res.status === 401) {
+        return NextResponse.redirect(new URL("/auth", request.url));
+      }
+    } catch {
+      // Backend down — let client handle it
+    }
   }
 
   return NextResponse.next();

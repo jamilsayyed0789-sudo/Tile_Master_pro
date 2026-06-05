@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { useBathroom3DStore } from "@/store3d";
 import {
   Ruler, Layers, Check, Rotate3d, Grid, Upload, ImageIcon, GripVertical, ArrowUpDown, Maximize2, Minimize2, Search
 } from "lucide-react";
@@ -278,24 +279,40 @@ function Room({
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 export default function Bathroom3DPage() {
-  // ── Dimensions ──────────────────────────────────────────────────────────
-  const [runningFeet,   setRunningFeet]   = useState(20);
-  const [wallHeight,    setWallHeight]    = useState(8);
-  const [roomLength,    setRoomLength]    = useState(8);
-  const [roomWidth,     setRoomWidth]     = useState(6);
-  const [tileSize,      setTileSize]      = useState<string | null>("12x18");
-  const [groutWidth,    setGroutWidth]    = useState(3);
-  const [groutColor,    setGroutColor]    = useState("#cccccc");
-  const [wastagePercent,setWastagePercent]= useState(10);
-  const [pricePerBox,   setPricePerBox]   = useState(650);
-  const [showerSplitMode, setShowerSplitMode] = useState(false);
-  const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [stripEnabled, setStripEnabled] = useState(false);
-  const [stripColor, setStripColor] = useState<string>("golden");
-  const [stripWidthMm, setStripWidthMm] = useState(2);
-  const [stripInterval, setStripInterval] = useState(2);
-  const [bookmatchEnabled, setBookmatchEnabled] = useState(false);
-  
+  // ── Dimensions (persisted) ──────────────────────────────────────────────
+  const runningFeet = useBathroom3DStore((s) => s.runningFeet);
+  const setRunningFeet = useBathroom3DStore((s) => s.setRunningFeet);
+  const wallHeight = useBathroom3DStore((s) => s.wallHeight);
+  const setWallHeight = useBathroom3DStore((s) => s.setWallHeight);
+  const roomLength = useBathroom3DStore((s) => s.roomLength);
+  const setRoomLength = useBathroom3DStore((s) => s.setRoomLength);
+  const roomWidth = useBathroom3DStore((s) => s.roomWidth);
+  const setRoomWidth = useBathroom3DStore((s) => s.setRoomWidth);
+  const tileSize = useBathroom3DStore((s) => s.tileSize);
+  const setTileSize = useBathroom3DStore((s) => s.setTileSize);
+  const groutWidth = useBathroom3DStore((s) => s.groutWidth);
+  const setGroutWidth = useBathroom3DStore((s) => s.setGroutWidth);
+  const groutColor = useBathroom3DStore((s) => s.groutColor);
+  const setGroutColor = useBathroom3DStore((s) => s.setGroutColor);
+  const wastagePercent = useBathroom3DStore((s) => s.wastagePercent);
+  const setWastagePercent = useBathroom3DStore((s) => s.setWastagePercent);
+  const pricePerBox = useBathroom3DStore((s) => s.pricePerBox);
+  const setPricePerBox = useBathroom3DStore((s) => s.setPricePerBox);
+  const showerSplitMode = useBathroom3DStore((s) => s.showerSplitMode);
+  const setShowerSplitMode = useBathroom3DStore((s) => s.setShowerSplitMode);
+  const isTheaterMode = useBathroom3DStore((s) => s.isTheaterMode);
+  const setIsTheaterMode = useBathroom3DStore((s) => s.setIsTheaterMode);
+  const stripEnabled = useBathroom3DStore((s) => s.stripEnabled);
+  const setStripEnabled = useBathroom3DStore((s) => s.setStripEnabled);
+  const stripColor = useBathroom3DStore((s) => s.stripColor);
+  const setStripColor = useBathroom3DStore((s) => s.setStripColor);
+  const stripWidthMm = useBathroom3DStore((s) => s.stripWidthMm);
+  const setStripWidthMm = useBathroom3DStore((s) => s.setStripWidthMm);
+  const stripInterval = useBathroom3DStore((s) => s.stripInterval);
+  const setStripInterval = useBathroom3DStore((s) => s.setStripInterval);
+  const bookmatchEnabled = useBathroom3DStore((s) => s.bookmatchEnabled);
+  const setBookmatchEnabled = useBathroom3DStore((s) => s.setBookmatchEnabled);
+
 
   // ── Original (raw) uploads ───────────────────────────────────────────────
   const [origDark,        setOrigDark]        = useState<string | null>(null);
@@ -312,8 +329,10 @@ export default function Bathroom3DPage() {
   const [floorImg,       setFloorImg]       = useState<string | null>(null);
   const [showerImg1,     setShowerImg1]     = useState<string | null>(null);
   const [showerImg2,     setShowerImg2]     = useState<string | null>(null);
-  const [shower1OffsetY, setShower1OffsetY] = useState(0);
-  const [shower2OffsetY, setShower2OffsetY] = useState(0);
+  const shower1OffsetY = useBathroom3DStore((s) => s.shower1OffsetY);
+  const setShower1OffsetY = useBathroom3DStore((s) => s.setShower1OffsetY);
+  const shower2OffsetY = useBathroom3DStore((s) => s.shower2OffsetY);
+  const setShower2OffsetY = useBathroom3DStore((s) => s.setShower2OffsetY);
 
   // Read pending texture from storage
   useEffect(() => {
@@ -339,14 +358,12 @@ export default function Bathroom3DPage() {
 
   // ── Adjustment settings ──────────────────────────────────────────────────
 
-  // ── Drag-to-reorder state ────────────────────────────────────────────────
+  // ── Drag-to-reorder state (persisted) ────────────────────────────────────
   // slotOrder controls the vertical order of wall tile bands (bottom → top)
-  const [slotOrder,      setSlotOrder]      = useState<string[]>(["dark", "light", "highlighter"]);
-  const [slotRows,       setSlotRows]       = useState<Record<string, number>>({
-    dark: 2,
-    light: 2,
-    highlighter: 1,
-  });
+  const slotOrder = useBathroom3DStore((s) => s.slotOrder);
+  const setSlotOrder = useBathroom3DStore((s) => s.setSlotOrder);
+  const slotRows = useBathroom3DStore((s) => s.slotRows);
+  const setSlotRows = useBathroom3DStore((s) => s.setSlotRows);
   const [draggedSlotId,  setDraggedSlotId]  = useState<string | null>(null);
   const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
 
@@ -386,16 +403,14 @@ export default function Bathroom3DPage() {
 
   const handleDrop = (targetId: string) => {
     if (draggedSlotId && draggedSlotId !== targetId) {
-      setSlotOrder(prev => {
-        const next = [...prev];
-        const from = next.indexOf(draggedSlotId);
-        const to   = next.indexOf(targetId);
-        if (from !== -1 && to !== -1) {
-          next.splice(from, 1);
-          next.splice(to, 0, draggedSlotId);
-        }
-        return next;
-      });
+      const next = [...slotOrder];
+      const from = next.indexOf(draggedSlotId);
+      const to   = next.indexOf(targetId);
+      if (from !== -1 && to !== -1) {
+        next.splice(from, 1);
+        next.splice(to, 0, draggedSlotId);
+      }
+      setSlotOrder(next);
     }
     setDraggedSlotId(null);
     setDragOverSlotId(null);
@@ -619,7 +634,7 @@ export default function Bathroom3DPage() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSlotRows(prev => ({ ...prev, [id]: Math.max(0, (prev[id] ?? 2) - 1) }));
+                                setSlotRows({ ...slotRows, [id]: Math.max(0, (slotRows[id] ?? 2) - 1) });
                               }}
                               className="w-4 h-4 rounded bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center text-xs font-bold transition-colors select-none cursor-pointer"
                             >
@@ -632,7 +647,7 @@ export default function Bathroom3DPage() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSlotRows(prev => ({ ...prev, [id]: Math.min(10, (prev[id] ?? 2) + 1) }));
+                                setSlotRows({ ...slotRows, [id]: Math.min(10, (slotRows[id] ?? 2) + 1) });
                               }}
                               className="w-4 h-4 rounded bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center text-xs font-bold transition-colors select-none cursor-pointer"
                             >
