@@ -38,7 +38,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </AuthGuard>
-        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
+        {/* <script src="https://checkout.razorpay.com/v1/checkout.js" async /> */}  {/* Razorpay temporarily disabled */}
       </body>
     </html>
   );
