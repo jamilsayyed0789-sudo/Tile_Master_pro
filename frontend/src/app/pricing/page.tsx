@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Zap, Shield, Clock, Crown } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -43,13 +43,7 @@ const plans = [
   },
 ];
 
-declare global {
-  interface Window {
-    // Razorpay: any;  // Razorpay temporarily disabled
-  }
-}
-
-export default function PricingPage() {
+function PricingContent() {
   const [selected, setSelected] = useState<"monthly" | "lifetime" | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
@@ -91,131 +85,6 @@ export default function PricingPage() {
       })
       .catch(() => {});
   }, [session]);
-
-  // const waitForRazorpay = (): Promise<boolean> => {
-  //   return new Promise((resolve) => {
-  //     if (typeof window !== "undefined" && window.Razorpay) {
-  //       resolve(true);
-  //       return;
-  //     }
-  //     let attempts = 0;
-  //     const interval = setInterval(() => {
-  //       attempts++;
-  //       if (window.Razorpay) {
-  //         clearInterval(interval);
-  //         resolve(true);
-  //       } else if (attempts > 30) {
-  //         clearInterval(interval);
-  //         resolve(false);
-  //       }
-  //     }, 200);
-  //   });
-  // };
-
-  // const handlePurchase = async (plan: "monthly" | "lifetime") => {
-  //   if (!session) {
-  //     router.push("/auth");
-  //     return;
-  //   }
-
-  //   setPaying(true);
-  //   const token = getToken();
-
-  //   if (!token) {
-  //     alert("Session expired. Please log in again.");
-  //     setPaying(false);
-  //     router.push("/auth");
-  //     return;
-  //   }
-
-  //   const rzpReady = await waitForRazorpay();
-  //   if (!rzpReady) {
-  //     alert("Razorpay failed to load. Please refresh the page and try again.");
-  //     setPaying(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     const orderRes = await fetch(`${API_BASE}/payment/create-order`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({ planType: plan }),
-  //     });
-
-  //     if (!orderRes.ok) {
-  //       const err = await orderRes.json();
-  //       throw new Error(err.detail || `Failed to create order (${orderRes.status})`);
-  //     }
-
-  //     const order = await orderRes.json();
-
-  //     const options = {
-  //       key: order.key_id,
-  //       amount: order.amount,
-  //       currency: order.currency,
-  //       name: "TileMaster Pro",
-  //       description: `${plan === "monthly" ? "Monthly" : "Lifetime"} Plan`,
-  //       order_id: order.order_id,
-  //       handler: async (response: any) => {
-  //         try {
-  //           const verifyRes = await fetch(`${API_BASE}/payment/verify`, {
-  //             method: "POST",
-  //             headers: {
-  //               "Content-Type": "application/json",
-  //               Authorization: `Bearer ${token}`,
-  //             },
-  //             body: JSON.stringify({
-  //               razorpay_order_id: response.razorpay_order_id,
-  //               razorpay_payment_id: response.razorpay_payment_id,
-  //               razorpay_signature: response.razorpay_signature,
-  //               plan_type: plan,
-  //             }),
-  //           });
-
-  //           if (verifyRes.ok) {
-  //             alert(
-  //               `${plan === "monthly" ? "Monthly" : "Lifetime"} plan activated!`
-  //             );
-  //             router.push("/");
-  //             router.refresh();
-  //           } else {
-  //             const err = await verifyRes.json();
-  //             alert(err.detail || "Payment verification failed.");
-  //           }
-  //         } catch {
-  //           alert("Payment verification failed.");
-  //         } finally {
-  //           setPaying(false);
-  //         }
-  //       },
-  //       prefill: {
-  //         name: session.user.name,
-  //         email: session.user.email,
-  //       },
-  //       theme: {
-  //         color: "#f59e0b",
-  //       },
-  //       modal: {
-  //         ondismiss: () => {
-  //           setPaying(false);
-  //         },
-  //       },
-  //     };
-
-  //     const rzp = new window.Razorpay(options);
-  //     rzp.on("payment.failed", (response: any) => {
-  //       alert(`Payment failed: ${response.error.description || "Unknown error"}`);
-  //       setPaying(false);
-  //     });
-  //     rzp.open();
-  //   } catch (e: any) {
-  //     alert(e.message || "Failed to initiate payment.");
-  //     setPaying(false);
-  //   }
-  // };
 
   const handlePurchase = async (plan: "monthly" | "lifetime") => {
     if (!session) {
@@ -381,5 +250,17 @@ export default function PricingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading pricing...</div>
+      </div>
+    }>
+      <PricingContent />
+    </Suspense>
   );
 }
