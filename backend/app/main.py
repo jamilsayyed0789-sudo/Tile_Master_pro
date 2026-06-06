@@ -17,9 +17,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TileMasterPro API", version="2.0.0", lifespan=lifespan)
 
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
