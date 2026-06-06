@@ -39,10 +39,7 @@ export default function CatalogUploadPage() {
     formData.append("file", file);
 
     try {
-      // Bypass Next.js proxy for large uploads to avoid 500/413 errors
-      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://127.0.0.1:8001' 
-        : `${window.location.protocol}//${window.location.hostname}:8001`;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
 
       const response = await fetch(`${baseUrl}/catalog/upload`, {
         method: "POST",
