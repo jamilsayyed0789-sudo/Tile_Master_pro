@@ -280,8 +280,20 @@ export default function Home() {
       <div className="absolute top-1/2 right-1/4 w-[350px] h-[350px] rounded-full radial-glow-warm opacity-40 -z-10 pointer-events-none" />
 
       {/* Tile grid + marble veining overlays */}
-      <div className="absolute inset-0 tile-grid-bg opacity-50 -z-20 pointer-events-none" />
-      <div className="absolute inset-0 marble-vein-bg opacity-70 -z-20 pointer-events-none" />
+      <div className="absolute inset-0 porcelain-tile-bg opacity-60 -z-20 pointer-events-none" />
+      <div className="absolute inset-0 granite-tile-bg opacity-40 -z-20 pointer-events-none" />
+      <div className="absolute inset-0 marble-vein-bg opacity-50 -z-20 pointer-events-none" />
+
+      {/* Decorative real-tile image strips in corners (blurred, decorative) */}
+      <div className="absolute top-20 -left-20 w-72 h-72 rounded-3xl overflow-hidden opacity-30 -z-10 rotate-12 border-4 border-white/40 shadow-2xl pointer-events-none hidden lg:block">
+        <img src="https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668397/tile_catalog/SHERGAON_p1_ab1a09e3.jpg" alt="" className="w-full h-full object-cover" />
+      </div>
+      <div className="absolute top-40 -right-20 w-80 h-80 rounded-3xl overflow-hidden opacity-25 -z-10 -rotate-12 border-4 border-white/40 shadow-2xl pointer-events-none hidden lg:block">
+        <img src="https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668404/tile_catalog/SHERGAON_p3_d641b90c.jpg" alt="" className="w-full h-full object-cover" />
+      </div>
+      <div className="absolute bottom-40 left-10 w-64 h-64 rounded-3xl overflow-hidden opacity-20 -z-10 rotate-6 border-4 border-white/40 shadow-2xl pointer-events-none hidden lg:block">
+        <img src="https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668411/tile_catalog/SHERGAON_p4_5f2c2119.jpg" alt="" className="w-full h-full object-cover" />
+      </div>
 
       {/* HERO SECTION — with real tile samples floating */}
       <section className="relative pt-10 pb-12 md:pt-16 md:pb-16">
@@ -497,7 +509,7 @@ export default function Home() {
       </section>
 
       {/* TILE CATEGORIES — what kind of tiles we handle */}
-      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative subway-tile-bg">
         <div className="text-center mb-14 max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -548,7 +560,7 @@ export default function Home() {
       </section>
 
       {/* TILE FINISHES — visual swatches */}
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative granite-tile-bg">
         <div className="text-center mb-10 max-w-3xl mx-auto">
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
             ✦ Finishes We Support ✦
@@ -581,7 +593,7 @@ export default function Home() {
       </section>
 
       {/* 3D VISUALIZATION SUITE */}
-      <section className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative diamond-tile-bg">
         <div className="text-center mb-14 max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -683,7 +695,7 @@ export default function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-white/40 dark:bg-black/30 backdrop-blur-md relative overflow-hidden">
+      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-white/40 dark:bg-black/30 backdrop-blur-md relative overflow-hidden porcelain-tile-bg">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full radial-glow-amber blur-3xl opacity-10 -z-10 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -774,7 +786,7 @@ export default function Home() {
       </section>
 
       {/* CALCULATOR + DESIGNER SUITE */}
-      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative herringbone-tile-bg">
         <div className="text-center mb-14 max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -1015,7 +1027,7 @@ export default function Home() {
       </section>
 
       {/* WHY TILE SHOPS LOVE US */}
-      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative granite-tile-bg">
         <div className="text-center mb-14 max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -1077,7 +1089,7 @@ export default function Home() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-gradient-to-b from-transparent via-amber-50/30 to-transparent dark:from-transparent dark:via-black/30 dark:to-transparent backdrop-blur-md relative overflow-hidden">
+      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-gradient-to-b from-transparent via-amber-50/30 to-transparent dark:from-transparent dark:via-black/30 dark:to-transparent backdrop-blur-md relative overflow-hidden subway-tile-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14 max-w-3xl mx-auto">
             <motion.div
@@ -1163,7 +1175,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-amber-900/15 dark:border-white/5 relative">
+      <section className="py-20 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-amber-900/15 dark:border-white/5 relative porcelain-tile-bg">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-5xl font-black mb-3">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">Expert insights on managing packaging, fractions, and room estimations.</p>

@@ -334,6 +334,176 @@
     linear-gradient(180deg, transparent 0%, rgba(184, 134, 11, 0.04) 50%, transparent 100%);
 }
 
+/* =====================================================
+   TILE PATTERN BACKGROUNDS — SVG-based, scalable
+   ===================================================== */
+
+/* Subway / brick tile pattern (offset rows) */
+.subway-tile-bg {
+  background-color: #faf7f2;
+  background-image:
+    linear-gradient(335deg, rgba(101, 67, 33, 0.08) 23%, transparent 23%),
+    linear-gradient(155deg, rgba(101, 67, 33, 0.08) 23%, transparent 23%),
+    linear-gradient(335deg, rgba(101, 67, 33, 0.08) 67%, transparent 67%),
+    linear-gradient(155deg, rgba(101, 67, 33, 0.08) 67%, transparent 67%);
+  background-size: 80px 80px;
+  background-position: 0 0, 0 0, 40px 40px, 40px 40px;
+}
+
+.dark .subway-tile-bg {
+  background-color: #0a0806;
+  background-image:
+    linear-gradient(335deg, rgba(252, 211, 77, 0.06) 23%, transparent 23%),
+    linear-gradient(155deg, rgba(252, 211, 77, 0.06) 23%, transparent 23%),
+    linear-gradient(335deg, rgba(252, 211, 77, 0.06) 67%, transparent 67%),
+    linear-gradient(155deg, rgba(252, 211, 77, 0.06) 67%, transparent 67%);
+  background-size: 80px 80px;
+  background-position: 0 0, 0 0, 40px 40px, 40px 40px;
+}
+
+/* Hexagonal mosaic pattern */
+.hex-tile-bg {
+  background-color: #faf7f2;
+  background-image:
+    radial-gradient(circle farthest-side at 0% 50%, #e4d9c4 23.5%, rgba(228, 217, 196, 0) 0)21px 30px,
+    radial-gradient(circle farthest-side at 0% 50%, transparent 24%, rgba(228, 217, 196, 0.7) 0, #e4d9c4 25%, rgba(228, 217, 196, 0.7) 26%, transparent 27%, transparent 100%)21px 30px,
+    linear-gradient(#faf7f2 14%, rgba(250, 247, 242, 0) 0, rgba(250, 247, 242, 0) 85%, #faf7f2 0)0 0,
+    linear-gradient(150deg, #faf7f2 24%, #e4d9c4 0, #e4d9c4 26%, rgba(228, 217, 196, 0) 0, rgba(228, 217, 196, 0) 74%, #e4d9c4 0, #e4d9c4 76%, #faf7f2 0)0 0,
+    linear-gradient(30deg, #faf7f2 24%, #e4d9c4 0, #e4d9c4 26%, rgba(228, 217, 196, 0) 0, rgba(228, 217, 196, 0) 74%, #e4d9c4 0, #e4d9c4 76%, #faf7f2 0)0 0,
+    linear-gradient(90deg, #e4d9c4 2%, #faf7f2 0, #faf7f2 98%, #e4d9c4 0)0 0 #faf7f2;
+  background-size: 42px 60px;
+}
+
+.dark .hex-tile-bg {
+  background-color: #0a0806;
+  background-image:
+    radial-gradient(circle farthest-side at 0% 50%, #3a302a 23.5%, rgba(58, 48, 42, 0) 0)21px 30px,
+    linear-gradient(150deg, #0a0806 24%, #3a302a 0, #3a302a 26%, rgba(58, 48, 42, 0) 0, rgba(58, 48, 42, 0) 74%, #3a302a 0, #3a302a 76%, #0a0806 0)0 0,
+    linear-gradient(30deg, #0a0806 24%, #3a302a 0, #3a302a 26%, rgba(58, 48, 42, 0) 0, rgba(58, 48, 42, 0) 74%, #3a302a 0, #3a302a 76%, #0a0806 0)0 0,
+    linear-gradient(90deg, #3a302a 2%, #0a0806 0, #0a0806 98%, #3a302a 0)0 0 #0a0806;
+  background-size: 42px 60px;
+}
+
+/* Large porcelain tile pattern (300x300) */
+.porcelain-tile-bg {
+  background-color: #f5f0e5;
+  background-image:
+    linear-gradient(rgba(101, 67, 33, 0.12) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(101, 67, 33, 0.12) 2px, transparent 2px);
+  background-size: 120px 120px;
+  background-position: -1px -1px;
+}
+
+.dark .porcelain-tile-bg {
+  background-color: #15110d;
+  background-image:
+    linear-gradient(rgba(252, 211, 77, 0.08) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(252, 211, 77, 0.08) 2px, transparent 2px);
+  background-size: 120px 120px;
+  background-position: -1px -1px;
+}
+
+/* Herringbone / chevron pattern */
+.herringbone-tile-bg {
+  background-color: #faf7f2;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 30px,
+      rgba(101, 67, 33, 0.08) 30px,
+      rgba(101, 67, 33, 0.08) 32px,
+      transparent 32px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 30px,
+      rgba(101, 67, 33, 0.08) 30px,
+      rgba(101, 67, 33, 0.08) 32px,
+      transparent 32px,
+      transparent 60px
+    );
+}
+
+.dark .herringbone-tile-bg {
+  background-color: #0a0806;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 30px,
+      rgba(252, 211, 77, 0.06) 30px,
+      rgba(252, 211, 77, 0.06) 32px,
+      transparent 32px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 30px,
+      rgba(252, 211, 77, 0.06) 30px,
+      rgba(252, 211, 77, 0.06) 32px,
+      transparent 32px,
+      transparent 60px
+    );
+}
+
+/* Dot/granite speckle pattern (granite tile look) */
+.granite-tile-bg {
+  background-color: #faf7f2;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(101, 67, 33, 0.10) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, rgba(184, 134, 11, 0.08) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 40% 80%, rgba(101, 67, 33, 0.06) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 90% 20%, rgba(184, 134, 11, 0.10) 0.8px, transparent 1.5px);
+  background-size: 60px 60px, 80px 80px, 40px 40px, 100px 100px;
+}
+
+.dark .granite-tile-bg {
+  background-color: #0a0806;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(252, 211, 77, 0.08) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, rgba(252, 211, 77, 0.06) 0.8px, transparent 1.5px),
+    radial-gradient(circle at 40% 80%, rgba(252, 211, 77, 0.05) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 90% 20%, rgba(252, 211, 77, 0.08) 0.8px, transparent 1.5px);
+  background-size: 60px 60px, 80px 80px, 40px 40px, 100px 100px;
+}
+
+/* Diagonal tile stack pattern (offset square tiles) */
+.diamond-tile-bg {
+  background-color: #faf7f2;
+  background-image:
+    linear-gradient(135deg, rgba(101, 67, 33, 0.06) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(101, 67, 33, 0.06) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(101, 67, 33, 0.06) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(101, 67, 33, 0.06) 25%, #f5f0e5 25%);
+  background-position:
+    10px 0,
+    10px 0,
+    0 0,
+    0 0;
+  background-size: 20px 20px;
+  background-repeat: repeat;
+}
+
+.dark .diamond-tile-bg {
+  background-color: #0a0806;
+  background-image:
+    linear-gradient(135deg, rgba(252, 211, 77, 0.05) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(252, 211, 77, 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(252, 211, 77, 0.05) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(252, 211, 77, 0.05) 25%, #15110d 25%);
+  background-position:
+    10px 0,
+    10px 0,
+    0 0,
+    0 0;
+  background-size: 20px 20px;
+  background-repeat: repeat;
+}
+
 /* Custom Hide Scrollbar Utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
