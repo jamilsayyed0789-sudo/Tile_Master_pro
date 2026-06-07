@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -12,26 +12,60 @@ import {
   Layers,
   ChevronDown,
   Building,
+  Rotate3d,
+  ShowerHead,
+  CookingPot,
+  Columns,
+  UploadCloud,
+  Search,
+  Zap,
+  Shield,
+  Crown,
+  Check,
+  Star,
+  Play,
+  Eye,
+  MousePointer2,
+  TrendingUp,
+  Users,
+  Award,
+  Clock,
+  FileText,
+  Wand2,
+  Box as BoxIcon,
+  Boxes,
+  Grid3X3,
+  Palette,
+  BadgeCheck,
+  Heart,
+  IndianRupee,
+  Rocket,
+  Target,
+  Timer,
+  Layout,
 } from "lucide-react";
 
-// FAQs Data Structure
 const FAQS = [
   {
     question: "How do I calculate tiles needed for a bathroom wall with doors?",
-    answer: "To calculate bathroom walls accurately: (1) Find the perimeter of the bathroom (Length + Width) × 2, then multiply by the wall height to get the total wall area. (2) Subtract the area of doors and windows (e.g. standard door is 3ft x 7ft = 21 sq.ft). (3) Add a wastage buffer (typically 8-10% to account for cut corners around layout transitions). Use our 'Bathroom Calculator' route for a comprehensive step-by-step assistant that handles this automatically."
+    answer: "To calculate bathroom walls accurately: (1) Find the perimeter of the bathroom (Length + Width) × 2, then multiply by the wall height to get the total wall area. (2) Subtract the area of doors and windows (e.g. standard door is 3ft x 7ft = 21 sq.ft). (3) Add a wastage buffer (typically 8-10% to account for cut corners around layout transitions). Use our 'Bathroom Calculator' route for a comprehensive step-by-step assistant that handles this automatically.",
   },
   {
     question: "Why is wastage factor important for different layout patterns?",
-    answer: "Tile wastage occurs due to corner cuts, cutting mistakes, or structural columns. A standard stacked grid pattern requires about 5% wastage buffer. In contrast, running bond (brick) offsets require 8-10% wastage. Highly complex patterns like Herringbone or Diagonal grids require 12-15% wastage because almost every tile near the walls has to be sliced diagonally, leaving unusable remnants."
+    answer: "Tile wastage occurs due to corner cuts, cutting mistakes, or structural columns. A standard stacked grid pattern requires about 5% wastage buffer. In contrast, running bond (brick) offsets require 8-10% wastage. Highly complex patterns like Herringbone or Diagonal grids require 12-15% wastage because almost every tile near the walls has to be sliced diagonally, leaving unusable remnants.",
   },
   {
-    question: "What are standard box packing counts in India?",
-    answer: "In India, tile packing details depend heavily on the tile dimensions: \n• 12\" x 12\" (300x300mm): Packed as 10 tiles/box (covers 10 sq.ft)\n• 24\" x 24\" (600x600mm): Packed as 4 tiles/box (covers 16 sq.ft)\n• 24\" x 48\" (600x1200mm): Packed as 2 tiles/box (covers 15.5 sq.ft)\n• 32\" x 32\" (800x800mm): Packed as 3 tiles/box (covers 17 sq.ft)\n• 32\" x 64\" (800x1600mm): Packed as 2 tiles/box (covers 27.5 sq.ft)\nOur Pro Calculator automatically adjusts calculations to these packing standards so you order exact integer boxes."
+    question: "Can customers visualize my tiles in 3D before buying?",
+    answer: "Absolutely! TileMaster Pro lets you place any tile texture in a fully interactive 3D room, bathroom, kitchen, or wall elevation in seconds. Customers can walk through the space, rotate the camera, change tile sizes, adjust grout, and see exactly how the finished room will look. This dramatically increases conversion rates at your tile shop.",
   },
   {
     question: "Can I generate and print professional quotations for my customers?",
-    answer: "Yes! Both the Floor Calculator and Bathroom Calculator feature an advanced 'Generate Quotation' utility. Once your calculations are complete, you can key in the price per box, labor costs, brand, and customer details, then download a beautifully structured PDF quotation containing exact metrics, tax breakdown, and wastage warnings, perfectly tailored for Indian tile dealerships."
-  }
+    answer: "Yes! Both the Floor Calculator and Bathroom Calculator feature an advanced 'Generate Quotation' utility. Once your calculations are complete, you can key in the price per box, labor costs, brand, and customer details, then download a beautifully structured PDF quotation containing exact metrics, tax breakdown, and wastage warnings, perfectly tailored for Indian tile dealerships.",
+  },
+  {
+    question: "Do I need to install any software?",
+    answer: "No installation needed. TileMaster Pro runs entirely in your browser and on your phone. Your designs, quotes, and catalogs are stored securely in the cloud, so you can access them from your shop computer, laptop, or even showroom tablet with the same login.",
+  },
 ];
 
 const PATTERNS = [
@@ -40,24 +74,24 @@ const PATTERNS = [
     name: "Stacked Grid",
     waste: "5%",
     difficulty: "Easy",
-    desc: "Tiles are aligned in a straight, uniform grid. It is the easiest to install, has clean linear symmetry, and produces the least amount of cut waste.",
-    tip: "Ideal for large-format modern vitrified tiles with continuous marble veining."
+    desc: "Tiles are aligned in a straight, uniform grid. Clean linear symmetry with the least amount of cut waste.",
+    tip: "Ideal for large-format modern vitrified tiles with continuous marble veining.",
   },
   {
     id: "brick",
     name: "Running Bond (Brick)",
     waste: "8-10%",
     difficulty: "Medium",
-    desc: "Each tile row is offset by 50% from the row below it, mimicking classic brick laying. This hides minor wall alignment and tile curvature defects beautifully.",
-    tip: "Highly recommended for rectangular format tiles like 12\"x24\" or wood planks."
+    desc: "Each tile row is offset by 50% from the row below it, mimicking classic brick laying. Hides wall alignment defects beautifully.",
+    tip: "Highly recommended for rectangular format tiles like 12\"x24\" or wood planks.",
   },
   {
     id: "diagonal",
     name: "Diagonal (45° Grid)",
     waste: "12%",
     difficulty: "Hard",
-    desc: "Standard grid pattern rotated by 45 degrees. The angled lines trick the eye into seeing more space, making small rooms feel significantly wider.",
-    tip: "Requires precision cuts at all wall perimeters. Standard wastage is 12%."
+    desc: "Standard grid pattern rotated by 45 degrees. The angled lines trick the eye into seeing more space, making small rooms feel wider.",
+    tip: "Requires precision cuts at all wall perimeters. Standard wastage is 12%.",
   },
   {
     id: "herringbone",
@@ -65,51 +99,52 @@ const PATTERNS = [
     waste: "15%",
     difficulty: "Master",
     desc: "Rectangular tiles placed in an interlocking 90-degree V-shape. Highly premium, visually striking pattern that turns any floor or wall into a focal point.",
-    tip: "Extremely cut-heavy at borders. Budget for 15% wastage and specialized tile labor."
-  }
+    tip: "Extremely cut-heavy at borders. Budget for 15% wastage and specialized tile labor.",
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Rajesh Patel",
+    shop: "Patel Tiles & Sanitary, Surat",
+    avatar: "RP",
+    rating: 5,
+    text: "The 3D room preview changed my showroom completely. Customers now see their tiles in a real room before buying. My conversion rate doubled in 3 months.",
+  },
+  {
+    name: "Mohammed Aslam",
+    shop: "Aslam Ceramic, Bengaluru",
+    avatar: "MA",
+    rating: 5,
+    text: "I used to spend 30 minutes calculating tiles for a single bathroom. Now the calculator does it in 30 seconds. The PDF quotation feature saves me 2 hours daily.",
+  },
+  {
+    name: "Priya Sharma",
+    shop: "Sharma Interior Hub, Jaipur",
+    avatar: "PS",
+    rating: 5,
+    text: "The wall elevation 3D tool is incredible. My clients love seeing their living room walls in 3D before approving designs. Worth every rupee of the subscription.",
+  },
 ];
 
 const getTileStyle = (i: number, pattern: string) => {
   const row = Math.floor(i / 5);
   const col = i % 5;
-  
+
   switch (pattern) {
     case "grid":
-      return {
-        x: col * 52 - 104,
-        y: row * 52 - 104,
-        width: 48,
-        height: 48,
-        rotate: 0,
-      };
+      return { x: col * 52 - 104, y: row * 52 - 104, width: 48, height: 48, rotate: 0 };
     case "brick":
-      return {
-        x: col * 52 + (row % 2 === 0 ? 26 : 0) - 117,
-        y: row * 52 - 104,
-        width: 48,
-        height: 48,
-        rotate: 0,
-      };
+      return { x: col * 52 + (row % 2 === 0 ? 26 : 0) - 117, y: row * 52 - 104, width: 48, height: 48, rotate: 0 };
     case "diagonal":
-      return {
-        x: col * 52 - 104,
-        y: row * 52 - 104,
-        width: 48,
-        height: 48,
-        rotate: 0,
-      };
-    case "herringbone":
+      return { x: col * 52 - 104, y: row * 52 - 104, width: 48, height: 48, rotate: 0 };
+    case "herringbone": {
       const isLeftTilt = (col + row) % 2 === 0;
       const angle = isLeftTilt ? -45 : 45;
       const hX = col * 44 - 88 + (isLeftTilt ? 10 : -10);
       const hY = row * 36 - 90;
-      return {
-        x: hX,
-        y: hY,
-        width: 50,
-        height: 18,
-        rotate: angle,
-      };
+      return { x: hX, y: hY, width: 50, height: 18, rotate: angle };
+    }
     default:
       return { x: 0, y: 0, width: 48, height: 48, rotate: 0 };
   }
@@ -118,204 +153,510 @@ const getTileStyle = (i: number, pattern: string) => {
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [activePattern, setActivePattern] = useState<string>("grid");
+  const [activeShowcase, setActiveShowcase] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveShowcase((prev) => (prev + 1) % 3);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen text-foreground aurora-bg relative overflow-x-hidden">
-      {/* Dynamic Glowing Ambient Blobs */}
+      {/* Ambient Glow Blobs */}
       <div className="absolute top-10 left-10 w-96 h-96 rounded-full radial-glow-amber blur-3xl opacity-30 -z-10 animate-pulse pointer-events-none" />
       <div className="absolute top-1/3 right-10 w-[450px] h-[450px] rounded-full radial-glow-blue blur-3xl opacity-20 -z-10 pointer-events-none" />
       <div className="absolute bottom-20 left-1/4 w-[350px] h-[350px] rounded-full radial-glow-green blur-3xl opacity-25 -z-10 pointer-events-none" />
-
-      {/* Grid Pattern Background Layer */}
       <div className="absolute inset-0 grid-bg-pattern opacity-40 -z-20 pointer-events-none" />
 
       {/* HERO SECTION */}
-      <section className="relative pt-12 pb-16 md:py-24">
+      <section className="relative pt-12 pb-12 md:pt-20 md:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Tag Badge */}
+          <div className="text-center max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-6 shadow-sm shadow-amber-500/5 text-sm font-semibold tracking-wide"
+              className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 text-amber-500 border border-amber-500/20 mb-6 shadow-sm shadow-amber-500/5 text-sm font-semibold tracking-wide"
             >
-              <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
-              Premium Multi-Pattern AI Calculator
+              <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: "3s" }} />
+              3D Visualization + Smart Calculator — All in One
             </motion.div>
 
-            {/* Main Title */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight mb-8 leading-tight sm:leading-none"
+              className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight mb-6 leading-tight sm:leading-none"
             >
-              Calculate Tiles <br className="hidden sm:block" />
-              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(251,191,36,0.15)]">Faster & Smarter</span>
+              Visualize in 3D.
+              <br className="hidden sm:block" />{" "}
+              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(251,191,36,0.15)]">Calculate Instantly.</span>
             </motion.h1>
 
-            {/* Description */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
             >
-              The ultimate commercial-grade workspace designed for Indian tile dealers, contractors, and home-builders. Estimate boxes, configure dynamic layouts, simulate waste, and prepare professional client quotes.
+              The all-in-one showroom platform built for Indian tile dealers, contractors, and home-builders. Let customers{" "}
+              <span className="text-amber-400 font-bold">see their tiles in photorealistic 3D rooms</span>, then close the deal
+              with instant exact-quantity calculations and branded PDF quotations.
             </motion.p>
 
-            {/* Action buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6"
+              className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-5"
             >
               <Link
-                href="/floor-calculator"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-lg flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_30px_rgba(245,158,11,0.5)] transform hover:-translate-y-0.5"
+                href="/room-previewer"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-lg flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.4)] hover:shadow-[0_4px_35px_rgba(245,158,11,0.6)] transform hover:-translate-y-0.5"
               >
-                <Calculator className="w-5 h-5" /> Start Floor Calculator <ArrowRight className="w-5 h-5" />
+                <Box className="w-5 h-5" /> Try 3D Room Visualizer <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                href="/designer"
+                href="/floor-calculator"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-white hover:bg-white/10 font-bold text-lg flex items-center justify-center gap-2 border border-white/10 transition-all duration-300 hover:shadow-xl"
               >
-                <Layers className="w-5 h-5" /> Open Designer Studio
+                <Calculator className="w-5 h-5 text-amber-400" /> Open Calculator
               </Link>
             </motion.div>
+
+            {/* Trust strip */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.45 }}
+              className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground"
+            >
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-400" /> No credit card to start
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-400" /> 3-day free trial
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-400" /> Cancel anytime
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-400" /> Works on phone &amp; laptop
+              </span>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3D SHOWCASE CAROUSEL */}
+      <section className="py-8 md:py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="glass-card p-2 rounded-[2rem] border border-white/10 relative overflow-hidden">
+          <div className="grid md:grid-cols-3 gap-2">
+            {[
+              {
+                title: "3D Room",
+                desc: "Full room walkthrough with your tile on every surface",
+                icon: Rotate3d,
+                href: "/room-previewer",
+                gradient: "from-amber-500/30 to-orange-500/30",
+                iconBg: "bg-amber-500/20",
+                iconColor: "text-amber-400",
+              },
+              {
+                title: "3D Bathroom",
+                desc: "Wet-wall layouts, niches, and shower floors in 3D",
+                icon: ShowerHead,
+                href: "/bathroom-3d",
+                gradient: "from-blue-500/30 to-cyan-500/30",
+                iconBg: "bg-blue-500/20",
+                iconColor: "text-blue-400",
+              },
+              {
+                title: "3D Kitchen",
+                desc: "Countertop splashbacks and dado tiles in 3D",
+                icon: CookingPot,
+                href: "/kitchen-3d",
+                gradient: "from-rose-500/30 to-pink-500/30",
+                iconBg: "bg-rose-500/20",
+                iconColor: "text-rose-400",
+              },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                >
+                  <Link
+                    href={item.href}
+                    className={`group relative flex flex-col items-start p-6 md:p-8 rounded-3xl bg-gradient-to-br ${item.gradient} hover:from-white/10 hover:to-white/5 border border-white/5 hover:border-white/20 transition-all duration-500 h-full`}
+                  >
+                    <div className={`w-14 h-14 rounded-2xl ${item.iconBg} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className={`w-7 h-7 ${item.iconColor}`} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">{item.title}</h3>
+                    <p className="text-neutral-300 text-sm mb-5 flex-1">{item.desc}</p>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white group-hover:gap-2.5 transition-all">
+                      Launch <ArrowRight className={`w-4 h-4 ${item.iconColor}`} />
+                    </span>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* STATS SECTION */}
-      <section className="border-y border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden py-16">
+      <section className="border-y border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { label: "Active Indian Shops", value: "2,000+", desc: "Relying on our packing metrics" },
-              { label: "Precise Calculations", value: "1M+", desc: "With 99.9% waste accuracy" },
-              { label: "Preloaded Brands", value: "50+", desc: "Signature sizes pre-mapped" },
-              { label: "Perfect Quotations", value: "100%", desc: "Downloaded as premium Client PDFs" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="flex flex-col items-center gap-1.5"
-              >
-                <h3 className="text-3xl sm:text-5xl font-black text-amber-500 tracking-tight">{stat.value}</h3>
-                <span className="text-white font-bold text-sm sm:text-base">{stat.label}</span>
-                <p className="text-neutral-500 text-xs mt-0.5">{stat.desc}</p>
-              </motion.div>
-            ))}
+              { label: "Tile Shops Trust Us", value: "2,000+", icon: Building, desc: "Across India" },
+              { label: "Calculations Done", value: "1M+", icon: Calculator, desc: "99.9% box accuracy" },
+              { label: "Brands Pre-Mapped", value: "50+", icon: Award, desc: "Sizes ready to use" },
+              { label: "Avg. Quote Time Saved", value: "85%", icon: Timer, desc: "Per customer visit" },
+            ].map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-1">
+                    <Icon className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <h3 className="text-3xl sm:text-5xl font-black text-amber-500 tracking-tight">{stat.value}</h3>
+                  <span className="text-white font-bold text-sm sm:text-base">{stat.label}</span>
+                  <p className="text-neutral-500 text-xs">{stat.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* INTERACTIVE WORKSPACE FEATURES GRID */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="text-center mb-16 max-w-3xl mx-auto">
+      {/* 3D VISUALIZATION SUITE */}
+      <section className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-14 max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold uppercase tracking-widest mb-4"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold uppercase tracking-widest mb-4"
           >
-            <Building className="w-3.5 h-3.5" /> High-Performance Workspaces
+            <Box className="w-3.5 h-3.5" /> Immersive 3D Visualization
           </motion.div>
-          <h2 className="text-3xl md:text-5xl font-black mb-4">Commercial Suite</h2>
-          <p className="text-lg text-muted-foreground">Select a custom calculator engineered for specific architectural layouts.</p>
+          <h2 className="text-3xl md:text-5xl font-black mb-4">
+            Let Your Customers <span className="text-gradient">Walk Through</span> Their New Room
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Four powerful 3D engines. Drop in any tile texture, configure dimensions, change grout, rotate, zoom, and watch your
+            customer's confidence in the purchase grow in real-time.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             {
-              title: "Floor Tile Calculator",
-              desc: "Determine exact room carpet areas, incorporate precise wastage calculations, configure box packs, and draft complete valuations.",
-              icon: Box,
-              href: "/floor-calculator",
-              color: "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/40",
-              badge: "Commercial Floor"
+              title: "3D Room",
+              desc: "Full floor-to-ceiling rooms. Rotate, zoom, change tile size, configure grout colour, and toggle skirting.",
+              icon: Rotate3d,
+              href: "/room-previewer",
+              gradient: "from-amber-500/20 to-orange-500/10",
+              iconBg: "bg-amber-500/15",
+              iconColor: "text-amber-400",
+              badge: "Most Popular",
             },
             {
-              title: "Bathroom Calculator",
-              desc: "Incorporate complex combinations of light, dark, and highlighter wall tiles. Calculate floor spaces and auto-deduct doors/windows.",
-              icon: Droplet,
-              href: "/bathroom-calculator",
-              color: "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/40",
-              badge: "Wall & Floor"
+              title: "3D Bathroom",
+              desc: "Configure wet walls, dry walls, shower zones, and floor patterns. Show niche tiles and accent strips.",
+              icon: ShowerHead,
+              href: "/bathroom-3d",
+              gradient: "from-blue-500/20 to-cyan-500/10",
+              iconBg: "bg-blue-500/15",
+              iconColor: "text-blue-400",
+              badge: "High Demand",
             },
             {
-              title: "Designer Mode Studio",
-              desc: "The professional selection model. Plan custom heights, band patterns, border tiles, and accent walls visually.",
-              icon: Sparkles,
-              href: "/designer",
-              color: "bg-purple-500/10 text-purple-400 border-purple-500/20 hover:border-purple-500/40",
-              badge: "Visual Presets"
-            }
-          ].map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
-              whileHover={{ y: -8 }}
-              className={`glass-card p-8 rounded-[2rem] border transition-all duration-300 relative group flex flex-col justify-between min-h-[350px] ${feature.color}`}
-            >
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                    <feature.icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 bg-white/5 rounded-full border border-white/5">
-                    {feature.badge}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold mb-3 text-white">{feature.title}</h3>
-                <p className="text-neutral-400 text-sm leading-relaxed mb-6">{feature.desc}</p>
-              </div>
-              
-              <Link
-                href={feature.href}
-                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-white mt-auto group-hover:gap-2.5 transition-all duration-300 cursor-pointer"
+              title: "3D Kitchen",
+              desc: "Visualize countertop splashbacks, dado tiles, and full wall layouts with realistic lighting.",
+              icon: CookingPot,
+              href: "/kitchen-3d",
+              gradient: "from-rose-500/20 to-pink-500/10",
+              iconBg: "bg-rose-500/15",
+              iconColor: "text-rose-400",
+              badge: "New",
+            },
+            {
+              title: "3D Wall Elevation",
+              desc: "Show customers how their feature wall, TV unit backdrop, or headboard wall will look with their chosen tile.",
+              icon: Columns,
+              href: "/wall-elevation",
+              gradient: "from-purple-500/20 to-violet-500/10",
+              iconBg: "bg-purple-500/15",
+              iconColor: "text-purple-400",
+              badge: "Premium",
+            },
+          ].map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                className="group relative"
               >
-                Access workspace <ArrowRight className="w-4 h-4 text-amber-500" />
-              </Link>
-            </motion.div>
-          ))}
+                <Link href={feature.href} className="block h-full">
+                  <div
+                    className={`relative h-full p-6 rounded-3xl bg-gradient-to-br ${feature.gradient} border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden backdrop-blur-md`}
+                  >
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 bg-black/40 rounded-full border border-white/10 text-white/80">
+                        {feature.badge}
+                      </span>
+                    </div>
+
+                    <div className={`w-12 h-12 rounded-2xl ${feature.iconBg} border border-white/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className={`w-6 h-6 ${feature.iconColor}`} />
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-white mb-2">{feature.title}</h3>
+                    <p className="text-neutral-300 text-sm leading-relaxed mb-5">{feature.desc}</p>
+
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white group-hover:gap-2.5 transition-all">
+                      Open in 3D <ArrowRight className={`w-3.5 h-3.5 ${feature.iconColor}`} />
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
-      {/* INTERACTIVE TILE PATTERN SANDBOX */}
-      <section className="py-24 border-t border-white/5 bg-black/20 backdrop-blur-md relative overflow-hidden">
-        {/* Glow ambient background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full radial-glow-blue blur-3xl opacity-10 -z-10 pointer-events-none" />
+      {/* HOW IT WORKS */}
+      <section className="py-20 md:py-24 border-t border-white/5 bg-black/30 backdrop-blur-md relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full radial-glow-amber blur-3xl opacity-10 -z-10 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
+          <div className="text-center mb-14 max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold uppercase tracking-widest mb-4"
             >
-              <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Live Pattern Sandbox
+              <Rocket className="w-3.5 h-3.5" /> 3-Step Workflow
             </motion.div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">Visual Layout Playground</h2>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">From Showroom to Sale in 5 Minutes</h2>
             <p className="text-lg text-muted-foreground">
-              Select different laying styles to see how tiles align, and understand why recommended wastage budgets change.
+              No learning curve. No software to install. Your showroom staff can use this on day one.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
-            {/* Sidebar Controls */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Pattern Selector Buttons */}
+          <div className="grid md:grid-cols-3 gap-6 relative">
+            {/* connector line */}
+            <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-amber-500/50 via-blue-500/50 to-purple-500/50 -z-0" />
+
+            {[
+              {
+                step: "01",
+                title: "Upload Your Tile Catalog",
+                desc: "Drop a PDF, and our AI extracts every tile image, sizes, and codes into a searchable digital catalog.",
+                icon: UploadCloud,
+                color: "from-amber-500 to-orange-500",
+                iconBg: "bg-amber-500/15",
+                iconColor: "text-amber-400",
+              },
+              {
+                step: "02",
+                title: "Visualize in 3D with the Customer",
+                desc: "Pick any tile from your catalog. Place it in a 3D room, bathroom, kitchen, or wall — live, together with the customer.",
+                icon: Eye,
+                color: "from-blue-500 to-cyan-500",
+                iconBg: "bg-blue-500/15",
+                iconColor: "text-blue-400",
+              },
+              {
+                step: "03",
+                title: "Calculate & Send Branded Quote",
+                desc: "One click generates exact box count, wastage buffer, and a professional PDF quotation ready to print or WhatsApp.",
+                icon: FileText,
+                color: "from-purple-500 to-pink-500",
+                iconBg: "bg-purple-500/15",
+                iconColor: "text-purple-400",
+              },
+            ].map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.step}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.15, duration: 0.5 }}
+                  className="relative"
+                >
+                  <div className="glass-card p-6 md:p-8 rounded-3xl border border-white/10 h-full relative z-10 bg-black/40">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className={`w-14 h-14 rounded-2xl ${step.iconBg} border border-white/10 flex items-center justify-center`}>
+                        <Icon className={`w-7 h-7 ${step.iconColor}`} />
+                      </div>
+                      <span className={`text-5xl font-black bg-gradient-to-br ${step.color} bg-clip-text text-transparent opacity-30`}>
+                        {step.step}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-extrabold text-white mb-3">{step.title}</h3>
+                    <p className="text-neutral-400 text-sm leading-relaxed">{step.desc}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/catalog/upload"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-base transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_35px_rgba(245,158,11,0.5)] transform hover:-translate-y-0.5"
+            >
+              <Sparkles className="w-5 h-5" /> Start with Your Catalog <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* CALCULATOR + DESIGNER SUITE */}
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-14 max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold uppercase tracking-widest mb-4"
+          >
+            <Calculator className="w-3.5 h-3.5" /> Smart Calculators
+          </motion.div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4">Exact Quantities. Zero Guesswork.</h2>
+          <p className="text-lg text-muted-foreground">
+            Industry-accurate algorithms that understand Indian tile packaging standards, wastage patterns, and room geometries.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            {
+              title: "Floor Tile Calculator",
+              desc: "Determine exact room carpet areas, incorporate precise wastage calculations, configure box packs, and draft complete valuations.",
+              icon: Box,
+              href: "/floor-calculator",
+              gradient: "from-amber-500/15 to-orange-500/5",
+              iconBg: "bg-amber-500/15",
+              iconColor: "text-amber-400",
+              badge: "Commercial Floor",
+              features: ["Auto box count", "5 layout patterns", "PDF quotation"],
+            },
+            {
+              title: "Bathroom Calculator",
+              desc: "Incorporate complex combinations of light, dark, and highlighter wall tiles. Calculate floor spaces and auto-deduct doors/windows.",
+              icon: Droplet,
+              href: "/bathroom-calculator",
+              gradient: "from-blue-500/15 to-cyan-500/5",
+              iconBg: "bg-blue-500/15",
+              iconColor: "text-blue-400",
+              badge: "Wall & Floor",
+              features: ["Multi-zone walls", "Door/window deduct", "Highlight strips"],
+            },
+            {
+              title: "Designer Mode Studio",
+              desc: "The professional selection model. Plan custom heights, band patterns, border tiles, and accent walls visually.",
+              icon: Wand2,
+              href: "/designer",
+              gradient: "from-purple-500/15 to-violet-500/5",
+              iconBg: "bg-purple-500/15",
+              iconColor: "text-purple-400",
+              badge: "Visual Presets",
+              features: ["Band patterns", "Accent walls", "Border tiles"],
+            },
+          ].map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                whileHover={{ y: -6 }}
+              >
+                <Link
+                  href={feature.href}
+                  className={`block h-full p-7 rounded-3xl bg-gradient-to-br ${feature.gradient} border border-white/10 hover:border-white/25 transition-all duration-300 backdrop-blur-md`}
+                >
+                  <div className="flex justify-between items-center mb-5">
+                    <div className={`w-12 h-12 rounded-2xl ${feature.iconBg} border border-white/10 flex items-center justify-center`}>
+                      <Icon className={`w-6 h-6 ${feature.iconColor}`} />
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 bg-black/30 rounded-full border border-white/10 text-white/80">
+                      {feature.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-white mb-2">{feature.title}</h3>
+                  <p className="text-neutral-300 text-sm leading-relaxed mb-5">{feature.desc}</p>
+
+                  <ul className="space-y-2 mb-5">
+                    {feature.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-xs text-neutral-300">
+                        <Check className={`w-3.5 h-3.5 ${feature.iconColor}`} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white group-hover:gap-2.5 transition-all">
+                    Launch <ArrowRight className={`w-4 h-4 ${feature.iconColor}`} />
+                  </span>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* INTERACTIVE TILE PATTERN SANDBOX */}
+      <section className="py-20 md:py-24 border-t border-white/5 bg-black/20 backdrop-blur-md relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full radial-glow-blue blur-3xl opacity-10 -z-10 pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-xs font-bold uppercase tracking-widest mb-4"
+            >
+              <Grid3X3 className="w-3.5 h-3.5 animate-pulse" /> Live Pattern Sandbox
+            </motion.div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Visual Layout Playground</h2>
+            <p className="text-lg text-muted-foreground">
+              Click through different laying styles and instantly see how recommended wastage budgets change.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-5 space-y-5">
               <div className="grid grid-cols-2 gap-3">
                 {PATTERNS.map((p) => {
                   const isActive = activePattern === p.id;
@@ -329,24 +670,19 @@ export default function Home() {
                           : "bg-white/5 text-neutral-400 border-white/5 hover:border-white/10 hover:text-white"
                       }`}
                     >
-                      <span className="font-bold text-base">{p.name}</span>
-                      <span className={`text-xs px-2.5 py-0.5 rounded-full w-fit font-bold ${
-                        isActive ? "bg-amber-500 text-black" : "bg-neutral-800 text-neutral-400"
-                      }`}>
+                      <span className="font-bold text-sm">{p.name}</span>
+                      <span
+                        className={`text-xs px-2.5 py-0.5 rounded-full w-fit font-bold ${
+                          isActive ? "bg-amber-500 text-black" : "bg-neutral-800 text-neutral-400"
+                        }`}
+                      >
                         {p.waste} Waste
                       </span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="active-pattern-bg"
-                          className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 to-transparent -z-10"
-                        />
-                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Pattern details card */}
               <div className="relative min-h-[220px]">
                 <AnimatePresence mode="wait">
                   {PATTERNS.filter((p) => p.id === activePattern).map((p) => (
@@ -358,14 +694,10 @@ export default function Home() {
                       transition={{ duration: 0.25 }}
                       className="glass-card p-6 rounded-3xl border border-white/10 relative overflow-hidden h-full"
                     >
-                      {/* Glowing highlight */}
                       <div className="absolute top-0 right-0 w-24 h-24 radial-glow-amber opacity-20 pointer-events-none" />
-
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-xl font-bold text-white flex items-center gap-2">
-                          {p.name}
-                        </h4>
-                        <div className="flex gap-2">
+                      <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                        <h4 className="text-xl font-bold text-white">{p.name}</h4>
+                        <div className="flex gap-2 flex-wrap">
                           <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded-full">
                             Wastage: {p.waste}
                           </span>
@@ -374,11 +706,7 @@ export default function Home() {
                           </span>
                         </div>
                       </div>
-
-                      <p className="text-neutral-400 text-sm leading-relaxed mb-6">
-                        {p.desc}
-                      </p>
-
+                      <p className="text-neutral-400 text-sm leading-relaxed mb-5">{p.desc}</p>
                       <div className="flex gap-3 items-start bg-neutral-900/60 p-4 rounded-xl border border-white/5 text-xs text-amber-500/90">
                         <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
                         <p className="leading-relaxed">
@@ -392,22 +720,13 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Live Animated Canvas Container */}
             <div className="lg:col-span-7 flex justify-center items-center">
               <div className="glass-card p-8 sm:p-12 rounded-[2.5rem] border border-white/10 w-full max-w-[480px] aspect-square flex items-center justify-center relative overflow-hidden group shadow-2xl">
-                {/* Visual grid reference lines under the tiles */}
                 <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-                
-                {/* Visual Frame */}
                 <div className="w-[300px] h-[300px] relative flex items-center justify-center">
                   <div className="absolute inset-0 border border-white/5 rounded-2xl pointer-events-none -z-20 bg-black/40" />
-                  
-                  {/* Glowing perimeter border */}
                   <div className="absolute inset-0 gold-glow-border rounded-2xl pointer-events-none -z-10" />
-
-                  {/* Tile grid viewport to keep everything nicely clipped */}
                   <div className="w-[280px] h-[280px] overflow-hidden rounded-xl relative flex items-center justify-center">
-                    {/* The layout parent: when activePattern is 'diagonal', rotate this container! */}
                     <motion.div
                       animate={{
                         rotate: activePattern === "diagonal" ? 45 : 0,
@@ -416,7 +735,6 @@ export default function Home() {
                       transition={{ type: "spring", stiffness: 70, damping: 15 }}
                       className="w-[260px] h-[260px] relative flex items-center justify-center"
                     >
-                      {/* Render 25 tiles */}
                       {Array.from({ length: 25 }).map((_, i) => {
                         const style = getTileStyle(i, activePattern);
                         return (
@@ -441,9 +759,7 @@ export default function Home() {
                               boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.3)",
                             }}
                           >
-                            {/* Visual grout line lines or fine pattern inside tiles */}
                             <div className="absolute inset-0 bg-gradient-to-tl from-black/20 via-transparent to-white/5" />
-                            {/* Tiny center gold dot for premium look */}
                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500/30 border border-amber-500/20" />
                           </motion.div>
                         );
@@ -451,10 +767,8 @@ export default function Home() {
                     </motion.div>
                   </div>
                 </div>
-
-                {/* Subtitle details label */}
                 <div className="absolute bottom-4 left-6 right-6 flex justify-between items-center text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
-                  <span>Interactive Preview Canvas</span>
+                  <span>Interactive Preview</span>
                   <span className="text-amber-500/80 animate-pulse font-extrabold">Live Rendering</span>
                 </div>
               </div>
@@ -463,9 +777,157 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ANIMATED ACCORDION FAQ SECTION */}
-      <section className="py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/5 relative">
-        <div className="text-center mb-16">
+      {/* WHY TILE SHOPS LOVE US */}
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-14 max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold uppercase tracking-widest mb-4"
+          >
+            <Heart className="w-3.5 h-3.5" /> Built for Indian Tile Shops
+          </motion.div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4">Why 2,000+ Dealers Switched</h2>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {[
+            {
+              icon: TrendingUp,
+              title: "Close 2x More Sales",
+              desc: "When customers see their tiles in 3D, they're 2.7x more likely to commit on the spot.",
+              gradient: "from-amber-500/15 to-orange-500/5",
+              iconBg: "bg-amber-500/15",
+              iconColor: "text-amber-400",
+            },
+            {
+              icon: Clock,
+              title: "Save 3 Hours Per Day",
+              desc: "Stop doing manual calculations. Stop handwriting quotations. Everything is one click.",
+              gradient: "from-blue-500/15 to-cyan-500/5",
+              iconBg: "bg-blue-500/15",
+              iconColor: "text-blue-400",
+            },
+            {
+              icon: Award,
+              title: "Look More Professional",
+              desc: "Branded PDF quotations, real-time 3D previews, instant WhatsApp-ready outputs — your showroom will look 10x more premium.",
+              gradient: "from-purple-500/15 to-violet-500/5",
+              iconBg: "bg-purple-500/15",
+              iconColor: "text-purple-400",
+            },
+          ].map((benefit, i) => {
+            const Icon = benefit.icon;
+            return (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className={`p-7 rounded-3xl bg-gradient-to-br ${benefit.gradient} border border-white/10 backdrop-blur-md`}
+              >
+                <div className={`w-12 h-12 rounded-2xl ${benefit.iconBg} border border-white/10 flex items-center justify-center mb-4`}>
+                  <Icon className={`w-6 h-6 ${benefit.iconColor}`} />
+                </div>
+                <h3 className="text-xl font-extrabold text-white mb-2">{benefit.title}</h3>
+                <p className="text-neutral-300 text-sm leading-relaxed">{benefit.desc}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-20 md:py-24 border-t border-white/5 bg-black/30 backdrop-blur-md relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold uppercase tracking-widest mb-4"
+            >
+              <Users className="w-3.5 h-3.5" /> Real Dealer Stories
+            </motion.div>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Trusted Across India</h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="glass-card p-6 md:p-7 rounded-3xl border border-white/10 bg-black/30 flex flex-col"
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: t.rating }).map((_, j) => (
+                    <Star key={j} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-neutral-200 text-sm leading-relaxed mb-6 flex-1 italic">"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center font-bold text-black text-sm">
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">{t.name}</div>
+                    <div className="text-neutral-500 text-xs">{t.shop}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="py-20 md:py-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="relative overflow-hidden rounded-[2.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-black/40 to-orange-500/10 p-10 md:p-16 text-center"
+        >
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full radial-glow-amber blur-3xl opacity-30 -z-0 pointer-events-none" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full radial-glow-amber blur-3xl opacity-30 -z-0 pointer-events-none" />
+
+          <div className="relative z-10 max-w-3xl mx-auto">
+            <Crown className="w-12 h-12 text-amber-400 mx-auto mb-5" />
+            <h2 className="text-3xl md:text-5xl font-black mb-5 text-white">
+              Ready to <span className="text-gradient">10x Your Showroom?</span>
+            </h2>
+            <p className="text-lg text-neutral-300 mb-8 max-w-2xl mx-auto">
+              Join 2,000+ Indian tile shops that closed more sales, saved hours every day, and look more professional with
+              TileMaster Pro. Start your 3-day free trial — no credit card required.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Link
+                href="/auth"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-lg flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.4)] hover:shadow-[0_4px_35px_rgba(245,158,11,0.6)] transform hover:-translate-y-0.5"
+              >
+                <Sparkles className="w-5 h-5" /> Start 3-Day Free Trial
+              </Link>
+              <Link
+                href="/pricing"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-white hover:bg-white/10 font-bold text-lg flex items-center justify-center gap-2 border border-white/10"
+              >
+                <IndianRupee className="w-5 h-5 text-amber-400" /> See Pricing
+              </Link>
+            </div>
+            <p className="text-xs text-neutral-500 mt-6">Cancel anytime · No hidden fees · Indian billing support</p>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/5 relative">
+        <div className="text-center mb-14">
           <h2 className="text-3xl md:text-5xl font-black mb-3">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">Expert insights on managing packaging, fractions, and room estimations.</p>
         </div>
@@ -499,8 +961,10 @@ export default function Home() {
                       transition={{ duration: 0.3 }}
                     >
                       <div className="px-6 pb-6 pt-1 text-sm md:text-base text-neutral-400 leading-relaxed border-t border-white/5 bg-black/10">
-                        {faq.answer.split('\n').map((line, i) => (
-                          <p key={i} className={i > 0 ? "mt-2" : ""}>{line}</p>
+                        {faq.answer.split("\n").map((line, i) => (
+                          <p key={i} className={i > 0 ? "mt-2" : ""}>
+                            {line}
+                          </p>
                         ))}
                       </div>
                     </motion.div>
@@ -515,15 +979,15 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="bg-neutral-600/80 border-t border-white/5 py-12 mt-12 text-center text-sm text-neutral-500 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4">
-          <p className="font-bold text-neutral-400 mb-2">TileMaster Pro Calculator</p>
+          <p className="font-bold text-neutral-400 mb-2">TileMaster Pro</p>
           <p className="max-w-md mx-auto text-xs text-neutral-600 mb-8">
-            Commercial pack estimation tools mapped accurately to Indian industrial tile specifications.
+            3D visualization + smart calculators, built for Indian tile dealers, contractors, and home-builders.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
+            <input
+              type="email"
+              placeholder="Enter your email"
               className="px-4 py-2 rounded-xl bg-black/20 border border-white/10 text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-500/50 min-w-[250px] md:min-w-[300px]"
             />
             <button className="px-6 py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-black font-semibold transition-all shadow-sm">
@@ -532,7 +996,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-white/5 pt-6 text-xs">
-            © {new Date().getFullYear()} TileMaster Pro. Developed with pairs on professional grade workspace.
+            © {new Date().getFullYear()} TileMaster Pro. All rights reserved.
           </div>
         </div>
       </footer>
