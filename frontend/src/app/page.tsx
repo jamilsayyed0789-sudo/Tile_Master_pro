@@ -163,12 +163,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen text-foreground aurora-bg relative overflow-x-hidden">
-      {/* Ambient Glow Blobs */}
-      <div className="absolute top-10 left-10 w-96 h-96 rounded-full radial-glow-amber blur-3xl opacity-30 -z-10 animate-pulse pointer-events-none" />
-      <div className="absolute top-1/3 right-10 w-[450px] h-[450px] rounded-full radial-glow-blue blur-3xl opacity-20 -z-10 pointer-events-none" />
-      <div className="absolute bottom-20 left-1/4 w-[350px] h-[350px] rounded-full radial-glow-green blur-3xl opacity-25 -z-10 pointer-events-none" />
-      <div className="absolute inset-0 grid-bg-pattern opacity-40 -z-20 pointer-events-none" />
+    <div className="min-h-screen text-neutral-900 dark:text-foreground aurora-bg relative overflow-x-hidden">
+      {/* Warm showroom glow blobs */}
+      <div className="absolute top-10 left-10 w-[500px] h-[500px] rounded-full radial-glow-amber opacity-60 -z-10 animate-pulse pointer-events-none" />
+      <div className="absolute top-1/3 right-10 w-[450px] h-[450px] rounded-full radial-glow-rose opacity-40 -z-10 pointer-events-none" />
+      <div className="absolute bottom-20 left-1/4 w-[400px] h-[400px] rounded-full radial-glow-blue opacity-40 -z-10 pointer-events-none" />
+      <div className="absolute top-1/2 right-1/4 w-[350px] h-[350px] rounded-full radial-glow-warm opacity-40 -z-10 pointer-events-none" />
+
+      {/* Tile grid + marble veining overlays */}
+      <div className="absolute inset-0 tile-grid-bg opacity-50 -z-20 pointer-events-none" />
+      <div className="absolute inset-0 marble-vein-bg opacity-70 -z-20 pointer-events-none" />
 
       {/* HERO SECTION */}
       <section className="relative pt-12 pb-12 md:pt-20 md:pb-20">
@@ -178,7 +182,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 text-amber-500 border border-amber-500/20 mb-6 shadow-sm shadow-amber-500/5 text-sm font-semibold tracking-wide"
+              className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white/80 dark:bg-black/40 text-amber-700 dark:text-amber-400 border border-amber-300/50 dark:border-amber-500/30 mb-6 shadow-md shadow-amber-500/10 text-sm font-bold tracking-wide backdrop-blur-md"
             >
               <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: "3s" }} />
               3D Visualization + Smart Calculator — All in One
@@ -188,22 +192,22 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight mb-6 leading-tight sm:leading-none"
+              className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight mb-6 leading-tight sm:leading-none text-neutral-900 dark:text-white"
             >
               Visualize in 3D.
               <br className="hidden sm:block" />{" "}
-              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(251,191,36,0.15)]">Calculate Instantly.</span>
+              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(184,134,11,0.25)]">Calculate Instantly.</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
+              className="text-lg md:text-xl text-neutral-700 dark:text-neutral-300 max-w-3xl mx-auto mb-10 leading-relaxed"
             >
               The all-in-one showroom platform built for Indian tile dealers, contractors, and home-builders. Let customers{" "}
-              <span className="text-amber-400 font-bold">see their tiles in photorealistic 3D rooms</span>, then close the deal
-              with instant exact-quantity calculations and branded PDF quotations.
+              <span className="text-amber-700 dark:text-amber-400 font-bold">see their tiles in photorealistic 3D rooms</span>,
+              then close the deal with instant exact-quantity calculations and branded PDF quotations.
             </motion.p>
 
             <motion.div
@@ -220,9 +224,9 @@ export default function Home() {
               </Link>
               <Link
                 href="/floor-calculator"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-white hover:bg-white/10 font-bold text-lg flex items-center justify-center gap-2 border border-white/10 transition-all duration-300 hover:shadow-xl"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-neutral-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10 font-bold text-lg flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-xl"
               >
-                <Calculator className="w-5 h-5 text-amber-400" /> Open Calculator
+                <Calculator className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Open Calculator
               </Link>
             </motion.div>
 
@@ -231,19 +235,19 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.45 }}
-              className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground"
+              className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-neutral-700 dark:text-neutral-400"
             >
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-400" /> No credit card to start
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> No credit card to start
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-400" /> 3-day free trial
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 3-day free trial
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-400" /> Cancel anytime
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Cancel anytime
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-400" /> Works on phone &amp; laptop
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Works on phone &amp; laptop
               </span>
             </motion.div>
           </div>
@@ -313,7 +317,7 @@ export default function Home() {
       </section>
 
       {/* STATS SECTION */}
-      <section className="border-y border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden py-12 md:py-16">
+      <section className="border-y border-amber-900/15 dark:border-white/5 bg-white/50 dark:bg-black/40 backdrop-blur-md relative overflow-hidden py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -448,7 +452,7 @@ export default function Home() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="py-20 md:py-24 border-t border-white/5 bg-black/30 backdrop-blur-md relative overflow-hidden">
+      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-white/40 dark:bg-black/30 backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full radial-glow-amber blur-3xl opacity-10 -z-10 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -636,7 +640,7 @@ export default function Home() {
       </section>
 
       {/* INTERACTIVE TILE PATTERN SANDBOX */}
-      <section className="py-20 md:py-24 border-t border-white/5 bg-black/20 backdrop-blur-md relative overflow-hidden">
+      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-gradient-to-b from-transparent via-amber-50/40 to-transparent dark:from-transparent dark:via-black/20 dark:to-transparent backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full radial-glow-blue blur-3xl opacity-10 -z-10 pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -840,7 +844,7 @@ export default function Home() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-20 md:py-24 border-t border-white/5 bg-black/30 backdrop-blur-md relative overflow-hidden">
+      <section className="py-20 md:py-24 border-t border-amber-900/15 dark:border-white/5 bg-gradient-to-b from-transparent via-amber-50/30 to-transparent dark:from-transparent dark:via-black/30 dark:to-transparent backdrop-blur-md relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14 max-w-3xl mx-auto">
             <motion.div
@@ -926,7 +930,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/5 relative">
+      <section className="py-20 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-amber-900/15 dark:border-white/5 relative">
         <div className="text-center mb-14">
           <h2 className="text-3xl md:text-5xl font-black mb-3">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">Expert insights on managing packaging, fractions, and room estimations.</p>
@@ -977,7 +981,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-neutral-600/80 border-t border-white/5 py-12 mt-12 text-center text-sm text-neutral-500 backdrop-blur-md">
+      <footer className="bg-gradient-to-b from-amber-100/40 to-amber-50/60 dark:from-neutral-900/80 dark:to-neutral-950/80 border-t border-amber-900/15 dark:border-white/5 py-12 mt-12 text-center text-sm text-neutral-700 dark:text-neutral-500 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4">
           <p className="font-bold text-neutral-400 mb-2">TileMaster Pro</p>
           <p className="max-w-md mx-auto text-xs text-neutral-600 mb-8">
