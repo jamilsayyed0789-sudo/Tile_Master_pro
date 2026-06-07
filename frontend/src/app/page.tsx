@@ -43,7 +43,116 @@ import {
   Target,
   Timer,
   Layout,
+  Square,
+  Square as Tile,
+  ChevronRight,
 } from "lucide-react";
+
+/* Real tile samples from your catalog — used in hero showcase */
+const FEATURED_TILES = [
+  {
+    name: "Endless Glossy",
+    code: "38223",
+    size: "600×1200",
+    finish: "Glossy",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668397/tile_catalog/SHERGAON_p1_ab1a09e3.jpg",
+  },
+  {
+    name: "Endless PRM 200",
+    code: "38224",
+    size: "600×1200",
+    finish: "Polished",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668398/tile_catalog/SHERGAON_p1_2630b1ff.jpg",
+  },
+  {
+    name: "Magic Satvari",
+    code: "33390",
+    size: "600×1200",
+    finish: "Glossy",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668400/tile_catalog/SHERGAON_p2_ce80427c.jpg",
+  },
+  {
+    name: "Endless PRM 300",
+    code: "38781",
+    size: "600×1200",
+    finish: "High Gloss",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668399/tile_catalog/SHERGAON_p2_8b98a088.jpg",
+  },
+  {
+    name: "Armani Glossy",
+    code: "33605",
+    size: "600×1200",
+    finish: "Polished",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668404/tile_catalog/SHERGAON_p3_d641b90c.jpg",
+  },
+  {
+    name: "Bianco Glossy",
+    code: "33659",
+    size: "600×1200",
+    finish: "Polished",
+    image:
+      "https://res.cloudinary.com/dwlzgxtxc/image/upload/v1780668411/tile_catalog/SHERGAON_p4_5f2c2119.jpg",
+  },
+];
+
+const TILE_CATEGORIES = [
+  {
+    name: "Vitrified Tiles",
+    desc: "High-strength, low-porosity tiles for heavy-traffic floors",
+    icon: "VT",
+    color: "from-amber-200/60 to-orange-200/40",
+    borderColor: "border-amber-400/40",
+  },
+  {
+    name: "Ceramic Tiles",
+    desc: "Affordable, versatile tiles for walls and light-traffic areas",
+    icon: "CT",
+    color: "from-rose-200/60 to-pink-200/40",
+    borderColor: "border-rose-400/40",
+  },
+  {
+    name: "Porcelain Slabs",
+    desc: "Large-format 800×1600, 1200×2400 for seamless premium look",
+    icon: "PS",
+    color: "from-blue-200/60 to-cyan-200/40",
+    borderColor: "border-blue-400/40",
+  },
+  {
+    name: "Marble Collection",
+    desc: "Italian and Indian marble-look tiles with realistic veining",
+    icon: "MR",
+    color: "from-emerald-200/60 to-teal-200/40",
+    borderColor: "border-emerald-400/40",
+  },
+  {
+    name: "Mosaic & Décor",
+    desc: "Hand-crafted mosaic sheets, water-jet designs, accent pieces",
+    icon: "MO",
+    color: "from-purple-200/60 to-violet-200/40",
+    borderColor: "border-purple-400/40",
+  },
+  {
+    name: "Outdoor & Parking",
+    desc: "Anti-skid, weather-resistant tiles for exteriors and parking",
+    icon: "OD",
+    color: "from-stone-300/60 to-neutral-300/40",
+    borderColor: "border-stone-400/40",
+  },
+];
+
+const TILE_FINISHES = [
+  { name: "Glossy", swatch: "from-white via-amber-50 to-amber-100" },
+  { name: "Matte", swatch: "from-stone-200 via-stone-300 to-stone-400" },
+  { name: "Polished", swatch: "from-amber-100 via-amber-200 to-amber-300" },
+  { name: "Satin", swatch: "from-rose-100 via-rose-200 to-rose-300" },
+  { name: "Rustic", swatch: "from-amber-300 via-amber-500 to-amber-700" },
+  { name: "High-Gloss", swatch: "from-cyan-100 via-cyan-200 to-cyan-400" },
+];
 
 const FAQS = [
   {
@@ -174,8 +283,8 @@ export default function Home() {
       <div className="absolute inset-0 tile-grid-bg opacity-50 -z-20 pointer-events-none" />
       <div className="absolute inset-0 marble-vein-bg opacity-70 -z-20 pointer-events-none" />
 
-      {/* HERO SECTION */}
-      <section className="relative pt-12 pb-12 md:pt-20 md:pb-20">
+      {/* HERO SECTION — with real tile samples floating */}
+      <section className="relative pt-10 pb-12 md:pt-16 md:pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-5xl mx-auto">
             <motion.div
@@ -185,7 +294,7 @@ export default function Home() {
               className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-white/80 dark:bg-black/40 text-amber-700 dark:text-amber-400 border border-amber-300/50 dark:border-amber-500/30 mb-6 shadow-md shadow-amber-500/10 text-sm font-bold tracking-wide backdrop-blur-md"
             >
               <Sparkles className="w-4 h-4 animate-spin" style={{ animationDuration: "3s" }} />
-              3D Visualization + Smart Calculator — All in One
+              India's #1 Tile Showroom Platform
             </motion.div>
 
             <motion.h1
@@ -194,9 +303,9 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight mb-6 leading-tight sm:leading-none text-neutral-900 dark:text-white"
             >
-              Visualize in 3D.
+              Sell More Tiles.
               <br className="hidden sm:block" />{" "}
-              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(184,134,11,0.25)]">Calculate Instantly.</span>
+              <span className="text-gradient drop-shadow-[0_2px_10px_rgba(184,134,11,0.25)]">Show. Calculate. Quote.</span>
             </motion.h1>
 
             <motion.p
@@ -205,9 +314,9 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-neutral-700 dark:text-neutral-300 max-w-3xl mx-auto mb-10 leading-relaxed"
             >
-              The all-in-one showroom platform built for Indian tile dealers, contractors, and home-builders. Let customers{" "}
-              <span className="text-amber-700 dark:text-amber-400 font-bold">see their tiles in photorealistic 3D rooms</span>,
-              then close the deal with instant exact-quantity calculations and branded PDF quotations.
+              The all-in-one platform for Indian tile dealers. Let customers{" "}
+              <span className="text-amber-700 dark:text-amber-400 font-bold">see your tiles in photorealistic 3D rooms</span>,
+              then close the deal with exact-quantity calculations and branded PDF quotations in minutes.
             </motion.p>
 
             <motion.div
@@ -220,13 +329,13 @@ export default function Home() {
                 href="/room-previewer"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-lg flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.4)] hover:shadow-[0_4px_35px_rgba(245,158,11,0.6)] transform hover:-translate-y-0.5"
               >
-                <Box className="w-5 h-5" /> Try 3D Room Visualizer <ArrowRight className="w-5 h-5" />
+                <Box className="w-5 h-5" /> Visualize a Tile in 3D <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
                 href="/floor-calculator"
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl glass-card text-neutral-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10 font-bold text-lg flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-xl"
               >
-                <Calculator className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Open Calculator
+                <Calculator className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Calculate Tile Quantity
               </Link>
             </motion.div>
 
@@ -244,12 +353,50 @@ export default function Home() {
                 <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 3-day free trial
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Cancel anytime
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Works for every tile size
               </span>
               <span className="flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Works on phone &amp; laptop
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Indian packing standards
               </span>
             </motion.div>
+          </div>
+        </div>
+
+        {/* Real Tile Samples Floating Showcase */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+          <div className="text-center mb-8">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
+              ✦ Sample from your catalog ✦
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {FEATURED_TILES.map((tile, i) => (
+              <motion.div
+                key={tile.code}
+                initial={{ opacity: 0, y: 30, rotate: -3 }}
+                animate={{ opacity: 1, y: 0, rotate: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 + i * 0.08 }}
+                whileHover={{ y: -8, scale: 1.05, rotate: 0 }}
+                className="group relative"
+              >
+                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-100 to-orange-100 dark:from-neutral-800 dark:to-neutral-900 shadow-xl shadow-amber-900/20 border-2 border-amber-300/30 dark:border-amber-500/20 group-hover:border-amber-500/60 transition-all duration-300">
+                  <img
+                    src={tile.image}
+                    alt={tile.name}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5">
+                    <p className="text-white text-[10px] font-bold truncate">{tile.name}</p>
+                    <p className="text-amber-200 text-[9px] font-mono">#{tile.code} · {tile.size}</p>
+                  </div>
+                  {/* Finish badge */}
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[8px] font-bold uppercase tracking-wider">
+                    {tile.finish}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -346,6 +493,90 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* TILE CATEGORIES — what kind of tiles we handle */}
+      <section className="py-20 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-14 max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-400/30 text-xs font-bold uppercase tracking-widest mb-4"
+          >
+            <Square className="w-3.5 h-3.5" /> Every Tile Type Supported
+          </motion.div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4 text-neutral-900 dark:text-white">
+            Built for <span className="text-gradient">Indian Tile Showrooms</span>
+          </h2>
+          <p className="text-lg text-neutral-700 dark:text-neutral-300">
+            From 300×300 mm ceramic to 1200×2400 mm porcelain slabs — we support every tile you stock.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {TILE_CATEGORIES.map((cat, i) => (
+            <motion.div
+              key={cat.name}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.06, duration: 0.4 }}
+              whileHover={{ y: -4 }}
+              className={`group relative p-6 rounded-3xl bg-gradient-to-br ${cat.color} border-2 ${cat.borderColor} backdrop-blur-md overflow-hidden shadow-md hover:shadow-xl transition-all`}
+            >
+              {/* Decorative tile corner pattern */}
+              <div className="absolute -top-8 -right-8 w-32 h-32 opacity-20 group-hover:opacity-30 transition-opacity">
+                <div className="grid grid-cols-4 gap-1 w-full h-full">
+                  {Array.from({ length: 16 }).map((_, j) => (
+                    <div key={j} className="bg-neutral-900/40 rounded-sm" />
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-white/70 dark:bg-black/40 border-2 border-white/60 dark:border-white/20 flex items-center justify-center mb-4 shadow-md">
+                  <span className="text-lg font-black text-amber-800 dark:text-amber-300">{cat.icon}</span>
+                </div>
+                <h3 className="text-xl font-extrabold text-neutral-900 dark:text-white mb-2">{cat.name}</h3>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">{cat.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* TILE FINISHES — visual swatches */}
+      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-10 max-w-3xl mx-auto">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
+            ✦ Finishes We Support ✦
+          </span>
+          <h2 className="text-2xl md:text-3xl font-black mt-2 text-neutral-900 dark:text-white">
+            Every Finish. Every Look.
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {TILE_FINISHES.map((f, i) => (
+            <motion.div
+              key={f.name}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+              className="group"
+            >
+              <div className={`aspect-square rounded-2xl bg-gradient-to-br ${f.swatch} border-2 border-white/40 dark:border-white/10 shadow-lg group-hover:shadow-2xl group-hover:scale-105 transition-all duration-300 relative overflow-hidden`}>
+                {/* Tile grout effect */}
+                <div className="absolute inset-0 bg-[linear-gradient(transparent_calc(100%-2px),rgba(0,0,0,0.1)_calc(100%-2px)),linear-gradient(90deg,transparent_calc(100%-2px),rgba(0,0,0,0.1)_calc(100%-2px))] pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-tl from-white/30 via-transparent to-transparent" />
+              </div>
+              <p className="text-center text-xs font-bold text-neutral-800 dark:text-neutral-200 mt-3 tracking-wider uppercase">
+                {f.name}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -553,9 +784,11 @@ export default function Home() {
           >
             <Calculator className="w-3.5 h-3.5" /> Smart Calculators
           </motion.div>
-          <h2 className="text-3xl md:text-5xl font-black mb-4">Exact Quantities. Zero Guesswork.</h2>
-          <p className="text-lg text-muted-foreground">
-            Industry-accurate algorithms that understand Indian tile packaging standards, wastage patterns, and room geometries.
+          <h2 className="text-3xl md:text-5xl font-black mb-4 text-neutral-900 dark:text-white">
+            Exact Boxes. Zero Wasted Stock.
+          </h2>
+          <p className="text-lg text-neutral-700 dark:text-neutral-300">
+            Industry-accurate algorithms built for Indian tile packaging — 300×300, 600×600, 600×1200, 800×1600, 1200×2400, and more.
           </p>
         </div>
 
@@ -792,7 +1025,7 @@ export default function Home() {
           >
             <Heart className="w-3.5 h-3.5" /> Built for Indian Tile Shops
           </motion.div>
-          <h2 className="text-3xl md:text-5xl font-black mb-4">Why 2,000+ Dealers Switched</h2>
+          <h2 className="text-3xl md:text-5xl font-black mb-4 text-neutral-900 dark:text-white">Why Indian Tile Dealers Switched</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -855,7 +1088,7 @@ export default function Home() {
             >
               <Users className="w-3.5 h-3.5" /> Real Dealer Stories
             </motion.div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4">Trusted Across India</h2>
+            <h2 className="text-3xl md:text-5xl font-black mb-4 text-neutral-900 dark:text-white">Trusted by Tile Shops Across India</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -904,7 +1137,7 @@ export default function Home() {
           <div className="relative z-10 max-w-3xl mx-auto">
             <Crown className="w-12 h-12 text-amber-400 mx-auto mb-5" />
             <h2 className="text-3xl md:text-5xl font-black mb-5 text-white">
-              Ready to <span className="text-gradient">10x Your Showroom?</span>
+              Ready to <span className="text-gradient">10x Your Tile Sales?</span>
             </h2>
             <p className="text-lg text-neutral-300 mb-8 max-w-2xl mx-auto">
               Join 2,000+ Indian tile shops that closed more sales, saved hours every day, and look more professional with
