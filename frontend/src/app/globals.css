@@ -512,3 +512,183 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* =====================================================
+   3D EFFECTS — perspective, tilt, depth, parallax
+   ===================================================== */
+
+.perspective-1000 {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+  transform-style: preserve-3d;
+}
+
+/* 3D tilt on hover (pure CSS — for cards) */
+.tilt-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform;
+}
+
+.tilt-3d:hover {
+  transform: rotateY(-8deg) rotateX(6deg) translateZ(30px);
+}
+
+/* Inner 3D layer */
+.tilt-inner-3d {
+  transform: translateZ(40px);
+}
+
+/* Floating animation (3D depth) */
+@keyframes float-3d {
+  0%, 100% { transform: translateY(0) translateZ(0) rotateX(0deg); }
+  50% { transform: translateY(-12px) translateZ(20px) rotateX(2deg); }
+}
+
+.float-3d {
+  animation: float-3d 6s ease-in-out infinite;
+}
+
+/* Slow rotation around Y axis (3D tile carousel) */
+@keyframes spin-3d-y {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Slow rotation around X axis */
+@keyframes spin-3d-x {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(360deg); }
+}
+
+/* Reversed Y rotation */
+@keyframes spin-3d-y-reverse {
+  0% { transform: rotateY(360deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+/* Tilt left-right (3D pendulum) */
+@keyframes tilt-pendulum {
+  0%, 100% { transform: rotateY(-15deg) rotateX(2deg); }
+  50% { transform: rotateY(15deg) rotateX(-2deg); }
+}
+
+.tilt-pendulum {
+  animation: tilt-pendulum 8s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+/* Pulse glow 3D (for floating tiles) */
+@keyframes pulse-glow-3d {
+  0%, 100% {
+    box-shadow:
+      0 0 30px rgba(252, 211, 77, 0.3),
+      0 20px 50px -10px rgba(184, 134, 11, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 60px rgba(252, 211, 77, 0.5),
+      0 30px 70px -10px rgba(184, 134, 11, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+}
+
+.pulse-glow-3d {
+  animation: pulse-glow-3d 4s ease-in-out infinite;
+}
+
+/* Tile edge highlight (3D bevel) */
+.tile-bevel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset -1px 0 0 rgba(0, 0, 0, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    0 12px 24px -4px rgba(101, 67, 33, 0.2);
+}
+
+.dark .tile-bevel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    inset 1px 0 0 rgba(255, 255, 255, 0.08),
+    inset -1px 0 0 rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 12px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* 3D floor reflection effect */
+.floor-reflection {
+  position: relative;
+}
+
+.floor-reflection::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(255, 255, 255, 0.15) 100%);
+  pointer-events: none;
+  transform: scaleY(-1);
+  mask-image: linear-gradient(180deg, transparent 0%, black 50%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 50%);
+}
+
+/* CSS-only 3D rotating tile cube */
+.cube-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  animation: spin-3d-y 20s linear infinite;
+}
+
+.cube-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+/* Hover lift 3D */
+.hover-lift-3d {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+  will-change: transform;
+}
+
+.hover-lift-3d:hover {
+  transform: translateY(-12px) translateZ(20px) rotateX(2deg);
+  box-shadow:
+    0 30px 60px -10px rgba(184, 134, 11, 0.3),
+    0 18px 36px -18px rgba(0, 0, 0, 0.3);
+}
+
+/* Deep shadow (for elevated 3D elements) */
+.shadow-deep {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1),
+    0 20px 40px -10px rgba(184, 134, 11, 0.15);
+}
+
+.dark .shadow-deep {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.4),
+    0 4px 6px -4px rgba(0, 0, 0, 0.3),
+    0 20px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* 3D parallax depth layers */
+.depth-back { transform: translateZ(-100px) scale(1.1); opacity: 0.5; }
+.depth-mid { transform: translateZ(0); }
+.depth-front { transform: translateZ(80px); }
+
+/* Isometric tile stack */
+.isometric-stack {
+  transform: rotateX(55deg) rotateZ(-45deg);
+  transform-style: preserve-3d;
+}
+
+@keyframes spin-3d-y {

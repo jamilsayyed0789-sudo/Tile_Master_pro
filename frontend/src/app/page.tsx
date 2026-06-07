@@ -374,42 +374,163 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Real Tile Samples Floating Showcase */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-          <div className="text-center mb-8">
+        {/* Real Tile Samples — 3D Floating Showcase with perspective */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 perspective-1000">
+          <div className="text-center mb-10">
             <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
               ✦ Sample from your catalog ✦
             </span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {FEATURED_TILES.map((tile, i) => (
               <motion.div
                 key={tile.code}
-                initial={{ opacity: 0, y: 30, rotate: -3 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 + i * 0.08 }}
-                whileHover={{ y: -8, scale: 1.05, rotate: 0 }}
+                initial={{ opacity: 0, y: 60, rotateX: 25, rotateY: -15 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0, rotateY: 0 }}
+                transition={{
+                  duration: 0.8,
+                  delay: 0.5 + i * 0.1,
+                  type: "spring",
+                  bounce: 0.3,
+                }}
+                style={{ transformStyle: "preserve-3d" }}
                 className="group relative"
               >
-                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-100 to-orange-100 dark:from-neutral-800 dark:to-neutral-900 shadow-xl shadow-amber-900/20 border-2 border-amber-300/30 dark:border-amber-500/20 group-hover:border-amber-500/60 transition-all duration-300">
+                <motion.div
+                  whileHover={{
+                    y: -16,
+                    scale: 1.08,
+                    rotateX: -8,
+                    rotateY: 5,
+                    z: 50,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-amber-100 to-orange-100 dark:from-neutral-800 dark:to-neutral-900 tile-bevel pulse-glow-3d border-2 border-amber-300/40 dark:border-amber-500/30 group-hover:border-amber-500"
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  <img
+                    src={tile.image}
+                    alt={tile.name}
+                    className="w-full h-full object-cover"
+                    style={{ transform: "translateZ(20px)" }}
+                    loading="lazy"
+                  />
+                  <div
+                    className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5"
+                    style={{ transform: "translateZ(30px)" }}
+                  >
+                    <p className="text-white text-[10px] font-bold truncate">{tile.name}</p>
+                    <p className="text-amber-200 text-[9px] font-mono">#{tile.code} · {tile.size}</p>
+                  </div>
+                  <div
+                    className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[8px] font-bold uppercase tracking-wider"
+                    style={{ transform: "translateZ(40px)" }}
+                  >
+                    {tile.finish}
+                  </div>
+                  {/* Reflection at bottom */}
+                  <div className="absolute inset-x-0 -bottom-2 h-1/2 bg-gradient-to-b from-black/40 to-transparent opacity-0 group-hover:opacity-30 transition-opacity duration-500 pointer-events-none" style={{ transform: "scaleY(-1) translateZ(-10px)" }} />
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3D ROTATING TILE CAROUSEL — CSS-only spinning tile tower */}
+      <section className="py-16 md:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 perspective-2000 relative overflow-hidden">
+        <div className="text-center mb-12">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-amber-700 dark:text-amber-400">
+            ✦ Interactive 3D View ✦
+          </span>
+          <h2 className="text-3xl md:text-4xl font-black mt-2 text-neutral-900 dark:text-white">
+            Your Tiles. In Motion.
+          </h2>
+        </div>
+
+        <div className="relative h-[500px] md:h-[560px] flex items-center justify-center">
+          {/* Glowing floor under the carousel */}
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-32 rounded-full radial-glow-amber opacity-60 blur-3xl pointer-events-none" />
+
+          {/* Center rotating cylinder of tiles */}
+          <div
+            className="relative w-72 h-96 md:w-96 md:h-[450px]"
+            style={{
+              transformStyle: "preserve-3d",
+              animation: "spin-3d-y 28s linear infinite",
+            }}
+          >
+            {FEATURED_TILES.map((tile, i) => {
+              const angle = (360 / FEATURED_TILES.length) * i;
+              return (
+                <div
+                  key={tile.code}
+                  className="absolute inset-0 rounded-3xl overflow-hidden tile-bevel border-4 border-white/40 dark:border-amber-500/30"
+                  style={{
+                    transform: `rotateY(${angle}deg) translateZ(220px)`,
+                    backfaceVisibility: "hidden",
+                  }}
+                >
                   <img
                     src={tile.image}
                     alt={tile.name}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5">
-                    <p className="text-white text-[10px] font-bold truncate">{tile.name}</p>
-                    <p className="text-amber-200 text-[9px] font-mono">#{tile.code} · {tile.size}</p>
-                  </div>
-                  {/* Finish badge */}
-                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[8px] font-bold uppercase tracking-wider">
-                    {tile.finish}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 inset-x-0 p-4 text-center">
+                    <p className="text-white text-sm font-extrabold">{tile.name}</p>
+                    <p className="text-amber-300 text-[10px] font-mono mt-1">
+                      #{tile.code} · {tile.size} · {tile.finish}
+                    </p>
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Floor reflection plane */}
+          <div
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 w-72 h-72 md:w-96 md:h-96 rounded-full opacity-20 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse, rgba(184, 134, 11, 0.4) 0%, transparent 60%)",
+              transform: "rotateX(80deg)",
+            }}
+          />
+
+          {/* Floating mini-tiles around the carousel */}
+          {[
+            { top: "10%", left: "8%", size: 60, delay: 0 },
+            { top: "20%", right: "10%", size: 80, delay: 1 },
+            { bottom: "20%", left: "5%", size: 70, delay: 2 },
+            { bottom: "15%", right: "8%", size: 50, delay: 0.5 },
+          ].map((pos, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-xl overflow-hidden tile-bevel border-2 border-white/40 dark:border-amber-500/30 shadow-2xl"
+              style={{
+                ...pos,
+                width: pos.size,
+                height: pos.size * 1.3,
+              }}
+              animate={{
+                y: [0, -15, 0],
+                rotateY: [0, 360],
+              }}
+              transition={{
+                y: { duration: 4, repeat: Infinity, delay: pos.delay, ease: "easeInOut" },
+                rotateY: { duration: 12 + i * 2, repeat: Infinity, ease: "linear" },
+              }}
+            >
+              <img
+                src={FEATURED_TILES[i % FEATURED_TILES.length].image}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -527,16 +648,23 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 perspective-1000">
           {TILE_CATEGORIES.map((cat, i) => (
             <motion.div
               key={cat.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30, rotateX: 20 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.06, duration: 0.4 }}
-              whileHover={{ y: -4 }}
-              className={`group relative p-6 rounded-3xl bg-gradient-to-br ${cat.color} border-2 ${cat.borderColor} backdrop-blur-md overflow-hidden shadow-md hover:shadow-xl transition-all`}
+              transition={{ delay: i * 0.06, duration: 0.5 }}
+              whileHover={{
+                y: -12,
+                rotateX: -6,
+                rotateY: 6,
+                scale: 1.03,
+                z: 40,
+              }}
+              style={{ transformStyle: "preserve-3d" }}
+              className={`group relative p-6 rounded-3xl bg-gradient-to-br ${cat.color} border-2 ${cat.borderColor} backdrop-blur-md overflow-hidden shadow-md hover:shadow-2xl transition-all tile-bevel`}
             >
               {/* Decorative tile corner pattern */}
               <div className="absolute -top-8 -right-8 w-32 h-32 opacity-20 group-hover:opacity-30 transition-opacity">
@@ -659,16 +787,17 @@ export default function Home() {
             return (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30, rotateX: 15 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
-                whileHover={{ y: -6, scale: 1.02 }}
+                whileHover={{ y: -12, scale: 1.05, rotateX: -5, rotateY: 4, z: 30 }}
+                style={{ transformStyle: "preserve-3d" }}
                 className="group relative"
               >
                 <Link href={feature.href} className="block h-full">
                   <div
-                    className={`relative h-full p-6 rounded-3xl bg-gradient-to-br ${feature.gradient} border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden backdrop-blur-md`}
+                    className={`relative h-full p-6 rounded-3xl bg-gradient-to-br ${feature.gradient} border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden backdrop-blur-md tile-bevel`}
                   >
                     <div className="absolute top-3 right-3">
                       <span className="text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 bg-black/40 rounded-full border border-white/10 text-white/80">
