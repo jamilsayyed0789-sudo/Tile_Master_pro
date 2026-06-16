@@ -46,6 +46,7 @@ import {
   Square,
   Square as Tile,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 
 /* Real tile samples from your catalog — used in hero showcase */
@@ -903,14 +904,27 @@ export default function Home() {
             })}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/catalog/upload"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-base transition-all duration-300 shadow-[0_4px_25px_rgba(245,158,11,0.3)] hover:shadow-[0_4px_35px_rgba(245,158,11,0.5)] transform hover:-translate-y-0.5"
             >
               <Sparkles className="w-5 h-5" /> Start with Your Catalog <ArrowRight className="w-5 h-5" />
             </Link>
+            <Link
+              href="/catalog/pdf-extract"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl glass-card text-neutral-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10 font-bold text-base transition-all duration-300 hover:shadow-xl border border-white/10"
+            >
+              <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" /> Extract Tiles from PDF
+            </Link>
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl glass-card text-neutral-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10 font-bold text-base transition-all duration-300 hover:shadow-xl border border-white/10"
+            >
+              <Settings className="w-5 h-5 text-neutral-500 dark:text-neutral-400" /> Settings
+            </Link>
           </div>
+
         </div>
       </section>
 

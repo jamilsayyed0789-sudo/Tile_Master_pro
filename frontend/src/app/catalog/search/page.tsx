@@ -510,9 +510,14 @@ export default function CatalogSearchPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
-            <Link href="/catalog/upload" className="inline-flex items-center text-neutral-400 hover:text-white mb-4 transition-colors">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Upload
-            </Link>
+            <div className="flex items-center gap-4 mb-4">
+              <Link href="/catalog/upload" className="inline-flex items-center text-neutral-400 hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Upload
+              </Link>
+              <Link href="/catalog/review" className="inline-flex items-center text-amber-400 hover:text-amber-300 transition-colors text-sm">
+                <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Review
+              </Link>
+            </div>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Tile Database</h1>
           </div>
 
@@ -579,12 +584,30 @@ export default function CatalogSearchPage() {
                   {/* Image */}
                   <div className="aspect-[4/3] bg-neutral-950 rounded-t-2xl overflow-hidden flex items-center justify-center">
                     {tile.image_url ? (
-                      <img src={tile.image_url} alt={tile.tile_name}
-                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
+                      <img
+                        src={tile.image_url}
+                        alt={tile.tile_name}
+                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = "none";
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector(".missing-placeholder")) {
+                            const ph = document.createElement("div");
+                            ph.className = "missing-placeholder flex flex-col items-center justify-center w-full h-full gap-2 text-center px-3";
+                            ph.innerHTML = `
+                              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              <p class="text-[9px] text-neutral-600 font-medium">Image not found<br/>in local storage</p>
+                            `;
+                            parent.appendChild(ph);
+                          }
+                        }}
+                      />
                     ) : (
                       <ImageIcon className="w-12 h-12 text-neutral-800" />
                     )}
                   </div>
+
 
                   {/* Info */}
                   <div className="p-4 border-t border-white/5 relative">

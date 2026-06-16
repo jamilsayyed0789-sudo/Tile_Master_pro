@@ -23,6 +23,9 @@ import {
   Sparkles,
   Wand2,
   ArrowUpRight,
+  QrCode,
+  FileText,
+  LayoutGrid,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authClient } from "@/lib/auth-client";
@@ -40,8 +43,9 @@ const navItems = [
   { name: "Floor Calculator", path: "/floor-calculator", icon: Calculator },
   { name: "Bathroom Calculator", path: "/bathroom-calculator", icon: Droplet },
   { name: "Designer Mode", path: "/designer", icon: Wand2 },
-  { name: "Upload Catalog", path: "/catalog/upload", icon: UploadCloud },
-  { name: "Search Catalog", path: "/catalog/search", icon: Search },
+  { name: "PDF Extract", path: "/catalog/pdf-extract", icon: FileText },
+  { name: "Tile Library", path: "/catalog/tile-library", icon: LayoutGrid },
+  { name: "QR Codes", path: "/dealer/qr-generator", icon: QrCode },
 ];
 
 export default function Navbar() {

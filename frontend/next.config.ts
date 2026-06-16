@@ -13,6 +13,18 @@ const nextConfig: NextConfig = {
         source: "/api/tile-processor/:path*",
         destination: `${BACKEND_URL}/tile-processor/:path*`,
       },
+      {
+        source: "/api/tile/:path*",
+        destination: `${BACKEND_URL}/tile/:path*`,
+      },
+      {
+        source: "/api/local/:path*",
+        destination: `${BACKEND_URL}/api/local/:path*`,
+      },
+      {
+        source: "/api/settings/:path*",
+        destination: `${BACKEND_URL}/api/settings/:path*`,
+      },
     ];
   },
 };

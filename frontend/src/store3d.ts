@@ -46,6 +46,8 @@ interface RoomPreviewerState {
   setShopName: (v: string) => void;
   laborCost: number;
   setLaborCost: (v: number) => void;
+  wallColor: string;
+  setWallColor: (v: string) => void;
   reset: () => void;
 }
 
@@ -90,6 +92,20 @@ interface Bathroom3DState {
   setSlotOrder: (v: string[]) => void;
   slotRows: Record<string, number>;
   setSlotRows: (v: Record<string, number>) => void;
+  showerWidth: number;
+  setShowerWidth: (v: number) => void;
+  showerDepth: number;
+  setShowerDepth: (v: number) => void;
+  showerHeight: number;
+  setShowerHeight: (v: number) => void;
+  toiletScale: number;
+  setToiletScale: (v: number) => void;
+  toiletXOffset: number;
+  setToiletXOffset: (v: number) => void;
+  toiletZOffset: number;
+  setToiletZOffset: (v: number) => void;
+  toiletRotY: number;
+  setToiletRotY: (v: number) => void;
   reset: () => void;
 }
 
@@ -155,7 +171,7 @@ interface WallElevationState {
   reset: () => void;
 }
 
-const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomWidth' | 'setIs3DMode' | 'setIsTheaterMode' | 'setGroutWidth' | 'setGroutColor' | 'setSelectedPattern' | 'setSkirtingColor' | 'setSkirtingHeight' | 'setSkirtingUseTexture' | 'setSizeUnit' | 'setTileWidthInput' | 'setTileLengthInput' | 'setBookmatchEnabled' | 'setUploadedFileName' | 'setSelectedStyleId' | 'setWastagePercent' | 'setTilesPerBoxInput' | 'setPricePerBox' | 'setClientName' | 'setShopName' | 'setLaborCost' | 'reset'> = {
+const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomWidth' | 'setIs3DMode' | 'setIsTheaterMode' | 'setGroutWidth' | 'setGroutColor' | 'setSelectedPattern' | 'setSkirtingColor' | 'setSkirtingHeight' | 'setSkirtingUseTexture' | 'setSizeUnit' | 'setTileWidthInput' | 'setTileLengthInput' | 'setBookmatchEnabled' | 'setUploadedFileName' | 'setSelectedStyleId' | 'setWastagePercent' | 'setTilesPerBoxInput' | 'setPricePerBox' | 'setClientName' | 'setShopName' | 'setLaborCost' | 'setWallColor' | 'reset'> = {
   roomLength: 14,
   roomWidth: 12,
   is3DMode: true,
@@ -163,7 +179,7 @@ const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomW
   groutWidth: 3,
   groutColor: '#c5c2bc',
   selectedPattern: 'grid',
-  skirtingColor: '#111111',
+  skirtingColor: '#f5f5f0',
   skirtingHeight: 0.4,
   skirtingUseTexture: false,
   sizeUnit: 'inches',
@@ -178,13 +194,14 @@ const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomW
   clientName: '',
   shopName: 'Marble Palace & Tiles',
   laborCost: 15,
+  wallColor: '#e5e7eb',
 };
 
-const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight' | 'setRoomLength' | 'setRoomWidth' | 'setTileSize' | 'setGroutWidth' | 'setGroutColor' | 'setWastagePercent' | 'setPricePerBox' | 'setShowerSplitMode' | 'setIsTheaterMode' | 'setStripEnabled' | 'setStripColor' | 'setStripWidthMm' | 'setStripInterval' | 'setBookmatchEnabled' | 'setShower1OffsetY' | 'setShower2OffsetY' | 'setSlotOrder' | 'setSlotRows' | 'reset'> = {
-  runningFeet: 20,
-  wallHeight: 8,
-  roomLength: 8,
-  roomWidth: 6,
+const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight' | 'setRoomLength' | 'setRoomWidth' | 'setTileSize' | 'setGroutWidth' | 'setGroutColor' | 'setWastagePercent' | 'setPricePerBox' | 'setShowerSplitMode' | 'setIsTheaterMode' | 'setStripEnabled' | 'setStripColor' | 'setStripWidthMm' | 'setStripInterval' | 'setBookmatchEnabled' | 'setShower1OffsetY' | 'setShower2OffsetY' | 'setSlotOrder' | 'setSlotRows' | 'setShowerWidth' | 'setShowerDepth' | 'setShowerHeight' | 'setToiletScale' | 'setToiletXOffset' | 'setToiletZOffset' | 'setToiletRotY' | 'reset'> = {
+  runningFeet: 36,
+  wallHeight: 9,
+  roomLength: 10,
+  roomWidth: 8,
   tileSize: '12x18',
   groutWidth: 3,
   groutColor: '#cccccc',
@@ -201,6 +218,13 @@ const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight
   shower2OffsetY: 0,
   slotOrder: ['dark', 'light', 'highlighter'],
   slotRows: { dark: 2, light: 2, highlighter: 1 },
+  showerWidth: 4.2,
+  showerDepth: 4.2,
+  showerHeight: 9.0,
+  toiletScale: 0.045,
+  toiletXOffset: 0.8,
+  toiletZOffset: 0.1,
+  toiletRotY: 0,
 };
 
 const defaultKitchen3D: Omit<Kitchen3DState, 'setRoomWidth' | 'setRoomLength' | 'setRoomHeight' | 'setCounterDepth' | 'setTileSize' | 'setTileRotation' | 'setCountertopColor' | 'setIsTheaterMode' | 'setSlabMode' | 'setHighlighterRows' | 'setFloorTileSize' | 'setStripEnabled' | 'setStripColor' | 'setStripWidthMm' | 'setStripInterval' | 'reset'> = {
@@ -262,6 +286,7 @@ export const useRoomPreviewerStore = create<RoomPreviewerState>()(
       setClientName: (v) => set({ clientName: v }),
       setShopName: (v) => set({ shopName: v }),
       setLaborCost: (v) => set({ laborCost: v }),
+      setWallColor: (v) => set({ wallColor: v }),
       reset: () => set(defaultRoomPreviewer),
     }),
     {
@@ -295,6 +320,13 @@ export const useBathroom3DStore = create<Bathroom3DState>()(
       setShower2OffsetY: (v) => set({ shower2OffsetY: v }),
       setSlotOrder: (v) => set({ slotOrder: v }),
       setSlotRows: (v) => set({ slotRows: v }),
+      setShowerWidth: (v) => set({ showerWidth: v }),
+      setShowerDepth: (v) => set({ showerDepth: v }),
+      setShowerHeight: (v) => set({ showerHeight: v }),
+      setToiletScale: (v) => set({ toiletScale: v }),
+      setToiletXOffset: (v) => set({ toiletXOffset: v }),
+      setToiletZOffset: (v) => set({ toiletZOffset: v }),
+      setToiletRotY: (v) => set({ toiletRotY: v }),
       reset: () => set(defaultBathroom3D),
     }),
     {

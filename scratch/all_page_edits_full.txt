@@ -1,0 +1,301 @@
+=== STEP 114 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 117 (Tool: multi_replace_file_content) ===
+Instruction: "Upgrade meshStandardMaterial to meshPhysicalMaterial in room-previewer page"
+Description: "Upgraded all meshStandardMaterial to meshPhysicalMaterial in Hall scene for better PBR"
+ReplacementChunks:
+"[{\"AllowMultiple\":false,\"EndLine\":220,\"ReplacementContent\":\"      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]} receiveShadow>\\n        <planeGeometry args={[roomWidth, roomLength]} />\\n        <meshPhysicalMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : \\\"#c8b8a8\\\"} {...TILE_FLOOR_PBR} />\\n      </mesh>\\n      {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {\\n        const base = 2500;\\n        const maxDim = Math.max(wFeet, lFeet);\\n        const wPx = Math.round((wFeet / maxDim) * base);\\n        const hPx = Math.round((lFeet / maxDim) * base);\\n        const hm = Math.max(1, Math.round(wPx * groutWidth / (2 * wFeet * 304.8)));\\n        const c = document.createElement(\\\"canvas\\\");\\n        c.width = wPx + 2 * hm;\\n        c.height = hPx + 2 * hm;\\n        const ctx = c.getContext(\\\"2d\\\")!;\\n        ctx.fillStyle = groutColor;\\n        ctx.globalAlpha = 0.5;\\n        ctx.fillRect(0, 0, c.width, hm);\\n        ctx.fillRect(0, c.height - hm, c.width, hm);\\n        ctx.fillRect(0, 0, hm, c.height);\\n        ctx.fillRect(c.width - hm, 0, hm, c.height);\\n        const tex = new THREE.CanvasTexture(c);\\n        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;\\n        tex.minFilter = THREE.LinearFilter;\\n        tex.magFilter = THREE.LinearFilter;\\n        tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);\\n        tex.needsUpdate = true;\\n        return (\\n          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.006, roomLength / 2]}>\\n            <planeGeometry args={[roomWidth, roomLength]} />\\n            <meshBasicMaterial map={tex} transparent depthWrite={false} />\\n          </mesh>\\n        );\\n      })()}\\n\\n      {/* Back wall */}\\n      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>\\n        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />\\n        <\n<truncated 6940 bytes>"
+================================================================================
+
+=== STEP 121 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 313 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 316 (Tool: replace_file_content) ===
+Instruction: "Remove camera preset buttons and auto-rotate toggle"
+Description: "Removed the camera preset buttons and 360 rotation toggle from the 3D viewport header."
+TargetContent:
+"                {/* View Preset Buttons */}\n                {is3DMode && (\n                  <div className=\"hidden md:flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-neutral-800\">\n                    {(['front', 'corner', 'top', 'entrance', '360', 'reset'] as const).map((p) => (\n                      <button\n                        key={p}\n                        onClick={() => setCameraPreset(p)}\n                        className={`px-2 py-1 text-[9px] font-bold rounded-md transition capitalize ${\n                          cameraPreset === p\n                            ? 'bg-amber-500/20 text-amber-400'\n                            : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'\n                        }`}\n                      >\n                        {p}\n                      </button>\n                    ))}\n                  </div>\n                )}\n\n                {/* Auto-rotate Toggle */}\n                {is3DMode && (\n                  <button\n                    onClick={() => setAutoRotate(!autoRotate)}\n                    className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition ${\n                      autoRotate\n                        ? 'bg-green-500/10 text-green-400 border-green-500/30'\n                        : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white'\n                    }`}\n                    title={autoRotate ? 'Auto-rotate On' : 'Auto-rotate Off'}\n                  >\n                    <Rotate3d className={`w-3 h-3 ${autoRotate ? 'animate-spin' : ''}`} />\n                    <span>360°</span>\n                  </button>\n                )}"
+ReplacementContent:
+"                {/* Camera controls removed by user request */}"
+================================================================================
+
+=== STEP 404 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 407 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 410 (Tool: replace_file_content) ===
+Instruction: "Comment out the procedural room meshes"
+Description: "Disabled procedural walls and floors so the imported 3D living room doesn't overlap with them."
+TargetContent:
+"    <group>\n      {/* Floor */}\n      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]} receiveShadow>\n        <planeGeometry args={[roomWidth, roomLength]} />\n        <meshPhysicalMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : \"#c8b8a8\"} {...TILE_FLOOR_PBR} />\n      </mesh>\n      {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {\n        const base = 2500;\n        const maxDim = Math.max(wFeet, lFeet);\n        const wPx = Math.round((wFeet / maxDim) * base);\n        const hPx = Math.round((lFeet / maxDim) * base);\n        const hm = Math.max(1, Math.round(wPx * groutWidth / (2 * wFeet * 304.8)));\n        const c = document.createElement(\"canvas\");\n        c.width = wPx + 2 * hm;\n        c.height = hPx + 2 * hm;\n        const ctx = c.getContext(\"2d\")!;\n        ctx.fillStyle = groutColor;\n        ctx.globalAlpha = 0.5;\n        ctx.fillRect(0, 0, c.width, hm);\n        ctx.fillRect(0, c.height - hm, c.width, hm);\n        ctx.fillRect(0, 0, hm, c.height);\n        ctx.fillRect(c.width - hm, 0, hm, c.height);\n        const tex = new THREE.CanvasTexture(c);\n        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;\n        tex.minFilter = THREE.LinearFilter;\n        tex.magFilter = THREE.LinearFilter;\n        tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);\n        tex.needsUpdate = true;\n        return (\n          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.006, roomLength / 2]}>\n            <planeGeometry args={[roomWidth, roomLength]} />\n            <meshBasicMaterial map={tex} transparent depthWrite={false} />\n          </mesh>\n        );\n      })()}\n\n      {/* Back wall */}\n      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>\n        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />\n        <meshPhysicalMaterial colo
+<truncated 2630 bytes>
+ReplacementContent:
+"    <group>\n      {/* Procedural walls and floor removed as requested to show the full livingroom.glb scene cleanly */}\n    </group>"
+================================================================================
+
+=== STEP 418 (Tool: replace_file_content) ===
+Instruction: "Restore the procedural room meshes"
+Description: "Restored the procedural room walls and floor so the user can use the TileMaster features again."
+TargetContent:
+"      {/* Procedural walls and floor removed as requested to show the full livingroom.glb scene cleanly */}"
+ReplacementContent:
+"      {/* Floor */}\n      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]} receiveShadow>\n        <planeGeometry args={[roomWidth, roomLength]} />\n        <meshPhysicalMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : \"#c8b8a8\"} {...TILE_FLOOR_PBR} />\n      </mesh>\n      {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {\n        const base = 2500;\n        const maxDim = Math.max(wFeet, lFeet);\n        const wPx = Math.round((wFeet / maxDim) * base);\n        const hPx = Math.round((lFeet / maxDim) * base);\n        const hm = Math.max(1, Math.round(wPx * groutWidth / (2 * wFeet * 304.8)));\n        const c = document.createElement(\"canvas\");\n        c.width = wPx + 2 * hm;\n        c.height = hPx + 2 * hm;\n        const ctx = c.getContext(\"2d\")!;\n        ctx.fillStyle = groutColor;\n        ctx.globalAlpha = 0.5;\n        ctx.fillRect(0, 0, c.width, hm);\n        ctx.fillRect(0, c.height - hm, c.width, hm);\n        ctx.fillRect(0, 0, hm, c.height);\n        ctx.fillRect(c.width - hm, 0, hm, c.height);\n        const tex = new THREE.CanvasTexture(c);\n        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;\n        tex.minFilter = THREE.LinearFilter;\n        tex.magFilter = THREE.LinearFilter;\n        tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);\n        tex.needsUpdate = true;\n        return (\n          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.006, roomLength / 2]}>\n            <planeGeometry args={[roomWidth, roomLength]} />\n            <meshBasicMaterial map={tex} transparent depthWrite={false} />\n          </mesh>\n        );\n      })()}\n\n      {/* Back wall */}\n      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>\n        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />\n        <meshPhysicalMaterial color={wallColor}
+<truncated 2603 bytes>
+================================================================================
+
+=== STEP 530 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 534 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 566 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 568 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 570 (Tool: replace_file_content) ===
+Instruction: "Change Canvas shadows prop to shadows={{ type: THREE.PCFShadowMap }}"
+Description: "Update Canvas shadows to use THREE.PCFShadowMap explicitly, avoiding Three.js deprecation warning."
+TargetContent:
+"                  <Canvas shadows dpr={[1, 1.75]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: \"high-performance\" }} style={{ width: \"100%\", height: \"100%\" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>"
+ReplacementContent:
+"                  <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.75]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: \"high-performance\" }} style={{ width: \"100%\", height: \"100%\" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>"
+================================================================================
+
+=== STEP 1092 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1146 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1456 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1521 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1523 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1525 (Tool: multi_replace_file_content) ===
+Instruction: "Set the back wall color to #2c2d30 and update wallColor to #efeae1 in room-previewer page.tsx."
+Description: "Change side walls to warm cream (#efeae1) and make the back wall (behind TV) a rich charcoal accent wall (#2c2d30) to eliminate the sterile, overly whiteish look."
+ReplacementChunks:
+"[{\"AllowMultiple\":false,\"EndLine\":188,\"ReplacementContent\":\"      {/* Back wall */}\\n      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>\\n        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />\\n        <meshPhysicalMaterial color=\\\"#2c2d30\\\" {...INTERIOR_PAINT_PBR} />\\n      </mesh>\",\"StartLine\":184,\"TargetContent\":\"      {/* Back wall */}\\n      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>\\n        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />\\n        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />\\n      </mesh>\"},{\"AllowMultiple\":false,\"EndLine\":1344,\"ReplacementContent\":\"                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor=\\\"#efeae1\\\" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />\",\"StartLine\":1344,\"TargetContent\":\"                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor=\\\"#e5e7eb\\\" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />\"}]"
+================================================================================
+
+=== STEP 1533 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1535 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1537 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1561 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1563 (Tool: replace_file_content) ===
+Instruction: "Retrieve wallColor and setWallColor from the Zustand store right after selectedStyleId."
+Description: "Retrieve wallColor state and setter in page.tsx"
+TargetContent:
+"  const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);\n  const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);\n\n  // Crop & Process States"
+ReplacementContent:
+"  const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);\n  const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);\n  const wallColor = useRoomPreviewerStore((s) => s.wallColor);\n  const setWallColor = useRoomPreviewerStore((s) => s.setWallColor);\n\n  // Crop & Process States"
+================================================================================
+
+=== STEP 1565 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1567 (Tool: replace_file_content) ===
+Instruction: "Change wallColor=\"#efeae1\" to wallColor={wallColor} in the ThreeJSView element."
+Description: "Pass dynamic wallColor to ThreeJSView"
+TargetContent:
+"                     <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor=\"#efeae1\" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />"
+ReplacementContent:
+"                     <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />"
+================================================================================
+
+=== STEP 1569 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1571 (Tool: replace_file_content) ===
+Instruction: "Add Wall Paint Controls panel right after the Skirting controls panel ends."
+Description: "Add Wall Paint Color UI controls to page.tsx"
+TargetContent:
+"              </div>\n            </div>\n          </div>\n\n        </div>"
+ReplacementContent:
+"            </div>\n          </div>\n\n          {/* 6. Wall Paint Controls */}\n          <div className=\"glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative\">\n            <div className=\"flex items-center gap-3 mb-5 border-b border-white/5 pb-3\">\n              <div className=\"p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20\">\n                <Sparkles className=\"w-5 h-5\" />\n              </div>\n              <div>\n                <h3 className=\"font-bold text-lg text-white\">Wall Paint Color</h3>\n                <p className=\"text-neutral-400 text-xs\">Choose a warm, cozy color for the walls</p>\n              </div>\n            </div>\n\n            <div className=\"mb-4\">\n              <label className=\"block text-xs font-bold text-neutral-400 mb-2.5 uppercase tracking-wider\">\n                Select Wall Shade\n              </label>\n              <div className=\"grid grid-cols-4 gap-2\">\n                {[\n                  { color: \"#d2c6b6\", label: \"Warm Sand\", bg: \"bg-[#d2c6b6]\" },\n                  { color: \"#c5b39c\", label: \"Soft Clay\", bg: \"bg-[#c5b39c]\" },\n                  { color: \"#9fa896\", label: \"Sage Green\", bg: \"bg-[#9fa896]\" },\n                  { color: \"#9a8b7c\", label: \"Cozy Taupe\", bg: \"bg-[#9a8b7c]\" },\n                  { color: \"#efeae1\", label: \"Cream\", bg: \"bg-[#efeae1]\" },\n                  { color: \"#dfdcd6\", label: \"Warm Grey\", bg: \"bg-[#dfdcd6]\" },\n                  { color: \"#b37c67\", label: \"Terracotta\", bg: \"bg-[#b37c67]\" },\n                  { color: \"#2c2d30\", label: \"Charcoal\", bg: \"bg-[#2c2d30]\" },\n                ].map(({ color, label, bg }) => (\n                  <button\n                    key={color}\n                    onClick={() => setWallColor(color)}\n                    title={label}\n                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition ${\n                      wallColor.toLowerCase() === 
+<truncated 2624 bytes>
+================================================================================
+
+=== STEP 1585 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1589 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1591 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1593 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1595 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1597 (Tool: replace_file_content) ===
+Instruction: "Retrieve wallColor and setWallColor right after selectedStyleId."
+Description: "Add wallColor to room previewer state variables"
+TargetContent:
+"  const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);\n  const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);\n\n  // Crop & Process States"
+ReplacementContent:
+"  const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);\n  const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);\n  const wallColor = useRoomPreviewerStore((s) => s.wallColor);\n  const setWallColor = useRoomPreviewerStore((s) => s.setWallColor);\n\n  // Crop & Process States"
+================================================================================
+
+=== STEP 1599 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1612 (Tool: replace_file_content) ===
+Instruction: "Change wallColor=\"#efeae1\" to wallColor={wallColor} in the ThreeJSView element."
+Description: "Pass dynamic wallColor to ThreeJSView in page.tsx"
+TargetContent:
+"                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor=\"#efeae1\" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />"
+ReplacementContent:
+"                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />"
+================================================================================
+
+=== STEP 1651 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1653 (Tool: replace_file_content) ===
+Instruction: "Restore all three.js 3d component imports right after ImageCropperModal."
+Description: "Restore Three.js imports for SceneLighting, LivingRoomFurnishings, GlassWall, PBR properties, CameraController, and HotspotSystem in page.tsx"
+TargetContent:
+"import ImageCropperModal from '@/components/ImageCropperModal';"
+ReplacementContent:
+"import ImageCropperModal from '@/components/ImageCropperModal';\nimport SceneLighting from '@/components/scene3d/SceneLighting';\nimport LivingRoomFurnishings from '@/components/scene3d/LivingRoomFurnishings';\nimport GlassWall from '@/components/scene3d/GlassWall';\nimport { TILE_FLOOR_PBR, INTERIOR_PAINT_PBR } from '@/components/scene3d/tilePbr';\nimport CameraController, { CameraPreset } from '@/components/scene3d/CameraController';\nimport HotspotSystem, { HotspotDef } from '@/components/scene3d/HotspotSystem';"
+================================================================================
+
+=== STEP 1655 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1657 (Tool: replace_file_content) ===
+Instruction: "Replace standard materials with physical materials, enable receiveShadow, add back wall panel, and replace glass mesh with GlassWall component."
+Description: "Upgrade ThreeJSView to use premium PBR materials and glass wall in page.tsx"
+TargetContent:
+"function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, wallColor, styleTex, bookmatchEnabled, selectedStyleId }: {\n  roomWidth: number; roomLength: number; wFeet: number; lFeet: number; patternSpan: number; groutWidth: number; groutColor: string; floorTex: THREE.Texture | null; skirtTex3d: THREE.Texture | null; skirtingHeight: number; skirtingColor: string; wallColor: string; styleTex: THREE.Texture | null;\n  bookmatchEnabled?: boolean;\n  selectedStyleId?: string;\n}) {\n  return (\n    <group>\n      {/* Floor */}\n      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]}>\n        <planeGeometry args={[roomWidth, roomLength]} />\n        <meshStandardMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : \"#c8b8a8\"} roughness={0.7} />\n      </mesh>\n      {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {\n        const base = 2500;\n        const maxDim = Math.max(wFeet, lFeet);\n        const wPx = Math.round((wFeet / maxDim) * base);\n        const hPx = Math.round((lFeet / maxDim) * base);\n        const hm = Math.max(1, Math.round(wPx * groutWidth / (2 * wFeet * 304.8)));\n        const c = document.createElement(\"canvas\");\n        c.width = wPx + 2 * hm;\n        c.height = hPx + 2 * hm;\n        const ctx = c.getContext(\"2d\")!;\n        ctx.fillStyle = groutColor;\n        ctx.globalAlpha = 0.5;\n        ctx.fillRect(0, 0, c.width, hm);\n        ctx.fillRect(0, c.height - hm, c.width, hm);\n        ctx.fillRect(0, 0, hm, c.height);\n        ctx.fillRect(c.width - hm, 0, hm, c.height);\n        const tex = new THREE.CanvasTexture(c);\n        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;\n        tex.minFilter = THREE.LinearFilter;\n        tex.magFilter = THREE.LinearFilter;\n        tex.repeat.set(roomWid
+<truncated 2958 bytes>
+ReplacementContent:
+"function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWidth, groutColor, floorTex, skirtTex3d, skirtingHeight, skirtingColor, wallColor, styleTex, bookmatchEnabled, selectedStyleId }: {\n  roomWidth: number; roomLength: number; wFeet: number; lFeet: number; patternSpan: number; groutWidth: number; groutColor: string; floorTex: THREE.Texture | null; skirtTex3d: THREE.Texture | null; skirtingHeight: number; skirtingColor: string; wallColor: string; styleTex: THREE.Texture | null;\n  bookmatchEnabled?: boolean;\n  selectedStyleId?: string;\n}) {\n  return (\n    <group>\n      {/* Floor */}\n      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]} receiveShadow>\n        <planeGeometry args={[roomWidth, roomLength]} />\n        <meshPhysicalMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : \"#c8b8a8\"} {...TILE_FLOOR_PBR} />\n      </mesh>\n      {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {\n        const base = 2500;\n        const maxDim = Math.max(wFeet, lFeet);\n        const wPx = Math.round((wFeet / maxDim) * base);\n        const hPx = Math.round((lFeet / maxDim) * base);\n        const hm = Math.max(1, Math.round(wPx * groutWidth / (2 * wFeet * 304.8)));\n        const c = document.createElement(\"canvas\");\n        c.width = wPx + 2 * hm;\n        c.height = hPx + 2 * hm;\n        const ctx = c.getContext(\"2d\")!;\n        ctx.fillStyle = groutColor;\n        ctx.globalAlpha = 0.5;\n        ctx.fillRect(0, 0, c.width, hm);\n        ctx.fillRect(0, c.height - hm, c.width, hm);\n        ctx.fillRect(0, 0, hm, c.height);\n        ctx.fillRect(c.width - hm, 0, hm, c.height);\n        const tex = new THREE.CanvasTexture(c);\n        tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;\n        tex.minFilter = THREE.LinearFilter;\n        tex.magFilter = THREE.LinearFilter;\n        tex.
+<truncated 3216 bytes>
+================================================================================
+
+=== STEP 1659 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1661 (Tool: replace_file_content) ===
+Instruction: "Replace the basic Canvas code with the full React Three Fiber rendering components."
+Description: "Restore Canvas components (SceneLighting, LivingRoomFurnishings, CameraController, and Hotspots) in page.tsx"
+TargetContent:
+"              {is3DMode ? (\n                <div className=\"w-full h-full\">\n                  <Canvas camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true }} style={{ width: \"100%\", height: \"100%\" }}>\n                    <ambientLight intensity={0.6} />\n                    <directionalLight position={[5, 10, 5]} intensity={0.8} />\n                    <directionalLight position={[-3, 5, -3]} intensity={0.3} />\n                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />\n                    <OrbitControls enableDamping dampingFactor={0.1} enableRotate enableZoom target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />\n                  </Canvas>\n                </div>"
+ReplacementContent:
+"              {is3DMode ? (\n                <div ref={canvasRef} className=\"w-full h-full\">\n                  <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.75]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: \"high-performance\" }} style={{ width: \"100%\", height: \"100%\" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>\n                    <SceneLighting sceneKind=\"living\" roomW={roomWidth} roomL={roomLength} sunPosition={[roomWidth + 5, 11, roomLength + 3]} />\n                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />\n                    <LivingRoomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />\n                    <OrbitControls makeDefault enableDamping dampingFactor={0.1} enableRotate enableZoom autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />\n                    <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomWidth} roomLength={roomLength} roomHeight={ROOM_HEIGHT_3D} />\n                    <HotspotSystem hotspots={hotspots} />\n                  </Canvas>\n                </div>"
+================================================================================
+
+=== STEP 1663 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1665 (Tool: replace_file_content) ===
+Instruction: "Add the loading state overlay right before the is3DMode check."
+Description: "Add loading screen overlay to Canvas container in page.tsx"
+TargetContent:
+"              {is3DMode ? ("
+ReplacementContent:
+"              {isLoading && (\n                <div className=\"absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700\">\n                  <div className=\"text-center\">\n                    <div className=\"w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3\" />\n                    <p className=\"text-amber-400 text-sm font-bold tracking-wide\">Loading 3D Scene…</p>\n                    <p className=\"text-neutral-500 text-xs mt-1\">Preparing your showroom</p>\n                  </div>\n                </div>\n              )}\n              {is3DMode ? ("
+================================================================================
+
+=== STEP 1667 (Tool: view_file) ===
+Instruction: None
+Description: None
+================================================================================
+
+=== STEP 1669 (Tool: replace_file_content) ===
+Instruction: "Insert Wall Paint controls between the skirting controls card and the left panel closing div."
+Description: "Add Wall Paint controls to room-previewer page.tsx"
+TargetContent:
+"          </div>\n\n        </div>"
+ReplacementContent:
+"          </div>\n\n          {/* 6. Wall Paint Controls */}\n          <div className=\"glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative\">\n            <div className=\"flex items-center gap-3 mb-5 border-b border-white/5 pb-3\">\n              <div className=\"p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20\">\n                <Sparkles className=\"w-5 h-5\" />\n              </div>\n              <div>\n                <h3 className=\"font-bold text-lg text-white\">Wall Paint Color</h3>\n                <p className=\"text-neutral-400 text-xs\">Choose a warm, cozy color for the walls</p>\n              </div>\n            </div>\n\n            <div className=\"mb-4\">\n              <label className=\"block text-xs font-bold text-neutral-400 mb-2.5 uppercase tracking-wider\">\n                Select Wall Shade\n              </label>\n              <div className=\"grid grid-cols-4 gap-2\">\n                {[\n                  { color: \"#d2c6b6\", label: \"Warm Sand\", bg: \"bg-[#d2c6b6]\" },\n                  { color: \"#c5b39c\", label: \"Soft Clay\", bg: \"bg-[#c5b39c]\" },\n                  { color: \"#9fa896\", label: \"Sage Green\", bg: \"bg-[#9fa896]\" },\n                  { color: \"#9a8b7c\", label: \"Cozy Taupe\", bg: \"bg-[#9a8b7c]\" },\n                  { color: \"#efeae1\", label: \"Cream\", bg: \"bg-[#efeae1]\" },\n                  { color: \"#dfdcd6\", label: \"Warm Grey\", bg: \"bg-[#dfdcd6]\" },\n                  { color: \"#b37c67\", label: \"Terracotta\", bg: \"bg-[#b37c67]\" },\n                  { color: \"#2c2d30\", label: \"Charcoal\", bg: \"bg-[#2c2d30]\" },\n                ].map(({ color, label, bg }) => (\n                  <button\n                    key={color}\n                    onClick={() => setWallColor(color)}\n                    title={label}\n                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition ${\n                      wallColor.toLowerCase() === color.toLowerCase()\
+<truncated 2604 bytes>
+================================================================================
+

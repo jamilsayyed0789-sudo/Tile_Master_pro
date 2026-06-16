@@ -1,16 +1,23 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, BakeShadows, AdaptiveDpr } from "@react-three/drei";
 import * as THREE from "three";
 import { useKitchen3DStore } from "@/store3d";
-import { Upload, ImageIcon, CookingPot, LayoutGrid, Paintbrush, Rotate3d, Maximize2, Minimize2, Search, Ruler } from "lucide-react";
+import { Upload, ImageIcon, CookingPot, LayoutGrid, Paintbrush, Rotate3d, Maximize2, Minimize2, Search, Ruler, Eye, EyeOff } from "lucide-react";
+import SceneLighting from "@/components/scene3d/SceneLighting";
+import KitchenFurnishings from "@/components/scene3d/KitchenFurnishings";
+import GlassWall from "@/components/scene3d/GlassWall";
+import { TILE_FLOOR_PBR, TILE_WALL_PBR, INTERIOR_PAINT_PBR, COUNTERTOP_PBR } from "@/components/scene3d/tilePbr";
+import CameraController, { CameraPreset } from "@/components/scene3d/CameraController";
+import HotspotSystem, { HotspotDef } from "@/components/scene3d/HotspotSystem";
+import { woodMat } from "@/components/scene3d/materials";
 
 
-function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopColor, countertopTex, tileRotation, counterDepth, slabMode, highlighterTex, highlighterRows, floorTex, floorTileSize, stripColor, stripWidthMm, stripInterval }: {
-  roomW: number; roomL: number; roomH: number; backsplashTex: THREE.Texture | null; tileSize: string; countertopColor: string; countertopTex: THREE.Texture | null; tileRotation: number; counterDepth: number; slabMode: boolean; highlighterTex: THREE.Texture | null; highlighterRows: number; floorTex: THREE.Texture | null; floorTileSize: string; stripColor?: string | null; stripWidthMm?: number; stripInterval?: number;
+function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopColor, countertopTex, tileRotation, counterDepth, slabMode, highlighterTex, highlighterRows, floorTex, floorTileSize, stripColor, stripWidthMm, stripInterval, showInterior = true }: {
+  roomW: number; roomL: number; roomH: number; backsplashTex: THREE.Texture | null; tileSize: string; countertopColor: string; countertopTex: THREE.Texture | null; tileRotation: number; counterDepth: number; slabMode: boolean; highlighterTex: THREE.Texture | null; highlighterRows: number; floorTex: THREE.Texture | null; floorTileSize: string; stripColor?: string | null; stripWidthMm?: number; stripInterval?: number; showInterior?: boolean;
 }) {
   const counterH = 3;
   const cabinetH = 2.5;
@@ -108,7 +115,7 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       return t ? (
         <mesh position={[0, 0, 0.001]}>
           <planeGeometry args={[w, h]} />
-          <meshBasicMaterial map={t} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial map={t} transparent opacity={1} depthWrite={false} side={THREE.FrontSide} />
         </mesh>
       ) : null;
     };
@@ -116,30 +123,30 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       <group>
         <mesh position={[roomW / 2, counterH / 2, 0]}>
           <planeGeometry args={[roomW, counterH]} />
-          <meshStandardMaterial color="#e8e0d0" roughness={0.6} />
+          <meshPhysicalMaterial color="#e8e0d0" {...INTERIOR_PAINT_PBR} />
         </mesh>
         {highlighterTex ? (
           <>
             {lowerH > 0 && (
               <group position={[roomW / 2, counterH + lowerH / 2, 0]}>
-                <mesh>
+                <mesh receiveShadow>
                   <planeGeometry args={[roomW, lowerH]} />
-                  <meshStandardMaterial map={tex} color={tex ? undefined : "#f5f0e8"} roughness={0.6} />
+                  <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(roomW, lowerH)}
               </group>
             )}
             <group position={[roomW / 2, hlY + hlHeight / 2, 0.002]}>
-              <mesh>
+              <mesh receiveShadow>
                 <planeGeometry args={[roomW, hlHeight]} />
-                <meshStandardMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} roughness={0.6} />
+                <meshPhysicalMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} {...TILE_WALL_PBR} />
               </mesh>
             </group>
             {upperH > 0 && (
               <group position={[roomW / 2, hlY + hlHeight + upperH / 2, 0]}>
-                <mesh>
+                <mesh receiveShadow>
                   <planeGeometry args={[roomW, upperH]} />
-                  <meshStandardMaterial map={tex} color={tex ? undefined : "#f5f0e8"} roughness={0.6} />
+                  <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(roomW, upperH)}
               </group>
@@ -147,9 +154,9 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
           </>
         ) : (
           <group position={[roomW / 2, counterH + bsHeight / 2, 0]}>
-            <mesh>
+            <mesh receiveShadow>
               <planeGeometry args={[roomW, bsHeight]} />
-              <meshStandardMaterial map={tex} color={tex ? undefined : "#f5f0e8"} roughness={0.6} />
+              <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
             </mesh>
             {stripOverlay(roomW, bsHeight)}
           </group>
@@ -171,7 +178,7 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       return t ? (
         <mesh position={[0, 0, zOff]}>
           <planeGeometry args={[w, h]} />
-          <meshBasicMaterial map={t} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial map={t} transparent opacity={1} depthWrite={false} side={THREE.FrontSide} />
         </mesh>
       ) : null;
     };
@@ -179,28 +186,28 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       <group>
         <mesh position={[0, counterH / 2, lDepth / 2 + 0.02]} rotation={[0, Math.PI / 2, 0]}>
           <planeGeometry args={[lDepth, counterH]} />
-          <meshStandardMaterial color="#e8e0d0" roughness={0.6} />
+          <meshPhysicalMaterial color="#e8e0d0" {...INTERIOR_PAINT_PBR} />
         </mesh>
         {highlighterTex ? (
           <>
             {lowerH > 0 && (
               <group position={[0, counterH + lowerH / 2, lDepth / 2 + 0.02]} rotation={[0, Math.PI / 2, 0]}>
-                <mesh>
+                <mesh receiveShadow>
                   <planeGeometry args={[lDepth, lowerH]} />
-                  <meshStandardMaterial map={tex} color={tex ? undefined : "#e8e0d0"} roughness={0.6} />
+                  <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(lDepth, lowerH, 0.001)}
               </group>
             )}
-            <mesh position={[0, hlY + hlHeight / 2, lDepth / 2 + 0.022]} rotation={[0, Math.PI / 2, 0]}>
+            <mesh position={[0, hlY + hlHeight / 2, lDepth / 2 + 0.022]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
               <planeGeometry args={[lDepth, hlHeight]} />
-              <meshStandardMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} roughness={0.6} />
+              <meshPhysicalMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} {...TILE_WALL_PBR} />
             </mesh>
             {upperH > 0 && (
               <group position={[0, hlY + hlHeight + upperH / 2, lDepth / 2 + 0.02]} rotation={[0, Math.PI / 2, 0]}>
-                <mesh>
+                <mesh receiveShadow>
                   <planeGeometry args={[lDepth, upperH]} />
-                  <meshStandardMaterial map={tex} color={tex ? undefined : "#e8e0d0"} roughness={0.6} />
+                  <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(lDepth, upperH, 0.001)}
               </group>
@@ -208,9 +215,9 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
           </>
         ) : (
           <group position={[0, counterH + bsHeight / 2, lDepth / 2 + 0.02]} rotation={[0, Math.PI / 2, 0]}>
-            <mesh>
+            <mesh receiveShadow>
               <planeGeometry args={[lDepth, bsHeight]} />
-              <meshStandardMaterial map={tex} color={tex ? undefined : "#e8e0d0"} roughness={0.6} />
+              <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
             </mesh>
             {stripOverlay(lDepth, bsHeight, 0.001)}
           </group>
@@ -220,22 +227,42 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
   };
 
   // Lower cabinets (L-shape)
-  const cabinZ = 1.8;
+  const cabinZ = 2.0;
   const counterZ = counterDepth;
-  const LowerCabinets = () => (
-    <group>
-      {/* Back wall run (starts after left wall cabinet depth) */}
-      <mesh position={[(cabinZ + roomW) / 2, counterH / 2, cabinZ / 2]}>
-        <boxGeometry args={[roomW - cabinZ, counterH, cabinZ]} />
-        <meshStandardMaterial color="#b8a898" roughness={0.6} />
-      </mesh>
-      {/* Left wall run */}
-      <mesh position={[cabinZ / 2, counterH / 2, lDepth / 2]}>
-        <boxGeometry args={[cabinZ, counterH, lDepth]} />
-        <meshStandardMaterial color="#b8a898" roughness={0.6} />
-      </mesh>
-    </group>
-  );
+  const LowerCabinets = () => {
+    const x_sink = roomW * 0.75;
+    const sinkW = 3.83;
+    const sinkD = 1.64;
+    const x1 = x_sink - sinkW / 2;
+    const x2 = x_sink + sinkW / 2;
+    const d_front = Math.max(0.01, cabinZ - sinkD);
+    const z_front = cabinZ - d_front / 2;
+
+    return (
+      <group>
+        {/* Back wall run (split around the sink hole) */}
+        {x1 > cabinZ && (
+          <mesh position={[(cabinZ + x1) / 2, counterH / 2, cabinZ / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+            <boxGeometry args={[x1 - cabinZ, counterH, cabinZ]} />
+          </mesh>
+        )}
+        {x2 < roomW && (
+          <mesh position={[(x2 + roomW) / 2, counterH / 2, cabinZ / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+            <boxGeometry args={[roomW - x2, counterH, cabinZ]} />
+          </mesh>
+        )}
+        {/* Front cabinet panel under the sink */}
+        <mesh position={[x_sink, counterH / 2, z_front]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+          <boxGeometry args={[sinkW, counterH, d_front]} />
+        </mesh>
+
+        {/* Left wall run */}
+        <mesh position={[cabinZ / 2, counterH / 2, lDepth / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+          <boxGeometry args={[cabinZ, counterH, lDepth]} />
+        </mesh>
+      </group>
+    );
+  };
 
   // Countertop
   const counterTileFeet = 2;
@@ -259,9 +286,9 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
   const FloorTile = () => {
     if (!floorTex) {
       return (
-        <mesh position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[roomW, roomL]} />
-          <meshStandardMaterial color="#c8b8a8" roughness={0.7} />
+          <meshPhysicalMaterial color="#c8b8a8" {...TILE_FLOOR_PBR} />
         </mesh>
       );
     }
@@ -274,42 +301,76 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
     ft.colorSpace = THREE.SRGBColorSpace;
     ft.needsUpdate = true;
     return (
-      <mesh position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[roomW, roomL]} />
-        <meshStandardMaterial map={ft} color="#ffffff" roughness={0.7} />
+        <meshPhysicalMaterial map={ft} color="#ffffff" {...TILE_FLOOR_PBR} />
       </mesh>
     );
   };
 
   const Countertop = () => {
-    let backTex: THREE.Texture | null;
     let leftTex: THREE.Texture | null;
     if (slabMode) {
-      backTex = slabCT?.backTex ?? null;
       leftTex = slabCT?.leftTex ?? null;
     } else {
-      backTex = countertopTex ? countertopTex.clone() : null;
       leftTex = countertopTex ? countertopTex.clone() : null;
-      if (backTex && leftTex) {
-        backTex.wrapS = backTex.wrapT = THREE.RepeatWrapping;
+      if (leftTex) {
         leftTex.wrapS = leftTex.wrapT = THREE.RepeatWrapping;
-        backTex.repeat.set(roomW / counterTileFeet, counterZ / counterTileFeet);
         leftTex.repeat.set(counterZ / counterTileFeet, lDepth / counterTileFeet);
-        backTex.needsUpdate = true;
         leftTex.needsUpdate = true;
       }
     }
+
+    const x_sink = roomW * 0.85;
+    const sinkW = 2.83;
+    const sinkD = 1.64;
+    const x1 = x_sink - sinkW / 2;
+    const x2 = x_sink + sinkW / 2;
+    const z1 = Math.max(0.01, counterZ / 2 - sinkD / 2);
+    const z2 = Math.min(counterZ - 0.01, counterZ / 2 + sinkD / 2);
+
+    const getPieceTex = (w: number, d: number, xStart: number, zStart: number) => {
+      if (!countertopTex) return null;
+      const t = countertopTex.clone();
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(w / counterTileFeet, d / counterTileFeet);
+      t.offset.set(xStart / counterTileFeet, zStart / counterTileFeet);
+      t.needsUpdate = true;
+      return t;
+    };
+
     return (
       <group>
-        {/* Back countertop (starts after left countertop width) */}
-        <mesh position={[(counterZ + roomW) / 2, counterH + 0.02, counterZ / 2]}>
-          <boxGeometry args={[roomW - counterZ, 0.06, counterZ]} />
-          <meshStandardMaterial map={backTex} color={backTex ? undefined : countertopColor} roughness={0.4} metalness={0.1} />
-        </mesh>
+        {/* Back countertop (split around the sink hole) */}
+        {x1 > counterZ && (
+          <mesh position={[(counterZ + x1) / 2, counterH + 0.02, counterZ / 2]}>
+            <boxGeometry args={[x1 - counterZ, 0.06, counterZ]} />
+            <meshPhysicalMaterial map={getPieceTex(x1 - counterZ, counterZ, counterZ, 0) ?? undefined} color={countertopTex ? "#ffffff" : countertopColor} {...COUNTERTOP_PBR} />
+          </mesh>
+        )}
+        {x2 < roomW && (
+          <mesh position={[(x2 + roomW) / 2, counterH + 0.02, counterZ / 2]}>
+            <boxGeometry args={[roomW - x2, 0.06, counterZ]} />
+            <meshPhysicalMaterial map={getPieceTex(roomW - x2, counterZ, x2, 0) ?? undefined} color={countertopTex ? "#ffffff" : countertopColor} {...COUNTERTOP_PBR} />
+          </mesh>
+        )}
+        {z1 > 0.02 && (
+          <mesh position={[x_sink, counterH + 0.02, z1 / 2]}>
+            <boxGeometry args={[sinkW, 0.06, z1]} />
+            <meshPhysicalMaterial map={getPieceTex(sinkW, z1, x1, 0) ?? undefined} color={countertopTex ? "#ffffff" : countertopColor} {...COUNTERTOP_PBR} />
+          </mesh>
+        )}
+        {counterZ > z2 + 0.02 && (
+          <mesh position={[x_sink, counterH + 0.02, z2 + (counterZ - z2) / 2]}>
+            <boxGeometry args={[sinkW, 0.06, counterZ - z2]} />
+            <meshPhysicalMaterial map={getPieceTex(sinkW, counterZ - z2, x1, z2) ?? undefined} color={countertopTex ? "#ffffff" : countertopColor} {...COUNTERTOP_PBR} />
+          </mesh>
+        )}
+
         {/* Left countertop */}
-        <mesh position={[counterZ / 2, counterH + 0.02, lDepth / 2]}>
+        <mesh position={[counterZ / 2, counterH + 0.02, lDepth / 2]} receiveShadow>
           <boxGeometry args={[counterZ, 0.06, lDepth]} />
-          <meshStandardMaterial map={leftTex} color={leftTex ? undefined : countertopColor} roughness={0.4} metalness={0.1} />
+          <meshPhysicalMaterial map={leftTex ?? undefined} color={countertopTex ? "#ffffff" : countertopColor} {...COUNTERTOP_PBR} />
         </mesh>
       </group>
     );
@@ -330,32 +391,31 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       <BackWall />
       <LeftWallTile />
       {/* Right wall */}
-      <mesh position={[roomW, roomH / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[roomW, roomH / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
         <planeGeometry args={[roomL, roomH]} />
-        <meshStandardMaterial color="#e8e0d0" roughness={0.6} />
+        <meshPhysicalMaterial color="#e8e0d0" {...INTERIOR_PAINT_PBR} />
       </mesh>
       {/* Left wall plain part (non-kitchen area) */}
-      <mesh position={[0, roomH / 2, lDepth + (roomL - lDepth) / 2]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh position={[0, roomH / 2, lDepth + (roomL - lDepth) / 2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <planeGeometry args={[roomL - lDepth, roomH]} />
-        <meshStandardMaterial color="#e8e0d0" roughness={0.6} />
+        <meshPhysicalMaterial color="#e8e0d0" {...INTERIOR_PAINT_PBR} />
       </mesh>
       {/* Floor */}
       <FloorTile />
       {/* Ceiling */}
       <mesh position={[roomW / 2, roomH, roomL / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[roomW, roomL]} />
-        <meshStandardMaterial color="#f0ece4" roughness={0.5} />
+        <meshPhysicalMaterial color="#f5f0e8" roughness={0.55} envMapIntensity={0.35} />
       </mesh>
-      {/* Glass front wall */}
-      <mesh position={[roomW / 2, roomH / 2, roomL]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[roomW, roomH]} />
-        <meshStandardMaterial color="#88ccff" transparent opacity={0.12} side={THREE.DoubleSide} />
-      </mesh>
-      <LowerCabinets />
-      <Countertop />
-      </group>
-    );
-  };
+      {/* Glass front wall removed to prevent foggy camera reflections and allow clear zoom-in view */}
+      {/* <GlassWall width={roomW} height={roomH} position={[roomW / 2, roomH / 2, roomL]} rotation={[0, Math.PI, 0]} /> */}
+      {showInterior && <LowerCabinets />}
+      {showInterior && <Countertop />}
+      <SceneLighting roomW={roomW} roomL={roomL} sceneKind="kitchen" />
+      {showInterior && <KitchenFurnishings roomW={roomW} roomL={roomL} roomH={roomH} counterDepth={counterDepth} />}
+    </group>
+  );
+};
 
 export default function Kitchen3DPage() {
   // Persisted state
@@ -398,6 +458,53 @@ export default function Kitchen3DPage() {
   const stripInterval = useKitchen3DStore((s) => s.stripInterval);
   const setStripInterval = useKitchen3DStore((s) => s.setStripInterval);
   
+
+  // ── Enhancement state ───────────────────────────────────────────────────
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset | null>(null);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInterior, setShowInterior] = useState(true);
+  const interactionTimer = useRef<any>(undefined);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+
+  const hotspots: HotspotDef[] = useMemo(() => [
+    { id: 'floor', position: [roomWidth / 2, 0.02, roomLength / 2], label: 'Floor' },
+    { id: 'backsplash', position: [roomWidth / 2, 4.5, 0.05], label: 'Backsplash' },
+    { id: 'countertop', position: [roomWidth * 0.55, 3.1, counterDepth * 0.4], label: 'Countertop' },
+    { id: 'cabinets', position: [counterDepth * 0.5, 2, roomLength * 0.5], label: 'Cabinets' },
+  ], [roomWidth, roomLength, counterDepth]);
+
+  useEffect(() => {
+    if (!autoRotate) return;
+    const handleInteraction = () => {
+      setAutoRotate(false);
+      clearTimeout(interactionTimer.current);
+      interactionTimer.current = setTimeout(() => setAutoRotate(true), 4000);
+    };
+    const el = canvasRef.current;
+    el?.addEventListener('pointerdown', handleInteraction);
+    return () => {
+      el?.removeEventListener('pointerdown', handleInteraction);
+      clearTimeout(interactionTimer.current);
+    };
+  }, [autoRotate]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   // Read pending texture from storage
   useEffect(() => {
@@ -715,30 +822,103 @@ export default function Kitchen3DPage() {
                   3D Viewport {isTheaterMode && <span className="text-amber-400 font-bold ml-1.5">(Showroom Mode)</span>}
                 </span>
               </div>
-              <button
-                onClick={() => setIsTheaterMode(!isTheaterMode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
-                  isTheaterMode
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
-                    : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
-                }`}
-                title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
-              >
-                {isTheaterMode ? (
-                  <><Minimize2 className="w-3.5 h-3.5" /><span>Standard View</span></>
-                ) : (
-                  <><Maximize2 className="w-3.5 h-3.5" /><span>Showroom View</span></>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* View Preset Buttons */}
+                <div className="hidden md:flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-neutral-800">
+                  {(['front', 'corner', 'top', 'entrance', '360', 'reset'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setCameraPreset(p)}
+                      className={`px-2 py-1 text-[9px] font-bold rounded-md transition capitalize ${
+                        cameraPreset === p
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Auto-rotate Toggle */}
+                <button
+                  onClick={() => setAutoRotate(!autoRotate)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition ${
+                    autoRotate
+                      ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                      : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white'
+                  }`}
+                  title={autoRotate ? 'Auto-rotate On' : 'Auto-rotate Off'}
+                >
+                  <Rotate3d className={`w-3 h-3 ${autoRotate ? 'animate-spin' : ''}`} />
+                  <span>360°</span>
+                </button>
+
+                {/* Fullscreen Toggle */}
+                <button
+                  onClick={toggleFullscreen}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border border-neutral-900 bg-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-850 transition"
+                  title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                >
+                  {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Search className="w-3 h-3" />}
+                </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowInterior(!showInterior)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                    showInterior
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                  }`}
+                  title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
+                >
+                  {showInterior ? (
+                    <><EyeOff className="w-3.5 h-3.5" /><span>Interior: On</span></>
+                  ) : (
+                    <><Eye className="w-3.5 h-3.5" /><span>Interior: Off</span></>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsTheaterMode(!isTheaterMode)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                    isTheaterMode
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                  }`}
+                  title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
+                >
+                  {isTheaterMode ? (
+                    <><Minimize2 className="w-3.5 h-3.5" /><span>Standard View</span></>
+                  ) : (
+                    <><Maximize2 className="w-3.5 h-3.5" /><span>Showroom View</span></>
+                  )}
+                </button>
+              </div>
+              </div>
             </div>
-            <div className="flex-1 min-h-0">
-            <Canvas camera={{ position: [roomWidth * 0.8, roomHeight * 0.5, roomLength * 0.8], fov: 45, near: 0.1, far: 100 }} gl={{ antialias: true }} style={{ width: "100%", height: "100%" }}>
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 10, 5]} intensity={0.8} />
-              <directionalLight position={[-5, -5, -5]} intensity={0.3} />
-                <Kitchen3D roomW={roomWidth} roomL={roomLength} roomH={roomHeight} backsplashTex={backsplashTex} tileSize={tileSize} countertopColor={countertopColor} countertopTex={countertopTex} tileRotation={tileRotation} counterDepth={counterDepth} slabMode={slabMode} highlighterTex={highlighterTex} highlighterRows={highlighterRows} floorTex={floorTex} floorTileSize={floorTileSize} stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
-              <OrbitControls enableDamping dampingFactor={0.1} minDistance={3} maxDistance={40} target={[roomWidth / 2, roomHeight / 2, roomLength / 2]} />
+            <div className="flex-1 min-h-0 relative">
+            {isLoading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                  <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
+                </div>
+              </div>
+            )}
+            <div ref={canvasRef} className="w-full h-full">
+            <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.8, roomHeight * 0.5, roomLength * 0.8], fov: 45, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
+              <SceneLighting sceneKind="kitchen" roomW={roomWidth} roomL={roomLength} sunPosition={[roomWidth + 6, 12, roomLength + 2]} />
+              <Kitchen3D roomW={roomWidth} roomL={roomLength} roomH={roomHeight} backsplashTex={backsplashTex} tileSize={tileSize} countertopColor={countertopColor} countertopTex={countertopTex} tileRotation={tileRotation} counterDepth={counterDepth} slabMode={slabMode} highlighterTex={highlighterTex} highlighterRows={highlighterRows} floorTex={floorTex} floorTileSize={floorTileSize} stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval} showInterior={showInterior} />
+              {showInterior && <KitchenFurnishings roomW={roomWidth} roomL={roomLength} roomH={roomHeight} counterDepth={counterDepth} />}
+              <OrbitControls makeDefault enableDamping dampingFactor={0.1} minDistance={3} maxDistance={40} autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, roomHeight / 2, roomLength / 2]} />
+              <BakeShadows />
+              <AdaptiveDpr pixelated />
+              <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomWidth} roomLength={roomLength} roomHeight={roomHeight} />
+              <HotspotSystem hotspots={hotspots} />
             </Canvas>
+            </div>
             </div>
           </div>
         </div>

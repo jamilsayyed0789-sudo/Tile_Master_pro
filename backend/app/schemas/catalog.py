@@ -27,3 +27,4 @@ class CatalogUploadResponse(BaseModel):
     message: str
     tiles_extracted: int
     catalog_name: str
+    extraction_mode: Optional[str] = None

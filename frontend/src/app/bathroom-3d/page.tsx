@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, Suspense, useEffect, useMemo } from "react";
+import { useState, Suspense, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, BakeShadows, AdaptiveDpr } from "@react-three/drei";
 import * as THREE from "three";
 import { useBathroom3DStore } from "@/store3d";
+import { TILE_FLOOR_PBR, TILE_WALL_PBR } from "@/components/scene3d/tilePbr";
 import {
-  Ruler, Layers, Check, Rotate3d, Grid, Upload, ImageIcon, GripVertical, ArrowUpDown, Maximize2, Minimize2, Search
+  Ruler, Layers, Check, Rotate3d, Grid, Upload, ImageIcon, GripVertical, ArrowUpDown, Maximize2, Minimize2, Search, Eye, EyeOff
 } from "lucide-react";
+import SceneLighting from "@/components/scene3d/SceneLighting";
+import BathroomFurnishings from "@/components/scene3d/BathroomFurnishings";
+import CameraController, { CameraPreset } from "@/components/scene3d/CameraController";
+import HotspotSystem, { HotspotDef } from "@/components/scene3d/HotspotSystem";
 
 
 type Unit = "inches" | "feet";
@@ -28,7 +33,7 @@ const SLOT_COLORS: Record<string, string> = {
 
 // ─── Surface ────────────────────────────────────────────────────────────────
 function Surface({
-  tex, color, args, position, rotation, isGlass, tileW, tileH, offsetY, stripColor, stripWidthMm, stripInterval, bookmatchEnabled, groutWidthMm, groutColor,
+  tex, color, args, position, rotation, isGlass, tileW, tileH, offsetY, stripColor, stripWidthMm, stripInterval, bookmatchEnabled, groutWidthMm, groutColor, isFloor,
 }: {
   tex: THREE.Texture | null;
   color: string;
@@ -45,6 +50,7 @@ function Surface({
   bookmatchEnabled?: boolean;
   groutWidthMm?: number;
   groutColor?: string;
+  isFloor?: boolean;
 }) {
   const stripOverlay = useMemo(() => {
     if (!stripColor || !stripWidthMm || !tileW || !tileH) return null;
@@ -63,9 +69,8 @@ function Surface({
     ctx.clearRect(0, 0, wPx, canvasH);
 
     const hexMap: Record<string, string> = {
-      golden: "#D4AF37",
-      silver: "#C0C0C0",
       black: "#111111",
+      white: "#FFFFFF",
     };
     const hex = hexMap[stripColor] || stripColor;
 
@@ -74,8 +79,9 @@ function Surface({
 
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.minFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = true;
     tex.repeat.set(args[0] / tileW, args[1] / (tileH * interval));
     tex.needsUpdate = true;
     return tex;
@@ -103,8 +109,9 @@ function Surface({
     ctx.fillRect(wPx - groutPxW, 0, groutPxW, hPx);
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.minFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
+    t.generateMipmaps = true;
     t.repeat.set(args[0] / tileW, args[1] / tileH);
     t.needsUpdate = true;
     return t;
@@ -115,9 +122,11 @@ function Surface({
     const t = tex.clone();
     t.wrapS = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
     t.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
-    t.minFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
+    t.generateMipmaps = true;
     t.anisotropy = 16;
+    t.colorSpace = tex.colorSpace;
     if (tileW && tileH) {
       t.repeat.set(args[0] / tileW, args[1] / tileH);
     } else {
@@ -127,6 +136,8 @@ function Surface({
     t.needsUpdate = true;
     return t;
   }, [tex, args[0], args[1], tileW, tileH, offsetY, bookmatchEnabled]);
+
+  const pbrSettings = isFloor ? TILE_FLOOR_PBR : TILE_WALL_PBR;
 
   if (isGlass) {
     return (
@@ -140,24 +151,24 @@ function Surface({
     <group position={position} rotation={rotation}>
       <mesh>
         <planeGeometry args={args} />
-        <meshStandardMaterial
+        <meshPhysicalMaterial
           key={texture ? texture.uuid : "plain"}
           map={texture}
-          color={texture ? undefined : color}
-          roughness={0.5}
-          side={THREE.DoubleSide}
+          color={texture ? "#ffffff" : color}
+          side={THREE.FrontSide}
+          {...pbrSettings}
         />
       </mesh>
       {groutOverlay && (
         <mesh position={[0, 0, 0.001]}>
           <planeGeometry args={args} />
-          <meshBasicMaterial map={groutOverlay} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial map={groutOverlay} transparent opacity={1} depthWrite={false} side={THREE.FrontSide} />
         </mesh>
       )}
       {stripOverlay && (
         <mesh position={[0, 0, 0.002]}>
           <planeGeometry args={args} />
-          <meshBasicMaterial map={stripOverlay} transparent opacity={1} depthWrite={false} side={THREE.DoubleSide} />
+          <meshBasicMaterial map={stripOverlay} transparent opacity={1} depthWrite={false} side={THREE.FrontSide} />
         </mesh>
       )}
     </group>
@@ -246,6 +257,7 @@ function Room({
         tex={floorTex} color="#e8e5e0"
         args={[roomW, roomL]} position={[roomW / 2, 0, roomL / 2]}
         rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled}
+        isFloor
       />
 
       {/* Back Wall */}
@@ -271,7 +283,7 @@ function Room({
       ))}
 
       {/* Glass Front & Ceiling */}
-      <Surface tex={null} color="#88ccff" args={[roomW, roomH]} position={[roomW / 2, roomH / 2, roomL]} rotation={[0, Math.PI, 0]} isGlass />
+      {/* <Surface tex={null} color="#88ccff" args={[roomW, roomH]} position={[roomW / 2, roomH / 2, roomL]} rotation={[0, Math.PI, 0]} isGlass /> */}
       <Surface tex={null} color="#222"    args={[roomW, roomL]} position={[roomW / 2, roomH,      roomL / 2]} rotation={[Math.PI / 2, 0, 0]} />
     </group>
   );
@@ -312,6 +324,20 @@ export default function Bathroom3DPage() {
   const setStripInterval = useBathroom3DStore((s) => s.setStripInterval);
   const bookmatchEnabled = useBathroom3DStore((s) => s.bookmatchEnabled);
   const setBookmatchEnabled = useBathroom3DStore((s) => s.setBookmatchEnabled);
+  const showerWidth = useBathroom3DStore((s) => s.showerWidth);
+  const setShowerWidth = useBathroom3DStore((s) => s.setShowerWidth);
+  const showerDepth = useBathroom3DStore((s) => s.showerDepth);
+  const setShowerDepth = useBathroom3DStore((s) => s.setShowerDepth);
+  const showerHeight = useBathroom3DStore((s) => s.showerHeight);
+  const setShowerHeight = useBathroom3DStore((s) => s.setShowerHeight);
+  const toiletScale = useBathroom3DStore((s) => s.toiletScale);
+  const setToiletScale = useBathroom3DStore((s) => s.setToiletScale);
+  const toiletXOffset = useBathroom3DStore((s) => s.toiletXOffset);
+  const setToiletXOffset = useBathroom3DStore((s) => s.setToiletXOffset);
+  const toiletZOffset = useBathroom3DStore((s) => s.toiletZOffset);
+  const setToiletZOffset = useBathroom3DStore((s) => s.setToiletZOffset);
+  const toiletRotY = useBathroom3DStore((s) => s.toiletRotY);
+  const setToiletRotY = useBathroom3DStore((s) => s.setToiletRotY);
 
 
   // ── Original (raw) uploads ───────────────────────────────────────────────
@@ -366,6 +392,19 @@ export default function Bathroom3DPage() {
   const setSlotRows = useBathroom3DStore((s) => s.setSlotRows);
   const [draggedSlotId,  setDraggedSlotId]  = useState<string | null>(null);
   const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [showInterior, setShowInterior] = useState(true);
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const hotspots: HotspotDef[] = useMemo(() => [
+    { id: 'floor', position: [roomLength / 2, 0.02, roomWidth / 2], label: 'Floor' },
+    { id: 'dark', position: [roomLength * 0.35, wallHeight * 0.5, 0.08], label: 'Main Wall' },
+    { id: 'light', position: [roomLength * 0.65, wallHeight * 0.5, 0.08], label: 'Accent Wall' },
+    { id: 'highlighter', position: [roomLength * 0.5, wallHeight * 0.8, 0.08], label: 'Highlighter' },
+    { id: 'shower1', position: [roomLength * 0.75, wallHeight * 0.5, roomWidth * 0.75], label: 'Shower 1' },
+    { id: 'shower2', position: [roomLength * 0.75, wallHeight * 0.3, roomWidth * 0.75], label: 'Shower 2' },
+  ], [roomLength, roomWidth, wallHeight]);
 
   // ── Upload helpers ───────────────────────────────────────────────────────
   const handleUpload = (
@@ -743,23 +782,6 @@ export default function Bathroom3DPage() {
             {/* Shower upload removed so 2x4 uses standard bands above */}
           </div>
 
-                    {/* Bookmatch Toggle */}
-          <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Grid className="w-4 h-4 text-amber-400" />
-                <h3 className="font-bold text-white text-sm">Bookmatch (Mirror)</h3>
-              </div>
-              <button
-                onClick={() => setBookmatchEnabled(!bookmatchEnabled)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${bookmatchEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
-              >
-                <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${bookmatchEnabled ? "translate-x-5" : "translate-x-1"}`} />
-              </button>
-            </div>
-            <p className="text-xs text-neutral-400">Flips alternate tiles to create a seamless butterfly pattern.</p>
-          </div>
-
           {/* Border Strip */}
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
@@ -779,7 +801,7 @@ export default function Bathroom3DPage() {
                 <div>
                   <label className="text-xs text-neutral-400 block mb-1.5">Color</label>
                   <div className="flex gap-2">
-                    {["golden", "silver", "black"].map((c) => (
+                    {["black", "white"].map((c) => (
                       <button
                         key={c}
                         onClick={() => setStripColor(c)}
@@ -789,9 +811,8 @@ export default function Bathroom3DPage() {
                             : "border-neutral-700 text-neutral-400 hover:border-neutral-500"
                         }`}
                       >
-                        {c === "golden" && <span className="inline-block w-3 h-3 rounded-full bg-[#D4AF37] mr-1 align-middle" />}
-                        {c === "silver" && <span className="inline-block w-3 h-3 rounded-full bg-[#C0C0C0] mr-1 align-middle" />}
-                        {c === "black" && <span className="inline-block w-3 h-3 rounded-full bg-[#111] mr-1 align-middle" />}
+                        {c === "black" && <span className="inline-block w-3 h-3 rounded-full border border-white/20 bg-[#111] mr-1 align-middle" />}
+                        {c === "white" && <span className="inline-block w-3 h-3 rounded-full border border-neutral-500 bg-[#fff] mr-1 align-middle" />}
                         {c.charAt(0).toUpperCase() + c.slice(1)}
                       </button>
                     ))}
@@ -818,24 +839,12 @@ export default function Bathroom3DPage() {
             )}
           </div>
 
-          {/* Grout & Wastage */}
+          {/* Price Details */}
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
-            <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-3">
-              <Grid className="w-4 h-4 text-purple-400" />
-              <h3 className="font-bold text-white text-sm">Grout & Wastage</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Spacer (mm)</span><span className="text-amber-400">{groutWidth}</span></div>
-                <input type="range" min="0" max="10" value={groutWidth} onChange={e => setGroutWidth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
-              </div>
-              <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Wastage %</span><span className="text-amber-400">{wastagePercent}%</span></div>
-                <input type="range" min="3" max="20" value={wastagePercent} onChange={e => setWastagePercent(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
-              </div>
-            </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-neutral-500">Price/Box (₹)</span>
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                Price/Box (₹)
+              </span>
               <input type="number" value={pricePerBox} onChange={e => setPricePerBox(Math.max(0, +e.target.value))} className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-white font-mono text-xs w-24 text-right focus:outline-none focus:border-amber-500/50" />
             </div>
           </div>
@@ -853,32 +862,58 @@ export default function Bathroom3DPage() {
                   3D Viewport {isTheaterMode && <span className="text-amber-400 font-bold ml-1.5">(Showroom Mode)</span>}
                 </span>
               </div>
-              <button
-                onClick={() => setIsTheaterMode(!isTheaterMode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
-                  isTheaterMode
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
-                    : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
-                }`}
-                title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
-              >
-                {isTheaterMode ? (
-                  <><Minimize2 className="w-3.5 h-3.5" /><span>Standard View</span></>
-                ) : (
-                  <><Maximize2 className="w-3.5 h-3.5" /><span>Showroom View</span></>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowInterior(!showInterior)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                    showInterior
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                  }`}
+                  title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
+                >
+                  {showInterior ? (
+                    <><EyeOff className="w-3.5 h-3.5" /><span>Interior: On</span></>
+                  ) : (
+                    <><Eye className="w-3.5 h-3.5" /><span>Interior: Off</span></>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsTheaterMode(!isTheaterMode)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                    isTheaterMode
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                  }`}
+                  title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
+                >
+                  {isTheaterMode ? (
+                    <><Minimize2 className="w-3.5 h-3.5" /><span>Standard View</span></>
+                  ) : (
+                    <><Maximize2 className="w-3.5 h-3.5" /><span>Showroom View</span></>
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
+            {isLoading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
+                <div className="text-center">
+                  <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                  <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
+                </div>
+              </div>
+            )}
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-amber-400 text-sm font-bold">Loading 3D Scene…</div>
               </div>
             }>
-              <Canvas camera={{ position: [3, 6.4, 16], fov: 40 }} gl={{ antialias: true }}>
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[5, 10, 5]}  intensity={0.8} />
-                <directionalLight position={[-3, 5, -3]} intensity={0.3} />
+              <div ref={canvasRef} className="w-full h-full">
+              <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [3, 6.4, 16], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
+                <Suspense fallback={null}>
+                <SceneLighting sceneKind="bathroom" roomW={roomLength} roomL={roomWidth} sunPosition={[roomLength + 4, 10, roomWidth + 2]} />
                 <Room
                   roomW={roomLength} roomL={roomWidth} roomH={wallHeight}
                   tileSize={tileSize}
@@ -893,13 +928,35 @@ export default function Bathroom3DPage() {
                   stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval}
                   groutWidthMm={groutWidth} groutColor={groutColor}
                 />
+                {showInterior && (
+                  <BathroomFurnishings 
+                    roomW={roomLength} 
+                    roomL={roomWidth} 
+                    roomH={wallHeight} 
+                    showerWidth={showerWidth} 
+                    showerDepth={showerDepth} 
+                    showerHeight={showerHeight} 
+                    toiletScale={toiletScale}
+                    toiletXOffset={toiletXOffset}
+                    toiletZOffset={toiletZOffset}
+                    toiletRotY={toiletRotY}
+                  />
+                )}
                 <OrbitControls
+                  makeDefault
                   enableDamping dampingFactor={0.1}
                   minDistance={3} maxDistance={30}
                   maxPolarAngle={Math.PI / 2.1}
+                  autoRotate={autoRotate} autoRotateSpeed={0.8}
                   target={[roomLength / 2, wallHeight / 3, roomWidth / 2]}
                 />
+                <BakeShadows />
+                <AdaptiveDpr pixelated />
+                <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomLength} roomLength={roomWidth} roomHeight={wallHeight} />
+                <HotspotSystem hotspots={hotspots} />
+                </Suspense>
               </Canvas>
+              </div>
             </Suspense>
             </div>
           </div>

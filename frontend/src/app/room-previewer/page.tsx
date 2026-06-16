@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, AdaptiveDpr, AdaptiveEvents, BakeShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { useRoomPreviewerStore } from "@/store3d";
 import { 
@@ -25,8 +25,17 @@ import {
   Maximize2,
   Minimize2,
   Search,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import ImageCropperModal from '@/components/ImageCropperModal';
+
+import SceneLighting from '@/components/scene3d/SceneLighting';
+import LivingRoomFurnishings from '@/components/scene3d/LivingRoomFurnishings';
+import BathroomFurnishings from '@/components/scene3d/BathroomFurnishings';
+import GlassWall from '@/components/scene3d/GlassWall';
+import { TILE_FLOOR_PBR, INTERIOR_PAINT_PBR } from '@/components/scene3d/tilePbr';
+import CameraController, { CameraPreset } from '@/components/scene3d/CameraController';
+import HotspotSystem, { HotspotDef } from '@/components/scene3d/HotspotSystem';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -67,7 +76,9 @@ const TILE_STYLES = [
   }
 ];
 
-const ROOM_HEIGHT_3D = 10;
+const ROOM_HEIGHT_3D = 10.5;
+
+
 
 function createStyleTexture(styleId: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
@@ -141,9 +152,9 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
   return (
     <group>
       {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[roomWidth / 2, 0.005, roomLength / 2]} receiveShadow>
         <planeGeometry args={[roomWidth, roomLength]} />
-        <meshStandardMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : "#c8b8a8"} roughness={0.7} />
+        <meshPhysicalMaterial key={floorTex ? `floor-${floorTex.uuid}` : `style-${selectedStyleId ?? 'default'}`} map={floorTex || styleTex} color={(floorTex || styleTex) ? undefined : "#c8b8a8"} {...TILE_FLOOR_PBR} />
       </mesh>
       {wFeet > 0 && lFeet > 0 && groutWidth > 0 && (() => {
         const base = 2500;
@@ -176,43 +187,45 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
       })()}
 
       {/* Back wall */}
-      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]}>
+      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow>
         <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color={wallColor} roughness={0.6} />
+        <meshPhysicalMaterial color="#2c2d30" {...INTERIOR_PAINT_PBR} />
+      </mesh>
+      {/* Decorative wall panel */}
+      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D * 0.72, 0.03]}>
+        <planeGeometry args={[roomWidth * 0.7, ROOM_HEIGHT_3D * 0.35]} />
+        <meshPhysicalMaterial color="#2a2622" roughness={0.55} metalness={0.05} envMapIntensity={0.5} />
       </mesh>
       <mesh position={[roomWidth / 2, Math.max(0.05, skirtingHeight) / 2, 0.02]}>
         <planeGeometry args={[roomWidth, Math.max(0.05, skirtingHeight)]} />
-        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d ?? undefined} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} transparent alphaTest={0.05} />
       </mesh>
       {/* Left wall */}
-      <mesh position={[0, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh position={[0, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color={wallColor} roughness={0.6} />
+        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
       </mesh>
       <mesh position={[0.02, Math.max(0.05, skirtingHeight) / 2, roomLength / 2]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
-        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d ?? undefined} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} transparent alphaTest={0.05} />
       </mesh>
       {/* Right wall */}
-      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
         <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color={wallColor} roughness={0.6} />
+        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
       </mesh>
       <mesh position={[roomWidth - 0.02, Math.max(0.05, skirtingHeight) / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
-        <meshStandardMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d ?? undefined} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} transparent alphaTest={0.05} />
       </mesh>
       {/* Ceiling */}
       <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D, roomLength / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[roomWidth, roomLength]} />
-        <meshStandardMaterial color="#f0ece4" roughness={0.5} />
+        <meshPhysicalMaterial color="#dcd8d0" roughness={0.75} />
       </mesh>
 
-      {/* Glass front wall */}
-      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />
-        <meshStandardMaterial color="#88ccff" transparent opacity={0.12} side={THREE.DoubleSide} />
-      </mesh>
+      {/* Glass front wall removed to prevent foggy camera reflections and allow clear zoom-in view */}
+      {/* <GlassWall width={roomWidth} height={ROOM_HEIGHT_3D} position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength]} rotation={[0, Math.PI, 0]} /> */}
     </group>
   );
 }
@@ -271,14 +284,40 @@ export default function RoomPreviewer() {
   const setUploadedFileName = useRoomPreviewerStore((s) => s.setUploadedFileName);
   const selectedStyleId = useRoomPreviewerStore((s) => s.selectedStyleId);
   const setSelectedStyleId = useRoomPreviewerStore((s) => s.setSelectedStyleId);
-
-  // Crop & Process States
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  const [processingImage, setProcessingImage] = useState(false);
+  const wallColor = useRoomPreviewerStore((s) => s.wallColor);
+  const setWallColor = useRoomPreviewerStore((s) => s.setWallColor);
 
 
 
-  // Cleanup object URLs
+  const [cameraPreset, setCameraPreset] = useState<CameraPreset | null>(null);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showInterior, setShowInterior] = useState(true);
+  const [roomType, setRoomType] = useState<'living' | 'bathroom' | 'kitchen' | 'bedroom' | 'hall' | 'pooja'>('living');
+  const interactionTimer = useRef<any>(undefined);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+
+  const hotspots: HotspotDef[] = useMemo(() => [
+    { id: 'floor', position: [roomWidth / 2, 0.02, roomLength / 2], label: 'Floor' },
+    { id: 'back-wall', position: [roomWidth / 2, ROOM_HEIGHT_3D / 2, 0.05], label: 'Back Wall' },
+    { id: 'feature-wall', position: [roomWidth / 2, ROOM_HEIGHT_3D * 0.72, 0.08], label: 'Feature Panel' },
+  ], [roomWidth, roomLength]);
+
+  useEffect(() => {
+    if (!autoRotate) return;
+    const handleInteraction = () => {
+      setAutoRotate(false);
+      clearTimeout(interactionTimer.current);
+      interactionTimer.current = setTimeout(() => setAutoRotate(true), 4000);
+    };
+    const el = canvasRef.current;
+    el?.addEventListener('pointerdown', handleInteraction);
+    return () => {
+      el?.removeEventListener('pointerdown', handleInteraction);
+      clearTimeout(interactionTimer.current);
+    };
+  }, [autoRotate]);
   useEffect(() => {
     return () => {
       if (originalCustomImage) {
@@ -323,8 +362,8 @@ export default function RoomPreviewer() {
       for (const slot of ['room_floor', 'room_wall']) {
         const pending = getPendingTexture(slot);
         if (pending) {
-          // Send to cropper instead of directly setting
-          setImageToCrop(buildTileUrl(pending.url));
+          // Directly apply the tile image without cropping
+          setCustomTileImage(buildTileUrl(pending.url));
           setUploadedFileName(pending.name);
           clearPendingTexture(slot);
         }
@@ -428,12 +467,13 @@ export default function RoomPreviewer() {
     new THREE.TextureLoader().load(
       customTileImage,
       (t) => {
-        t.wrapS = t.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
+        t.wrapS = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
+        t.wrapT = THREE.ClampToEdgeWrapping; // prevent vertical tiling bleeding into black
         t.minFilter = THREE.LinearFilter;
         t.magFilter = THREE.LinearFilter;
         t.anisotropy = 16;
-        // tile width repeats along wall; show full tile vertically so texture is clearly visible
-        t.repeat.set(roomWidth / wFeet / patternSpan, Math.max(1, skirtingHeight / lFeet / patternSpan));
+        // repeat horizontally by number of tiles; vertically show full image once (1.0)
+        t.repeat.set(roomWidth / wFeet / patternSpan, 1.0);
         t.colorSpace = THREE.SRGBColorSpace;
         t.needsUpdate = true;
         setSkirtTex3d(t);
@@ -457,38 +497,15 @@ export default function RoomPreviewer() {
   }, [selectedStyleId, roomWidth, roomLength, wFeet, lFeet, bookmatchEnabled]);
 
   // Handle local image file uploads
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadedFileName(file.name);
-    setProcessingImage(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('seamless', 'true');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001'}/tile-processor/process`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error('Processing failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setImageToCrop(url);
-    } catch {
-      const url = URL.createObjectURL(file);
-      setImageToCrop(url);
-    } finally {
-      setProcessingImage(false);
-    }
-  };
-
-  const handleCropComplete = (croppedUrl: string) => {
+    const url = URL.createObjectURL(file);
     if (originalCustomImage) URL.revokeObjectURL(originalCustomImage);
     if (customTileImage) URL.revokeObjectURL(customTileImage);
-    
-    setOriginalCustomImage(imageToCrop);
-    setCustomTileImage(croppedUrl);
-    setImageToCrop(null);
+    setOriginalCustomImage(url);
+    setCustomTileImage(url);
   };
 
   const triggerUpload = () => {
@@ -518,9 +535,10 @@ export default function RoomPreviewer() {
   };
 
   // Preset room sizes handler
-  const applyRoomPreset = (len: number, wid: number) => {
+  const applyRoomPreset = (len: number, wid: number, type: typeof roomType = 'living') => {
     setRoomLength(len);
     setRoomWidth(wid);
+    setRoomType(type);
   };
 
   // Math calculations
@@ -584,7 +602,7 @@ export default function RoomPreviewer() {
 
         if (customTileImage) {
           tileStyle.backgroundImage = `url(${customTileImage})`;
-          tileStyle.backgroundSize = 'cover';
+          tileStyle.backgroundSize = '100% 100%';
           tileStyle.backgroundPosition = 'center';
           tileStyle.backgroundRepeat = 'no-repeat';
           tileStyle.backgroundColor = 'transparent';
@@ -748,32 +766,32 @@ export default function RoomPreviewer() {
               <span className="text-xs font-bold text-neutral-400 block mb-2">Indian Room Presets:</span>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => applyRoomPreset(6, 6)}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-neutral-900 border border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300 transition"
+                  onClick={() => applyRoomPreset(6, 6, 'pooja')}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'pooja' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Pooja Room (6x6)
                 </button>
                 <button
-                  onClick={() => applyRoomPreset(8, 6)}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-neutral-900 border border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300 transition"
+                  onClick={() => applyRoomPreset(10, 8, 'bathroom')}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bathroom' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
-                  Bath (8x6)
+                  Bath (10x8)
                 </button>
                 <button
-                  onClick={() => applyRoomPreset(10, 8)}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-neutral-900 border border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300 transition"
+                  onClick={() => applyRoomPreset(10, 8, 'kitchen')}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'kitchen' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Kitchen (10x8)
                 </button>
                 <button
-                  onClick={() => applyRoomPreset(14, 12)}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-neutral-900 border border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300 transition"
+                  onClick={() => applyRoomPreset(14, 12, 'bedroom')}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bedroom' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Bedroom (14x12)
                 </button>
                 <button
-                  onClick={() => applyRoomPreset(18, 16)}
-                  className="px-2.5 py-1 text-xs rounded-lg bg-neutral-900 border border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300 transition"
+                  onClick={() => applyRoomPreset(18, 16, 'hall')}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'hall' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Hall (18x16)
                 </button>
@@ -898,22 +916,14 @@ export default function RoomPreviewer() {
 
               {!customTileImage ? (
                 <div className="flex flex-col gap-1 w-full">
-                  {processingImage ? (
-                    <div className="w-full border-2 border-dashed border-amber-500/30 bg-amber-500/5 rounded-2xl p-6 text-center">
-                      <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2.5" />
-                      <span className="block text-sm font-bold text-amber-400 mb-0.5">Processing image...</span>
-                      <span className="text-xs text-neutral-500">Removing background & detecting tile</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={triggerUpload}
-                      className="w-full border-2 border-dashed border-neutral-800 hover:border-neutral-700 bg-neutral-600/40 rounded-2xl p-6 text-center group cursor-pointer transition"
-                    >
-                      <Upload className="w-8 h-8 text-neutral-500 group-hover:text-amber-400 mx-auto mb-2.5 transition" />
-                      <span className="block text-sm font-bold text-neutral-300 mb-0.5">Select image file</span>
-                      <span className="text-xs text-neutral-500">Supports PNG, JPG, JPEG, WEBP from your local disk</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={triggerUpload}
+                    className="w-full border-2 border-dashed border-neutral-800 hover:border-neutral-700 bg-neutral-600/40 rounded-2xl p-6 text-center group cursor-pointer transition"
+                  >
+                    <Upload className="w-8 h-8 text-neutral-500 group-hover:text-amber-400 mx-auto mb-2.5 transition" />
+                    <span className="block text-sm font-bold text-neutral-300 mb-0.5">Select image file</span>
+                    <span className="text-xs text-neutral-500">Supports PNG, JPG, JPEG, WEBP from your local disk</span>
+                  </button>
 
                 </div>
               ) : (
@@ -921,10 +931,11 @@ export default function RoomPreviewer() {
                 <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div 
-                      className="w-12 h-12 rounded-lg border border-neutral-700 bg-neutral-600 flex-shrink-0"
+                      className="w-12 h-12 rounded-lg border border-neutral-700 bg-neutral-800 flex-shrink-0"
                       style={{
                         backgroundImage: `url(${customTileImage})`,
-                        backgroundSize: 'cover',
+                        backgroundSize: 'contain',
+                        backgroundRepeat: 'no-repeat',
                         backgroundPosition: 'center'
                       }}
                     />
@@ -1105,14 +1116,14 @@ export default function RoomPreviewer() {
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {[
-                  { color: "#111111", label: "Charcoal", bg: "bg-[#111111]" },
                   { color: "#f5f5f0", label: "Ivory", bg: "bg-[#f5f5f0]" },
-                  { color: "#5c3d2e", label: "Walnut", bg: "bg-[#5c3d2e]" },
                   { color: "#c8a96e", label: "Champagne", bg: "bg-[#c8a96e]" },
-                  { color: "#4a5568", label: "Slate", bg: "bg-[#4a5568]" },
                   { color: "#8b7355", label: "Sandstone", bg: "bg-[#8b7355]" },
                   { color: "#c9a96e", label: "Gold", bg: "bg-[#c9a96e]" },
+                  { color: "#5c3d2e", label: "Walnut", bg: "bg-[#5c3d2e]" },
+                  { color: "#4a5568", label: "Slate", bg: "bg-[#4a5568]" },
                   { color: "#2d3748", label: "Graphite", bg: "bg-[#2d3748]" },
+                  { color: "#111111", label: "Charcoal", bg: "bg-[#111111]" },
                 ].map(({ color, label, bg }) => (
                   <button
                     key={color}
@@ -1178,6 +1189,87 @@ export default function RoomPreviewer() {
             </div>
           </div>
 
+          {/* 6. Wall Paint Controls */}
+          <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative">
+            <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white">Wall Paint Color</h3>
+                <p className="text-neutral-400 text-xs">Choose a warm, cozy color for the walls</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-neutral-400 mb-2.5 uppercase tracking-wider">
+                Select Wall Shade
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { color: "#e5e7eb", label: "Basic Grey", bg: "bg-[#e5e7eb]" },
+                  { color: "#d2c6b6", label: "Warm Sand", bg: "bg-[#d2c6b6]" },
+                  { color: "#c5b39c", label: "Soft Clay", bg: "bg-[#c5b39c]" },
+                  { color: "#9fa896", label: "Sage Green", bg: "bg-[#9fa896]" },
+                  { color: "#9a8b7c", label: "Cozy Taupe", bg: "bg-[#9a8b7c]" },
+                  { color: "#efeae1", label: "Cream", bg: "bg-[#efeae1]" },
+                  { color: "#dfdcd6", label: "Warm Grey", bg: "bg-[#dfdcd6]" },
+                  { color: "#2c2d30", label: "Charcoal", bg: "bg-[#2c2d30]" },
+                ].map(({ color, label, bg }) => (
+                  <button
+                    key={color}
+                    onClick={() => setWallColor(color)}
+                    title={label}
+                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition ${
+                      wallColor.toLowerCase() === color.toLowerCase()
+                        ? 'border-amber-500 bg-neutral-800 shadow-md scale-105'
+                        : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'
+                    }`}
+                  >
+                    <span className={`w-6 h-6 rounded-full ${bg} border border-white/10 shadow`} />
+                    <span className="text-[9px] font-bold text-neutral-400 truncate w-full text-center">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Wall Color Picker */}
+            <div className="space-y-2 border-t border-neutral-850 pt-4">
+              <span className="block text-[10px] text-neutral-500 uppercase tracking-widest font-black">
+                Custom Wall Paint Color
+              </span>
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-amber-500/50 transition">
+                  <input
+                    type="color"
+                    value={wallColor}
+                    onChange={(e) => setWallColor(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer scale-150"
+                  />
+                  <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: wallColor }} />
+                </div>
+                <div className="relative flex-1 max-w-[120px]">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 text-xs font-mono font-bold">#</span>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={wallColor.replace('#', '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[0-9A-Fa-f]{0,6}$/.test(val)) {
+                        if (val.length === 3 || val.length === 6) {
+                          setWallColor(`#${val}`);
+                        }
+                      }
+                    }}
+                    className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-amber-500/50 transition-all font-semibold"
+                    placeholder="HEX"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* RIGHT PANEL: Dynamic Viewport & 3D Isometric Previewer */}
@@ -1196,6 +1288,24 @@ export default function RoomPreviewer() {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Interior Toggle Button */}
+                {is3DMode && (
+                  <button
+                    onClick={() => setShowInterior(!showInterior)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                      showInterior
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                        : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                    }`}
+                    title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
+                  >
+                    {showInterior ? (
+                      <><EyeOff className="w-3.5 h-3.5" /><span>Interior: On</span></>
+                    ) : (
+                      <><Eye className="w-3.5 h-3.5" /><span>Interior: Off</span></>
+                    )}
+                  </button>
+                )}
                 {/* Showroom / Theater Mode Button */}
                 <button
                   onClick={() => setIsTheaterMode(!isTheaterMode)}
@@ -1264,14 +1374,33 @@ export default function RoomPreviewer() {
                 </>
               )}
 
+              {isLoading && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                    <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
+                  </div>
+                </div>
+              )}
               {is3DMode ? (
-                <div className="w-full h-full">
-                  <Canvas camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true }} style={{ width: "100%", height: "100%" }}>
-                    <ambientLight intensity={0.6} />
-                    <directionalLight position={[5, 10, 5]} intensity={0.8} />
-                    <directionalLight position={[-3, 5, -3]} intensity={0.3} />
-                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor="#e5e7eb" styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />
-                    <OrbitControls enableDamping dampingFactor={0.1} enableRotate enableZoom target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
+                <div ref={canvasRef} className="w-full h-full">
+                  <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
+                    <AdaptiveDpr pixelated />
+                    <AdaptiveEvents />
+                    <BakeShadows />
+                    <SceneLighting sceneKind={roomType === 'bathroom' ? 'bathroom' : roomType === 'kitchen' ? 'kitchen' : 'living'} roomW={roomWidth} roomL={roomLength} sunPosition={[roomWidth + 5, 11, roomLength + 3]} />
+                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />
+                    {showInterior && (
+                      roomType === 'bathroom' ? (
+                        <BathroomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
+                      ) : (
+                        <LivingRoomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
+                      )
+                    )}
+                    <OrbitControls makeDefault enableDamping dampingFactor={0.1} enableRotate enableZoom autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
+                    <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomWidth} roomLength={roomLength} roomHeight={ROOM_HEIGHT_3D} />
+                    <HotspotSystem hotspots={hotspots} />
                   </Canvas>
                 </div>
               ) : (
@@ -1560,14 +1689,7 @@ export default function RoomPreviewer() {
         )}
       </AnimatePresence>
 
-      {/* Image Cropper Modal */}
-      {imageToCrop && (
-        <ImageCropperModal
-          imageUrl={imageToCrop}
-          onClose={() => setImageToCrop(null)}
-          onCropComplete={handleCropComplete}
-        />
-      )}
+
 
     </div>
   );

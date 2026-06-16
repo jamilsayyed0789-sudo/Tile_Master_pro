@@ -14,4 +14,5 @@ class TileCatalog(Base):
     image_url = Column(Text, nullable=True)
     catalog_name = Column(String(255), nullable=True)
     page_number = Column(Integer, nullable=True)
+    relative_image_path = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

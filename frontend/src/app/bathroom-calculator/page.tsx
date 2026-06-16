@@ -19,6 +19,9 @@ const bathroomSchema = z.object({
   wall_tile_width: z.number().min(0.1),
   wall_tile_unit: z.enum(["feet", "inches", "mm", "cm"]),
   wall_tiles_per_box: z.number().min(1),
+  floor_tile_length: z.number().min(0.1).optional(),
+  floor_tile_width: z.number().min(0.1).optional(),
+  floor_tile_unit: z.enum(["feet", "inches", "mm", "cm"]).optional(),
   floor_tiles_per_box: z.number().min(1).optional(),
   wastage_percent: z.number().min(0).max(100),
 });
@@ -43,6 +46,9 @@ export default function BathroomCalculator() {
     resolver: zodResolver(bathroomSchema),
     defaultValues: bathroomData || {
       wall_tile_unit: "feet",
+      floor_tile_unit: "feet",
+      floor_tile_length: 1,
+      floor_tile_width: 1,
     } as Partial<BathroomFormValues>
   });
 
@@ -90,12 +96,12 @@ export default function BathroomCalculator() {
         let floor_boxes = null;
 
         // Floor calculation (Optional if they don't enter floor dimensions)
-        if (data.floor_length && data.floor_width) {
+        if (data.floor_length && data.floor_width && data.floor_tile_length && data.floor_tile_width && data.floor_tile_unit) {
           const floor_area = data.floor_length * data.floor_width;
           floor_area_sqft = floor_area.toFixed(2);
           
-          // Floor tiles are strictly 1x1 feet, so tile area is 1 sq.ft
-          const raw_floor_tiles = floor_area / 1.0; 
+          const floor_tile_area = convertToSqFt(data.floor_tile_length, data.floor_tile_width, data.floor_tile_unit);
+          const raw_floor_tiles = floor_area / floor_tile_area; 
           floor_tiles_final = Math.ceil(raw_floor_tiles * (1 + (data.wastage_percent || 0) / 100));
           
           if (data.floor_tiles_per_box) {
@@ -213,9 +219,27 @@ export default function BathroomCalculator() {
                 <div className="space-y-4 p-4 rounded-xl border border-border bg-muted/20">
                   <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider border-b border-border/50 pb-2 flex justify-between items-center">
                     <span>Floor Tiles</span>
-                    <span className="text-xs bg-background px-2 py-1 rounded-md border border-border">Fixed Size: 1 x 1 ft</span>
                   </h4>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Length</label>
+                      <input type="number" step="0.01" {...register("floor_tile_length", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Width</label>
+                      <input type="number" step="0.01" {...register("floor_tile_width", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Unit</label>
+                      <select {...register("floor_tile_unit")} className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all">
+                        <option value="feet">Feet</option>
+                        <option value="inches">Inches</option>
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-xs font-medium mb-1">Tiles Per Box</label>
                       <input type="number" {...register("floor_tiles_per_box", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
@@ -301,13 +325,13 @@ export default function BathroomCalculator() {
                       <>
                         <p className="text-white/70 text-sm mb-1">Floor Boxes</p>
                         <p className="text-4xl font-extrabold text-[#fcd34d]">{result.floor_boxes}</p>
-                        <p className="text-sm text-white/50">{result.floor_tiles_final} tiles (1x1)</p>
+                        <p className="text-sm text-white/50">{result.floor_tiles_final} tiles</p>
                       </>
                     ) : (
                       <>
                         <p className="text-white/70 text-sm mb-1">Total Floor Tiles</p>
                         <p className="text-4xl font-extrabold text-[#fcd34d]">{result.floor_tiles_final}</p>
-                        <p className="text-sm text-white/50">tiles (1x1)</p>
+                        <p className="text-sm text-white/50">tiles</p>
                       </>
                     )}
                   </div>
