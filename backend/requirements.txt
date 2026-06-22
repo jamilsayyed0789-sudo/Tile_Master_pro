@@ -18,8 +18,8 @@ cloudinary==1.42.0
 requests==2.32.3
 qrcode[pil]==8.1
 fpdf2==2.8.3
-# razorpay==1.4.2  # Razorpay temporarily disabled
-# setuptools>=68.0.0  # Razorpay temporarily disabled
+razorpay==1.4.2
+setuptools>=68.0.0
 
 paddlepaddle
 paddleocr
