@@ -134,7 +134,7 @@ export default function PremiumHome() {
               <Link href="/room-previewer" className="group flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5">
                 Start Designing <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/catalog" className="flex items-center justify-center gap-2 px-8 py-4 bg-slate-800 border border-slate-700 text-slate-50 rounded-xl font-medium transition-all hover:bg-slate-700 shadow-sm">
+              <Link href="/catalog/tile-library" className="flex items-center justify-center gap-2 px-8 py-4 bg-slate-800 border border-slate-700 text-slate-50 rounded-xl font-medium transition-all hover:bg-slate-700 shadow-sm">
                 Explore Tile Collection
               </Link>
             </div>

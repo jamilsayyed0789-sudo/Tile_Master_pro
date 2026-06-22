@@ -10,12 +10,23 @@ export interface StorageStatus {
   writable?: boolean;
 }
 
+/** Helper to safely parse JSON or throw a descriptive error if HTML is returned */
+async function safeParseJson(res: Response): Promise<any> {
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `Backend API URL is invalid or misconfigured (Expected JSON, but received HTML). Please make sure NEXT_PUBLIC_API_URL is set correctly in Vercel to your Railway backend URL.`
+    );
+  }
+  return res.json();
+}
+
 /** Fetch current storage status from backend */
 export async function getStorageStatus(): Promise<StorageStatus> {
   try {
     const res = await fetch(`${API_BASE}/api/local/status`);
     if (!res.ok) return { configured: false, path: "" };
-    return await res.json();
+    return await safeParseJson(res);
   } catch {
     return { configured: false, path: "" };
   }
@@ -26,7 +37,7 @@ export async function getStorageSettings(): Promise<{ local_storage_path: string
   try {
     const res = await fetch(`${API_BASE}/api/settings/storage`);
     if (!res.ok) return { local_storage_path: "" };
-    return await res.json();
+    return await safeParseJson(res);
   } catch {
     return { local_storage_path: "" };
   }
@@ -40,7 +51,14 @@ export async function setStoragePath(path: string): Promise<{ ok: boolean; messa
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ local_storage_path: path }),
     });
-    const data = await res.json();
+    
+    let data;
+    try {
+      data = await safeParseJson(res);
+    } catch (err: any) {
+      return { ok: false, message: err.message };
+    }
+
     if (!res.ok) return { ok: false, message: data.detail || "Failed to update settings" };
     return { ok: true, message: "Storage folder updated successfully" };
   } catch (e: any) {
@@ -69,7 +87,14 @@ export async function saveTileToLocalStorage(payload: LocalTilePayload): Promise
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    
+    let data;
+    try {
+      data = await safeParseJson(res);
+    } catch (err: any) {
+      return { ok: false, message: err.message };
+    }
+
     if (!res.ok) return { ok: false, message: data.detail || "Failed to save tile" };
     return { ok: true, data };
   } catch (e: any) {

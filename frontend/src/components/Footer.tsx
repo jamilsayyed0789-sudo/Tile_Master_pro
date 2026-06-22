@@ -31,7 +31,7 @@ export default function Footer() {
         <div className="space-y-4">
           <h4 className="font-medium text-slate-50 font-space-grotesk">Product</h4>
           <ul className="space-y-2 font-light">
-            <li><Link href="/catalog" className="hover:text-blue-400 transition-colors">Tile Collection</Link></li>
+            <li><Link href="/catalog/tile-library" className="hover:text-blue-400 transition-colors">Tile Collection</Link></li>
             <li><Link href="/catalog/pdf-extract" className="hover:text-blue-400 transition-colors">Catalog Hub</Link></li>
             <li><Link href="/room-previewer" className="hover:text-blue-400 transition-colors">3D Room Viewer</Link></li>
             <li><Link href="/designer" className="hover:text-blue-400 transition-colors">Designer Mode</Link></li>
