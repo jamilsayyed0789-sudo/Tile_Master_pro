@@ -1,3 +1,4 @@
 [phases.setup]
-nixPkgs = ["mesa", "glib", "gcc"]
-aptPkgs = ["libgl1-mesa-glx", "libglib2.0-0", "libgomp1"]
+nixPkgs = ["...", "mesa", "glib", "gcc-unwrapped", "libGL"]
+nixLibs = ["...", "mesa", "glib", "gcc-unwrapped", "libGL"]
+aptPkgs = ["...", "libgl1-mesa-glx", "libglib2.0-0", "libgomp1"]
