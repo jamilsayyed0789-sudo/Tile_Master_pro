@@ -62,7 +62,7 @@ export default function AIExtract({ ocrText, onApply, onClose }: Props) {
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <Sparkles className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-bold text-white">AI Auto-Detection</span>
             </div>
             <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition">
@@ -80,7 +80,7 @@ export default function AIExtract({ ocrText, onApply, onClose }: Props) {
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
                 rows={3}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono resize-none focus:outline-none focus:border-amber-500/50 transition placeholder:text-neutral-600"
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-mono resize-none focus:outline-none focus:border-blue-500/50 transition placeholder:text-neutral-600"
                 placeholder="Paste tile text here or type manually..."
               />
             </div>
@@ -92,7 +92,7 @@ export default function AIExtract({ ocrText, onApply, onClose }: Props) {
                   initial={{ width: 0 }}
                   animate={{ width: `${result.confidence}%` }}
                   className={`h-full rounded-full ${
-                    result.confidence >= 70 ? "bg-green-500" : result.confidence >= 40 ? "bg-amber-500" : "bg-red-500"
+                    result.confidence >= 70 ? "bg-green-500" : result.confidence >= 40 ? "bg-blue-500" : "bg-red-500"
                   }`}
                 />
               </div>
@@ -115,16 +115,16 @@ export default function AIExtract({ ocrText, onApply, onClose }: Props) {
 
             {/* Suggestions */}
             {suggestions.length > 0 && (
-              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                <Lightbulb className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">Name Suggestions</p>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1">Name Suggestions</p>
                   <div className="flex flex-wrap gap-1.5">
                     {suggestions.map((s, i) => (
                       <button
                         key={i}
                         onClick={() => setCustomText((prev) => `${prev}\n${s}`)}
-                        className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition"
+                        className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition"
                       >
                         {s}
                       </button>
@@ -150,7 +150,7 @@ export default function AIExtract({ ocrText, onApply, onClose }: Props) {
               <button
                 onClick={handleApply}
                 disabled={applied || filledCount === 0}
-                className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-black transition shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl bg-blue-500 hover:bg-blue-400 text-black transition shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {applied ? (
                   <>

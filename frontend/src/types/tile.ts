@@ -23,6 +23,7 @@ export interface CropRegion {
   y: number;
   width: number;
   height: number;
+  type?: "image" | "name" | "number";
 }
 
 export interface AIExtractionResult {

@@ -111,6 +111,7 @@ function Surface({
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
+    t.anisotropy = 16;
     t.generateMipmaps = true;
     t.repeat.set(args[0] / tileW, args[1] / tileH);
     t.needsUpdate = true;
@@ -536,13 +537,13 @@ export default function Bathroom3DPage() {
       <div className={`mx-auto mb-6 transition-all duration-500 ${isTheaterMode ? 'max-w-[1600px]' : 'max-w-7xl'}`}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-amber-500/10 text-amber-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20 flex items-center gap-1.5">
+            <span className="bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20 flex items-center gap-1.5">
               <Rotate3d className="w-3.5 h-3.5" /> Bathroom Pattern Designer
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gradient mb-2">Bathroom Pattern Designer</h1>
           <p className="text-neutral-400 max-w-2xl text-sm md:text-base leading-relaxed">
-            Upload tile images, then <span className="text-amber-400 font-semibold">drag tile rows up or down</span> to instantly reorder the wall band layout.
+            Upload tile images, then <span className="text-blue-400 font-semibold">drag tile rows up or down</span> to instantly reorder the wall band layout.
           </p>
         </motion.div>
       </div>
@@ -555,26 +556,26 @@ export default function Bathroom3DPage() {
           {/* Bathroom Size */}
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
-              <Ruler className="w-4 h-4 text-amber-400" />
+              <Ruler className="w-4 h-4 text-blue-400" />
               <h3 className="font-bold text-white text-sm">Bathroom Size</h3>
             </div>
             <div className="space-y-3 text-sm">
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-400">Perimeter</span><span className="text-amber-400">{runningFeet} ft</span></div>
-                <input type="range" min="10" max="60" value={runningFeet} onChange={e => setRunningFeet(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-400">Perimeter</span><span className="text-blue-400">{runningFeet} ft</span></div>
+                <input type="range" min="10" max="60" value={runningFeet} onChange={e => setRunningFeet(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-400">Wall Height</span><span className="text-amber-400">{wallHeight} ft</span></div>
-                <input type="range" min="4" max="14" step="0.5" value={wallHeight} onChange={e => setWallHeight(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-400">Wall Height</span><span className="text-blue-400">{wallHeight} ft</span></div>
+                <input type="range" min="4" max="14" step="0.5" value={wallHeight} onChange={e => setWallHeight(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Length</span><span className="text-amber-400">{roomLength} ft</span></div>
-                  <input type="range" min="3" max="15" value={roomLength} onChange={e => setRoomLength(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Length</span><span className="text-blue-400">{roomLength} ft</span></div>
+                  <input type="range" min="3" max="15" value={roomLength} onChange={e => setRoomLength(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-amber-400">{roomWidth} ft</span></div>
-                  <input type="range" min="3" max="12" value={roomWidth} onChange={e => setRoomWidth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-blue-400">{roomWidth} ft</span></div>
+                  <input type="range" min="3" max="12" value={roomWidth} onChange={e => setRoomWidth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
                 </div>
               </div>
             </div>
@@ -589,7 +590,7 @@ export default function Bathroom3DPage() {
             <div className="grid grid-cols-3 gap-1.5 mb-4">
               {TILE_SIZES.map(s => (
                 <button key={s.id} onClick={() => setTileSize(s.id)}
-                  className={`p-2 rounded-lg border text-[9px] font-bold transition-all ${tileSize === s.id ? "border-amber-500 ring-1 ring-amber-500/50 bg-amber-500/10" : "border-white/5 hover:border-white/20"}`}>
+                  className={`p-2 rounded-lg border text-[9px] font-bold transition-all ${tileSize === s.id ? "border-blue-500 ring-1 ring-blue-500/50 bg-blue-500/10" : "border-white/5 hover:border-white/20"}`}>
                   {tileSize === s.id && <Check className="w-2.5 h-2.5 mx-auto mb-0.5" />}
                   {s.label}
                 </button>
@@ -605,7 +606,7 @@ export default function Bathroom3DPage() {
                   <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
                     <ImageIcon className="w-3 h-3" /> Upload Tile Images
                   </h4>
-                  <span className="flex items-center gap-1 text-[9px] text-amber-400/70 font-semibold">
+                  <span className="flex items-center gap-1 text-[9px] text-blue-400/70 font-semibold">
                     <ArrowUpDown className="w-2.5 h-2.5" /> drag to reorder
                   </span>
                 </div>
@@ -631,7 +632,7 @@ export default function Bathroom3DPage() {
                           onDragEnd={handleDragEnd}
                           className={`flex-1 rounded-lg transition-all duration-150 select-none
                             ${isDragging  ? "opacity-35 scale-[0.97]" : "opacity-100"}
-                            ${isDragOver  ? "ring-2 ring-amber-500/70 ring-offset-1 ring-offset-neutral-950" : ""}
+                            ${isDragOver  ? "ring-2 ring-blue-500/70 ring-offset-1 ring-offset-neutral-950" : ""}
                           `}
                         >
                           {/* Position badge */}
@@ -651,7 +652,7 @@ export default function Bathroom3DPage() {
                             </div>
                           ) : (
                             <div className="flex flex-col gap-1 w-full flex-1">
-                              <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-2 py-2 cursor-pointer hover:border-amber-500/50 transition-colors w-full">
+                              <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-2 py-2 cursor-pointer hover:border-blue-500/50 transition-colors w-full">
                                 <GripVertical className="w-3.5 h-3.5 text-neutral-600 flex-shrink-0" />
                                 <Upload className="w-3.5 h-3.5 text-neutral-500 flex-shrink-0" />
                                 <span className="text-[10px] text-neutral-500">Upload {slot.label}</span>
@@ -679,7 +680,7 @@ export default function Bathroom3DPage() {
                             >
                               -
                             </button>
-                            <span className="text-xs font-bold text-amber-400 w-4 text-center select-none">
+                            <span className="text-xs font-bold text-blue-400 w-4 text-center select-none">
                               {slotRows[id] ?? 2}
                             </span>
                             <button
@@ -712,7 +713,7 @@ export default function Bathroom3DPage() {
                       >Remove</button>
                     </div>
                   ) : (
-                    <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-2 cursor-pointer hover:border-amber-500/50 transition-colors mt-0.5">
+                    <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-500/50 transition-colors mt-0.5">
                       <Upload className="w-3.5 h-3.5 text-neutral-500" />
                       <span className="text-[10px] text-neutral-500">Upload Floor Tile</span>
                       <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e, setOrigFloor as any, setFloorImg as any, "floor")} />
@@ -725,14 +726,14 @@ export default function Bathroom3DPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <ImageIcon className="w-3 h-3 text-amber-400" /> Shower Wall Split
+                        <ImageIcon className="w-3 h-3 text-blue-400" /> Shower Wall Split
                       </h4>
                       <p className="text-[9px] text-neutral-500 mt-0.5">Splits the back wall into Left/Right halves.</p>
                     </div>
                     <button
                       onClick={() => setShowerSplitMode(!showerSplitMode)}
                       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        showerSplitMode ? "bg-amber-500" : "bg-neutral-700"
+                        showerSplitMode ? "bg-blue-500" : "bg-neutral-700"
                       }`}
                     >
                       <span
@@ -746,7 +747,7 @@ export default function Bathroom3DPage() {
 
                 {/* ── Shower upload (Active when Split Mode ON) ─ */}
                 {showerSplitMode && (
-                  <div className="space-y-2 mt-2 bg-neutral-900/50 p-3 rounded-xl border border-amber-500/10">
+                  <div className="space-y-2 mt-2 bg-neutral-900/50 p-3 rounded-xl border border-blue-500/10">
                     {[
                       { label: "Left Half",  img: showerImg1, origImg: origShower1, setOrig: setOrigShower1, setProc: setShowerImg1, id: "shower1", offsetY: shower1OffsetY, setOffsetY: setShower1OffsetY },
                       { label: "Right Half", img: showerImg2, origImg: origShower2, setOrig: setOrigShower2, setProc: setShowerImg2, id: "shower2", offsetY: shower2OffsetY, setOffsetY: setShower2OffsetY },
@@ -766,7 +767,7 @@ export default function Bathroom3DPage() {
                             </div>
                           </div>
                         ) : (
-                          <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-2 cursor-pointer hover:border-amber-500/50 transition-colors">
+                          <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-500/50 transition-colors">
                             <Upload className="w-3.5 h-3.5 text-neutral-500" />
                             <span className="text-[10px] text-neutral-500">Upload {label}</span>
                             <input type="file" accept="image/*" className="hidden" onChange={e => handleUpload(e, setOrig as any, setProc as any, id)} />
@@ -786,12 +787,12 @@ export default function Bathroom3DPage() {
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
               <div className="flex items-center gap-2">
-                <Grid className="w-4 h-4 text-amber-400" />
+                <Grid className="w-4 h-4 text-blue-400" />
                 <h3 className="font-bold text-white text-sm">Border Strip</h3>
               </div>
               <button
                 onClick={() => setStripEnabled(!stripEnabled)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${stripEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${stripEnabled ? "bg-blue-500" : "bg-neutral-700"}`}
               >
                 <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${stripEnabled ? "translate-x-5" : "translate-x-1"}`} />
               </button>
@@ -807,7 +808,7 @@ export default function Bathroom3DPage() {
                         onClick={() => setStripColor(c)}
                         className={`flex-1 py-2 rounded-lg text-xs font-bold border transition ${
                           stripColor === c
-                            ? "border-amber-500 bg-amber-500/10 text-amber-400"
+                            ? "border-blue-500 bg-blue-500/10 text-blue-400"
                             : "border-neutral-700 text-neutral-400 hover:border-neutral-500"
                         }`}
                       >
@@ -819,16 +820,16 @@ export default function Bathroom3DPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-amber-400">{stripWidthMm} mm</span></div>
-                  <input type="range" min="1" max="3" value={stripWidthMm} onChange={e => setStripWidthMm(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                  <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-blue-400">{stripWidthMm} mm</span></div>
+                  <input type="range" min="1" max="3" value={stripWidthMm} onChange={e => setStripWidthMm(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
                 </div>
                 {(tileSize === "12x18" || tileSize === "2x1" || tileSize === "2x4") && (
                   <div>
-                    <div className="flex justify-between text-xs mb-1"><span className="text-neutral-500">Strip after every</span><span className="text-amber-400">{stripInterval} tiles</span></div>
+                    <div className="flex justify-between text-xs mb-1"><span className="text-neutral-500">Strip after every</span><span className="text-blue-400">{stripInterval} tiles</span></div>
                     <div className="flex gap-2">
                       {[1, 2, 3].map((n) => (
                         <button key={n} onClick={() => setStripInterval(n)}
-                          className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all ${stripInterval === n ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
+                          className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all ${stripInterval === n ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
                           {n}
                         </button>
                       ))}
@@ -845,7 +846,7 @@ export default function Bathroom3DPage() {
               <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                 Price/Box (₹)
               </span>
-              <input type="number" value={pricePerBox} onChange={e => setPricePerBox(Math.max(0, +e.target.value))} className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-white font-mono text-xs w-24 text-right focus:outline-none focus:border-amber-500/50" />
+              <input type="number" value={pricePerBox} onChange={e => setPricePerBox(Math.max(0, +e.target.value))} className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-white font-mono text-xs w-24 text-right focus:outline-none focus:border-blue-500/50" />
             </div>
           </div>
 
@@ -859,7 +860,7 @@ export default function Bathroom3DPage() {
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                  3D Viewport {isTheaterMode && <span className="text-amber-400 font-bold ml-1.5">(Showroom Mode)</span>}
+                  3D Viewport {isTheaterMode && <span className="text-blue-400 font-bold ml-1.5">(Showroom Mode)</span>}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -867,7 +868,7 @@ export default function Bathroom3DPage() {
                   onClick={() => setShowInterior(!showInterior)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     showInterior
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
                       : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                   }`}
                   title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
@@ -882,7 +883,7 @@ export default function Bathroom3DPage() {
                   onClick={() => setIsTheaterMode(!isTheaterMode)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     isTheaterMode
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
                       : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                   }`}
                   title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
@@ -899,15 +900,15 @@ export default function Bathroom3DPage() {
             {isLoading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
                 <div className="text-center">
-                  <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                  <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-blue-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
                   <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
                 </div>
               </div>
             )}
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-amber-400 text-sm font-bold">Loading 3D Scene…</div>
+                <div className="text-blue-400 text-sm font-bold">Loading 3D Scene…</div>
               </div>
             }>
               <div ref={canvasRef} className="w-full h-full">

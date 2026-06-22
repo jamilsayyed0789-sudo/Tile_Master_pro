@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/AuthGuard";
 import Footer from "@/components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -28,9 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-[linear-gradient(135deg,#0F172A_0%,#111827_50%,#1E293B_100%)] text-slate-300 font-sans">
         <AuthGuard>
           <Navbar />
           <main className="flex-grow pt-14">
@@ -38,7 +38,7 @@ export default function RootLayout({
           </main>
           <Footer />
         </AuthGuard>
-        {/* <script src="https://checkout.razorpay.com/v1/checkout.js" async /> */}  {/* Razorpay temporarily disabled */}
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
       </body>
     </html>
   );

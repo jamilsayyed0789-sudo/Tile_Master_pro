@@ -39,7 +39,7 @@ export default function FirstTimeSetupModal({ onConfigured, onSkip }: Props) {
         className="relative w-full max-w-lg bg-neutral-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
       >
         {/* Accent bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500" />
 
         {/* Skip button */}
         <button
@@ -51,8 +51,8 @@ export default function FirstTimeSetupModal({ onConfigured, onSkip }: Props) {
 
         <div className="p-8">
           {/* Icon */}
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mb-5">
-            <HardDrive className="w-7 h-7 text-amber-400" />
+          <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center mb-5">
+            <HardDrive className="w-7 h-7 text-blue-400" />
           </div>
 
           <h2 className="text-2xl font-black text-white mb-2">Set Up Local Storage</h2>
@@ -71,12 +71,12 @@ export default function FirstTimeSetupModal({ onConfigured, onSkip }: Props) {
             onChange={(e) => { setPath(e.target.value); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="e.g. D:\TileMasterPro\Tiles"
-            className="w-full bg-neutral-800 border border-neutral-700 focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition mb-2"
+            className="w-full bg-neutral-800 border border-neutral-700 focus:border-blue-500/60 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition mb-2"
           />
 
           <p className="text-[10px] text-neutral-600 mb-1 leading-relaxed">
             Use an <strong className="text-neutral-400">absolute path</strong> accessible to the server.
-            Subfolders <code className="text-amber-400/80">YYYY/MM/</code> will be created automatically.
+            Subfolders <code className="text-blue-400/80">YYYY/MM/</code> will be created automatically.
           </p>
 
           {error && (
@@ -103,7 +103,7 @@ export default function FirstTimeSetupModal({ onConfigured, onSkip }: Props) {
             <button
               onClick={handleSave}
               disabled={saving || !path.trim()}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black font-bold text-sm transition shadow-lg shadow-amber-500/20"
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-black font-bold text-sm transition shadow-lg shadow-blue-500/20"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
               {saving ? "Configuring..." : "Use This Folder"}

@@ -24,29 +24,42 @@ class LocalTileSave(BaseModel):
     catalog_name: Optional[str] = None
     page_number: Optional[int] = None
     image_data_url: str  # base64 data URL like "data:image/jpeg;base64,..."
+    has_name: Optional[bool] = None
+    has_number: Optional[bool] = None
 
 
 def _get_storage_path() -> str:
     settings = get_settings()
     path = settings.get("local_storage_path", "").strip()
     if not path:
-        raise HTTPException(
-            status_code=400,
-            detail="Local storage folder not configured. Please set it in Settings first."
-        )
+        # Fallback to default uploads directory in the backend
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(base_dir, "uploads")
+        os.makedirs(path, exist_ok=True)
     return path
 
 
 def _build_relative_path(tile_number: str) -> tuple[str, str]:
-    """Returns (relative_path, absolute_path) for the tile image."""
+    """Returns (relative_path, filename) for the tile image."""
     now = datetime.utcnow()
     year = now.strftime("%Y")
     month = now.strftime("%m")
-    # Sanitize tile_number for use as filename
-    safe_number = "".join(c for c in tile_number if c.isalnum() or c in "-_").strip()
+    
+    # Check if tile_number already has an extension
+    if tile_number.lower().endswith((".png", ".jpg", ".jpeg")):
+        ext = os.path.splitext(tile_number)[1]
+        base_name = os.path.splitext(tile_number)[0]
+    else:
+        ext = ".jpg"
+        base_name = tile_number
+        
+    # Sanitize base_name for use as filename (convert spaces to underscores)
+    import re
+    safe_number = re.sub(r'\s+', '_', base_name)
+    safe_number = "".join(c for c in safe_number if c.isalnum() or c in "-_").strip()
     if not safe_number:
         safe_number = str(uuid.uuid4()).replace("-", "")
-    filename = f"{safe_number}.jpg"
+    filename = f"{safe_number}{ext}"
     relative_path = f"{year}/{month}/{filename}"
     return relative_path, filename
 
@@ -54,25 +67,20 @@ def _build_relative_path(tile_number: str) -> tuple[str, str]:
 @local_storage_router.get("/status")
 def get_storage_status():
     """Get the current local storage configuration status."""
-    settings = get_settings()
-    path = settings.get("local_storage_path", "").strip()
-    if not path:
-        return {"configured": False, "path": ""}
-    exists = os.path.isdir(path)
+    path = _get_storage_path()
     writable = False
-    if exists:
-        try:
-            test = os.path.join(path, ".test_write")
-            with open(test, "w") as f:
-                f.write("test")
-            os.remove(test)
-            writable = True
-        except Exception:
-            pass
+    try:
+        test = os.path.join(path, ".test_write")
+        with open(test, "w") as f:
+            f.write("test")
+        os.remove(test)
+        writable = True
+    except Exception:
+        pass
     return {
         "configured": True,
         "path": path,
-        "exists": exists,
+        "exists": True,
         "writable": writable,
     }
 
@@ -84,6 +92,7 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     The image must be provided as a base64 data URL (data:image/jpeg;base64,...).
     """
     storage_path = _get_storage_path()
+    print(f"[SAVE TILE] payload: name={payload.tile_name}, number={payload.tile_number}, has_name={payload.has_name}, has_number={payload.has_number}")
 
     # Decode base64 image
     data_url = payload.image_data_url
@@ -97,8 +106,49 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid base64 image data")
 
-    # Build file paths
-    relative_path, filename = _build_relative_path(payload.tile_number)
+    # Guard: reject suspiciously tiny images (< 3.5 KB decoded).
+    # Name/number OCR crop boxes produce tiny JPEG blobs (~4–8 KB) that should
+    # NEVER be saved to disk as tile images — they are only used for OCR text
+    # extraction. Real tile images are always significantly larger.
+    # 3,500 bytes keeps us safely above pure-text JPEG crops (~2–4 KB raw).
+    MIN_TILE_BYTES = 3500
+    if len(img_bytes) < MIN_TILE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Image too small to be a tile ({len(img_bytes)} bytes). Name/number crop images should not be saved directly."
+        )
+
+    # Build file paths using clean and robust extraction criteria
+    import re
+    is_name_valid = False
+    if payload.tile_name:
+        name_clean = payload.tile_name.strip()
+        name_lower = name_clean.lower()
+        if name_lower not in ("", "unknown", "untitled") and not name_lower.startswith("untitled page") and not name_lower.startswith("tile page"):
+            is_name_valid = True
+            
+    is_number_valid = False
+    if payload.tile_number:
+        num_clean = payload.tile_number.strip()
+        num_lower = num_clean.lower()
+        if num_lower not in ("", "unknown") and not re.match(r'^[ppPp]\d+(?:-\d+)?$', num_lower):
+            is_number_valid = True
+
+    # Combine or select based on validity
+    if is_name_valid and is_number_valid:
+        if payload.tile_name.strip().lower() == payload.tile_number.strip().lower():
+            filename_base = payload.tile_number.strip()
+        else:
+            filename_base = f"{payload.tile_name.strip()}_{payload.tile_number.strip()}"
+    elif is_number_valid:
+        filename_base = payload.tile_number.strip()
+    elif is_name_valid:
+        filename_base = payload.tile_name.strip()
+    else:
+        # Fallback to whatever we have
+        filename_base = payload.tile_number or payload.tile_name or "tile"
+
+    relative_path, filename = _build_relative_path(filename_base)
     now = datetime.utcnow()
     year = now.strftime("%Y")
     month = now.strftime("%m")
@@ -108,9 +158,9 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
 
     # If file already exists (duplicate number), add UUID suffix
     if os.path.exists(abs_path):
-        safe_number = "".join(c for c in payload.tile_number if c.isalnum() or c in "-_").strip()
+        base_name, ext = os.path.splitext(filename)
         uid = str(uuid.uuid4()).replace("-", "")[:6]
-        filename = f"{safe_number}_{uid}.jpg"
+        filename = f"{base_name}_{uid}{ext}"
         relative_path = f"{year}/{month}/{filename}"
         abs_path = os.path.join(folder, filename)
 
@@ -121,10 +171,22 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     # Build a local image URL that the frontend can use
     image_serve_url = f"/api/local/image?path={relative_path}"
 
+    # Determine database name and number to store
+    db_name = payload.tile_name
+    db_number = payload.tile_number
+    if payload.has_name is False:
+        db_name = None
+    if payload.has_number is False:
+        db_number = None
+
+    # Fallback if both are empty in DB
+    if not db_name and not db_number:
+        db_name = f"Tile Page {payload.page_number or 1}"
+
     # Save metadata to database
     tile = TileCatalog(
-        tile_name=payload.tile_name,
-        tile_number=payload.tile_number,
+        tile_name=db_name,
+        tile_number=db_number,
         tile_size=payload.tile_size,
         image_url=image_serve_url,
         catalog_name=payload.catalog_name,
@@ -165,4 +227,7 @@ def serve_local_image(path: str = Query(..., description="Relative image path, e
     if not os.path.isfile(abs_path):
         raise HTTPException(status_code=404, detail="Image not found in local storage")
 
-    return FileResponse(abs_path, media_type="image/jpeg")
+    # Detect media type from file extension
+    ext = os.path.splitext(abs_path)[1].lower()
+    media_type = "image/png" if ext == ".png" else "image/jpeg"
+    return FileResponse(abs_path, media_type=media_type)

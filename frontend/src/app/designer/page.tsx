@@ -85,7 +85,7 @@ export default function DesignerCalculator() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold mb-4 flex items-center justify-center gap-3">
-          <Palette className="w-10 h-10 text-[#a855f7]" />
+          <Palette className="w-10 h-10 text-[#3b82f6]" />
           Designer Mode
         </h1>
         <p className="text-muted-foreground text-lg">Calculate perfect distribution of Light, Dark, and Highlighter tiles.</p>
@@ -101,7 +101,7 @@ export default function DesignerCalculator() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Total Wall Boxes Needed</label>
-                <input type="number" {...register("total_wall_boxes", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#a855f7] outline-none transition-all text-xl font-bold" />
+                <input type="number" {...register("total_wall_boxes", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all text-xl font-bold" />
                 {errors.total_wall_boxes && <span className="text-destructive text-xs mt-1">{errors.total_wall_boxes.message}</span>}
               </div>
 
@@ -116,7 +116,7 @@ export default function DesignerCalculator() {
                   <div className="flex items-center gap-4">
                     <div className="w-1/3">
                       <label className="block text-sm font-medium mb-1 text-muted-foreground">Light</label>
-                      <input type="number" {...register("light_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#a855f7] outline-none transition-all" />
+                      <input type="number" {...register("light_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
                     </div>
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden mt-6">
                       <div className="h-full bg-[#f1f5f9]" style={{ width: `${light}%` }} />
@@ -126,7 +126,7 @@ export default function DesignerCalculator() {
                   <div className="flex items-center gap-4">
                     <div className="w-1/3">
                       <label className="block text-sm font-medium mb-1 text-muted-foreground">Dark</label>
-                      <input type="number" {...register("dark_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#a855f7] outline-none transition-all" />
+                      <input type="number" {...register("dark_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
                     </div>
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden mt-6">
                       <div className="h-full bg-[#334155]" style={{ width: `${dark}%` }} />
@@ -136,7 +136,7 @@ export default function DesignerCalculator() {
                   <div className="flex items-center gap-4">
                     <div className="w-1/3">
                       <label className="block text-sm font-medium mb-1 text-muted-foreground">Highlighter</label>
-                      <input type="number" {...register("highlighter_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#a855f7] outline-none transition-all" />
+                      <input type="number" {...register("highlighter_percent", { valueAsNumber: true })} className="w-full bg-background border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#3b82f6] outline-none transition-all" />
                     </div>
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden mt-6">
                       <div className="h-full bg-[url('/pattern.svg')] bg-[#cbd5e1]" style={{ width: `${high}%` }} />
@@ -149,7 +149,7 @@ export default function DesignerCalculator() {
             <button
               type="submit"
               disabled={loading || totalPercent !== 100}
-              className="w-full py-4 rounded-xl bg-[#a855f7] hover:bg-[#9333ea] text-white font-bold text-lg transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-xl bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold text-lg transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function DesignerCalculator() {
 
           {loading && (
             <div className="glass-card p-10 rounded-3xl text-center flex flex-col items-center justify-center min-h-[400px]">
-               <Activity className="w-16 h-16 text-[#a855f7] animate-spin mb-4" />
+               <Activity className="w-16 h-16 text-[#3b82f6] animate-spin mb-4" />
                <h3 className="text-xl font-bold animate-pulse">Calculating Splits...</h3>
             </div>
           )}
@@ -189,11 +189,11 @@ export default function DesignerCalculator() {
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="glass-card rounded-3xl overflow-hidden shadow-2xl relative bg-[#0f172a] text-white"
+              className="glass-card rounded-3xl overflow-hidden shadow-2xl relative bg-[#0f172a] text-white border border-slate-700/50"
             >
               <div className="p-8">
-                <h3 className="text-2xl font-bold mb-8 flex items-center gap-2">
-                  <Sun className="text-[#fcd34d]" /> Final Distribution
+                <h3 className="text-2xl font-bold mb-8 flex items-center gap-2 text-slate-50">
+                  <Sun className="text-blue-400" /> Final Distribution
                 </h3>
                 
                 <div className="space-y-6">
@@ -245,10 +245,9 @@ export default function DesignerCalculator() {
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-[#a855f7]/20 p-6 flex justify-between items-center text-white backdrop-blur-md relative z-10 border-t border-[#a855f7]/30">
-                <span className="font-medium text-lg text-[#e9d5ff]">Verification (Total)</span>
-                <span className="text-3xl font-black text-[#e9d5ff]">{result.total} Boxes</span>
+              <div className="bg-[#3b82f6]/20 p-6 flex justify-between items-center text-white backdrop-blur-md relative z-10 border-t border-[#3b82f6]/30">
+                <span className="font-medium text-lg text-[#bfdbfe]">Verification (Total)</span>
+                <span className="text-3xl font-black text-[#bfdbfe]">{result.total} Boxes</span>
               </div>
             </motion.div>
           )}

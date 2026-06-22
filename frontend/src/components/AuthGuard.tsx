@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-// import { authClient } from "@/lib/auth-client";
+// import { createClient } from "@/utils/supabase/client";
 
 /* === AUTH/TRIAL DISABLED FOR DEMO — re-enable later === */
 
@@ -31,7 +31,16 @@ export default function AuthGuard({
 }) {
   // const router = useRouter();
   // const pathname = usePathname();
-  // const { data: session, isPending } = authClient.useSession();
+  // const supabase = createClient();
+  // const [session, setSession] = useState<any>(null);
+  // const [isPending, setIsPending] = useState(true);
+
+  // useEffect(() => {
+  //   supabase.auth.getSession().then(({ data: { session } }) => {
+  //     setSession(session);
+  //     setIsPending(false);
+  //   });
+  // }, []);
   // const [checked, setChecked] = useState(false);
 
   // useEffect(() => {
@@ -45,12 +54,7 @@ export default function AuthGuard({
   //   }
 
   //   if (session && protectedRoutes.some((r) => pathname.startsWith(r))) {
-  //     const cookieToken = document.cookie
-  //       .split("; ")
-  //       .find((c) => c.startsWith("better-auth.session_token="))
-  //       ?.split("=")[1];
-
-  //     const token = cookieToken || null;
+  //     const token = session?.access_token || null;
 
   //     if (token) {
   //       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";

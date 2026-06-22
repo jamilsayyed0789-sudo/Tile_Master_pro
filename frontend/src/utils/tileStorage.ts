@@ -54,7 +54,10 @@ export function compressImage(
       canvas.height = h;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", quality));
+      const result = canvas.toDataURL("image/jpeg", quality);
+      canvas.width = 0;
+      canvas.height = 0;
+      resolve(result);
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;

@@ -5,7 +5,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional, Tuple
 
-from app.services.cloudinary_service import upload_image
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,285 @@ PAGE_WORKERS = 4
 # Threshold for scanned/digital detection
 TEXT_DENSITY_THRESHOLD = 50  # chars per page
 
+TILE_NUMBER_REGEXES = [
+    re.compile(r'(?<!\d)\d{3,8}(?!\d)'),                  # 3 to 8 digits
+    re.compile(r'\b[A-Za-z]{1,8}[-_./]?\d{3,8}\b'),       # Letters then digits
+    re.compile(r'\b[A-Za-z]{1,8}\s+\d{3,8}\b'),           # Letters space digits
+]
+
+def detect_nearest_tile_number(img_bbox, text_blocks):
+    if not img_bbox or not text_blocks:
+        return None
+        
+    img_cx = (img_bbox[0] + img_bbox[2]) / 2
+    img_cy = (img_bbox[1] + img_bbox[3]) / 2
+    
+    best_match = None
+    min_dist = float('inf')
+    
+    for tb in text_blocks:
+        if "bbox" not in tb or "text" not in tb:
+            continue
+        tb_bbox = tb["bbox"]
+        tb_cx = (tb_bbox[0] + tb_bbox[2]) / 2
+        tb_cy = (tb_bbox[1] + tb_bbox[3]) / 2
+        
+        dist = math.hypot(tb_cx - img_cx, tb_cy - img_cy)
+        
+        for pattern in TILE_NUMBER_REGEXES:
+            matches = pattern.findall(tb["text"])
+            for m in matches:
+                if dist < min_dist:
+                    min_dist = dist
+                    best_match = m
+                    
+    return best_match
+
+def detect_nearest_tile_name(img_bbox, text_blocks, tile_number=None):
+    if not img_bbox or not text_blocks:
+        return None
+        
+    img_cx = (img_bbox[0] + img_bbox[2]) / 2
+    img_cy = (img_bbox[1] + img_bbox[3]) / 2
+    
+    best_match = None
+    min_dist = float('inf')
+    
+    for tb in text_blocks:
+        if "bbox" not in tb or "text" not in tb:
+            continue
+        text = tb["text"].strip()
+        if len(text) < 3 or len(text) > 40:
+            continue
+        if tile_number and text.lower() == tile_number.lower():
+            continue
+            
+        tb_bbox = tb["bbox"]
+        tb_cx = (tb_bbox[0] + tb_bbox[2]) / 2
+        tb_cy = (tb_bbox[1] + tb_bbox[3]) / 2
+        
+        dist = math.hypot(tb_cx - img_cx, tb_cy - img_cy)
+        
+        has_digit = any(c.isdigit() for c in text)
+        is_upper_or_title = text.isupper() or text.istitle()
+        has_stone_keyword = any(kw in text.lower() for kw in ["stone", "marble", "granite", "wood", "slate", "cement", "concrete", "bianco", "nero", "crema", "dark", "light", "grey", "white"])
+        
+        if (not has_digit and is_upper_or_title) or has_stone_keyword:
+            if dist < min_dist:
+                min_dist = dist
+                best_match = text
+                
+    return best_match
+
+def normalize_filename(
+    tile_name: Optional[str],
+    tile_number: Optional[str],
+    has_name: Optional[bool] = None,
+    has_number: Optional[bool] = None
+) -> str:
+    # 1. Determine if name is valid/selected
+    is_name_valid = False
+    if tile_name:
+        name_lower = tile_name.lower().strip()
+        # Heuristic checks for invalid/placeholder names
+        if name_lower not in ("", "unknown", "untitled") and not name_lower.startswith("untitled page") and not name_lower.startswith("tile page"):
+            is_name_valid = True
+    
+    # If has_name is explicitly passed, let it override heuristic
+    if has_name is not None:
+        is_name_valid = has_name and bool(tile_name)
+
+    # 2. Determine if number is valid/selected
+    is_number_valid = False
+    if tile_number:
+        num_lower = tile_number.lower().strip()
+        # Heuristic check: ignore pattern of P followed by digits (e.g. p1, p2, p1-1)
+        if num_lower not in ("", "unknown") and not re.match(r'^[pp]\d+(?:-\d+)?$', num_lower):
+            is_number_valid = True
+
+    # If has_number is explicitly passed, let it override heuristic
+    if has_number is not None:
+        is_number_valid = has_number and bool(tile_number)
+
+    # Clean the name if valid
+    name_clean = ""
+    if is_name_valid and tile_name:
+        name_clean = tile_name.strip()
+        name_clean = re.sub(r'\s+', '', name_clean)
+        name_clean = "".join(c for c in name_clean if c.isalnum() or c in "_-")
+
+    # Clean the number if valid
+    number_clean = ""
+    if is_number_valid and tile_number:
+        number_clean = tile_number.strip()
+        number_clean = re.sub(r'\s+', '', number_clean)
+        number_clean = "".join(c for c in number_clean if c.isalnum() or c in "_-")
+
+    # Construct name based on user rules
+    if name_clean and number_clean:
+        if name_clean.lower() == number_clean.lower():
+            return f"{number_clean}.png"
+        return f"{name_clean}_{number_clean}.png"
+    elif name_clean:
+        return f"{name_clean}.png"
+    elif number_clean:
+        return f"{number_clean}.png"
+    else:
+        # If neither is valid, fallback: use whatever we have, or generate a uuid
+        fallback_name = "".join(c for c in (tile_name or "").strip() if c.isalnum() or c in "_-")
+        fallback_num = "".join(c for c in (tile_number or "").strip() if c.isalnum() or c in "_-")
+        if fallback_name and fallback_num:
+            if fallback_name.lower() == fallback_num.lower():
+                return f"{fallback_num}.png"
+            return f"{fallback_name}_{fallback_num}.png"
+        elif fallback_name:
+            return f"{fallback_name}.png"
+        elif fallback_num:
+            return f"{fallback_num}.png"
+        else:
+            return f"tile_{uuid.uuid4().hex[:8]}.png"
+
+
+
+def extract_metadata_from_crop(ocr_blocks) -> Tuple[Optional[str], Optional[str]]:
+    tile_name = None
+    tile_number = None
+    candidate_names = []
+    
+    for block in ocr_blocks:
+        text = block.get("text", "").strip()
+        if not text:
+            continue
+            
+        # Check for Tile Number
+        found_num = False
+        for pattern in TILE_NUMBER_REGEXES:
+            match = pattern.search(text)
+            if match:
+                tile_number = match.group(0)
+                # Remove the number from this block text to see if anything else is left
+                text = text.replace(tile_number, "").strip()
+                found_num = True
+                break
+                
+        # Skip dimensions/sizes and other common ignore words
+        if not text or len(text) < 2:
+            continue
+        if any(w in text.lower() for w in ["email", "website", "address", "www", "http", "page", "mm", "cm", "finish"]):
+            continue
+        if re.search(r'\d+\s?[xX×]\s?\d+', text):
+            continue
+            
+        candidate_names.append(text)
+        
+    if candidate_names:
+        tile_name = candidate_names[0]
+        
+    return tile_name, tile_number
+
+def extract_metadata_near_image(page, sel_bbox, page_rect) -> Tuple[Optional[str], Optional[str]]:
+    import os
+    x0, y0, x1, y1 = sel_bbox
+    
+    # Try cropping below the image first (width bounds, y1 to y1 + 120 points)
+    tx0 = max(0, x0 - 15)
+    ty0 = y1
+    tx1 = min(page_rect.width, x1 + 15)
+    ty1 = min(page_rect.height, y1 + 120)
+    
+    # 1. Try PyMuPDF native text extraction below the image (extremely fast!)
+    import fitz
+    tile_name, tile_number = None, None
+    clip_below = fitz.Rect(tx0, ty0, tx1, ty1)
+    text_below = page.get_text("text", clip=clip_below).strip()
+    if text_below:
+        blocks_below = [{"text": line.strip(), "bbox": clip_below} for line in text_below.split("\n") if line.strip()]
+        tile_name, tile_number = extract_metadata_from_crop(blocks_below)
+        
+    # 2. Try PyMuPDF native text extraction above the image (y0 - 80 to y0 points) if number is still missing
+    if not tile_number:
+        tx0_above = max(0, x0 - 15)
+        ty0_above = max(0, y0 - 80)
+        tx1_above = min(page_rect.width, x1 + 15)
+        ty1_above = y0
+        clip_above = fitz.Rect(tx0_above, ty0_above, tx1_above, ty1_above)
+        text_above = page.get_text("text", clip=clip_above).strip()
+        if text_above:
+            blocks_above = [{"text": line.strip(), "bbox": clip_above} for line in text_above.split("\n") if line.strip()]
+            tile_name_above, tile_number_above = extract_metadata_from_crop(blocks_above)
+            if tile_number_above:
+                tile_number = tile_number_above
+                tile_name = tile_name_above or tile_name
+            elif tile_name_above and not tile_name:
+                tile_name = tile_name_above
+                
+    # 3. If we successfully extracted a number from the PDF text layer, return immediately!
+    if tile_number:
+        return tile_name, tile_number
+
+    # 4. Fallback to PaddleOCR if the PDF has no text layer in the regions
+    text_blocks = []
+    if ty1 > ty0:
+        try:
+            pix = page.get_pixmap(clip=clip_below, dpi=200)
+            img_bytes = pix.tobytes("png")
+            
+            # Create a temporary text crop near the tile image.
+            temp_crop_path = f"temp_crop_{uuid.uuid4().hex[:8]}.png"
+            with open(temp_crop_path, "wb") as f:
+                f.write(img_bytes)
+                
+            text_blocks = _perform_ocr_on_page(img_bytes)
+            
+            if os.path.exists(temp_crop_path):
+                try:
+                    os.remove(temp_crop_path)
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.warning(f"Failed below text crop: {e}")
+            
+    tile_name_ocr, tile_number_ocr = extract_metadata_from_crop(text_blocks)
+    if tile_number_ocr:
+        tile_number = tile_number_ocr
+        tile_name = tile_name_ocr or tile_name
+    elif tile_name_ocr and not tile_name:
+        tile_name = tile_name_ocr
+        
+    if not tile_number:
+        tx0_above = max(0, x0 - 15)
+        ty0_above = max(0, y0 - 80)
+        tx1_above = min(page_rect.width, x1 + 15)
+        ty1_above = y0
+        
+        if ty1_above > ty0_above:
+            try:
+                clip_above = fitz.Rect(tx0_above, ty0_above, tx1_above, ty1_above)
+                pix = page.get_pixmap(clip=clip_above, dpi=200)
+                img_bytes = pix.tobytes("png")
+                
+                temp_crop_path = f"temp_crop_{uuid.uuid4().hex[:8]}.png"
+                with open(temp_crop_path, "wb") as f:
+                    f.write(img_bytes)
+                    
+                text_blocks_above = _perform_ocr_on_page(img_bytes)
+                
+                if os.path.exists(temp_crop_path):
+                    try:
+                        os.remove(temp_crop_path)
+                    except Exception:
+                        pass
+                        
+                tile_name_above, tile_number_above = extract_metadata_from_crop(text_blocks_above)
+                if tile_number_above:
+                    tile_number = tile_number_above
+                    tile_name = tile_name_above or tile_name
+                elif tile_name_above and not tile_name:
+                    tile_name = tile_name_above
+            except Exception as e:
+                logger.warning(f"Failed above text crop: {e}")
+                
+    return tile_name, tile_number
 
 def extract_text_info(text_blocks: List[dict]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     tile_number = None
@@ -73,16 +352,49 @@ def _image_hash(img_bytes: bytes) -> str:
     return hashlib.md5(img_bytes).hexdigest()
 
 
-def _upload_to_cloudinary(img_bytes: bytes, public_id: str) -> Optional[str]:
+def _save_to_local_storage(img_bytes: bytes, tile_number: str) -> Optional[tuple[str, str]]:
     try:
-        return upload_image(img_bytes, public_id)
+        from app.routers.local_storage import _get_storage_path, _build_relative_path
+        import os
+        from datetime import datetime
+        
+        # Guard: reject suspiciously tiny images (< 3.5 KB).
+        # Real tile images are always significantly larger, whereas small logo,
+        # text, or crop images are tiny.
+        MIN_TILE_BYTES = 3500
+        if len(img_bytes) < MIN_TILE_BYTES:
+            logger.info(f"Skipping local save for {tile_number} — image is too small ({len(img_bytes)} bytes)")
+            return None
+
+        storage_path = _get_storage_path()
+        relative_path, filename = _build_relative_path(tile_number)
+        
+        now = datetime.utcnow()
+        year = now.strftime("%Y")
+        month = now.strftime("%m")
+        folder = os.path.join(storage_path, year, month)
+        os.makedirs(folder, exist_ok=True)
+        abs_path = os.path.join(folder, filename)
+        
+        with open(abs_path, "wb") as f:
+            f.write(img_bytes)
+            
+        image_serve_url = f"/api/local/image?path={relative_path}"
+        return (image_serve_url, relative_path)
     except Exception as e:
-        logger.warning(f"Cloudinary upload failed for {public_id}: {e}")
+        logger.warning(f"Local storage save failed for {tile_number}: {e}")
         return None
 
 
-def _tile_score(img: dict, page_area: float) -> float:
+def _tile_score(img: dict, page_area: float, min_width: int = 100, min_height: int = 100) -> float:
+    # Reject small logo, icon, or text images
+    if img["width"] < min_width or img["height"] < min_height:
+        return 0.0
+
     aspect = img["width"] / max(img["height"], 1)
+    if aspect < 0.25 or aspect > 4.0:
+        return 0.0
+
     rel_area = img.get("bbox_area", img["width"] * img["height"]) / max(page_area, 1)
 
     score = 1.0
@@ -211,10 +523,16 @@ def extract_tiles_from_pdf(
     tiles_per_page: Optional[int] = None,
 ) -> List[dict]:
     import fitz
+    import uuid
+    import os
+    from app.database import SessionLocal
+    from app.models.catalog import TileCatalog
 
     raw_tiles = []
     seen_hashes = set()
     seen_tile_numbers = set()
+    hash_to_url = {}
+
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
     logger.info(f"Processing catalog '{catalog_name}': {total_pages} pages")
@@ -222,178 +540,192 @@ def extract_tiles_from_pdf(
     start_page = (page_start or 1) - 1
     end_page = min(page_end or total_pages, total_pages)
 
-    for page_num in range(start_page, end_page):
-        try:
-            page = doc[page_num]
-            page_text = page.get_text("blocks")
-            page_rect = page.rect
-            page_area = page_rect.width * page_rect.height
+    db = SessionLocal()
+    try:
+        for page_num in range(start_page, end_page):
+            try:
+                page = doc[page_num]
+                page_text = page.get_text("blocks")
+                page_rect = page.rect
+                page_area = page_rect.width * page_rect.height
 
-            candidates = []
-            for info in page.get_image_info(xrefs=True):
-                xref = info.get("xref")
-                if not xref:
-                    continue
-                try:
-                    base_image = doc.extract_image(xref)
-                    if not base_image or "image" not in base_image:
+                candidates = []
+                for info in page.get_image_info(xrefs=True):
+                    xref = info.get("xref")
+                    if not xref:
                         continue
-                    w = base_image["width"]
-                    h = base_image["height"]
-                    img_bbox = info.get("bbox")
-                    if img_bbox:
-                        bbox_area = (img_bbox[2] - img_bbox[0]) * (img_bbox[3] - img_bbox[1])
-                    else:
-                        bbox_area = w * h
-                    candidates.append({
-                        "xref": xref,
-                        "width": w,
-                        "height": h,
-                        "area": w * h,
-                        "bbox_area": bbox_area,
-                        "bytes": base_image["image"],
-                        "bbox": img_bbox,
-                    })
-                except Exception as e:
-                    logger.debug(f"Page {page_num+1} image {xref} extract error: {e}")
+                    try:
+                        base_image = doc.extract_image(xref)
+                        if not base_image or "image" not in base_image:
+                            continue
+                        w = base_image["width"]
+                        h = base_image["height"]
+                        img_bbox = info.get("bbox")
+                        if img_bbox:
+                            bbox_area = (img_bbox[2] - img_bbox[0]) * (img_bbox[3] - img_bbox[1])
+                        else:
+                            bbox_area = w * h
+                        candidates.append({
+                            "xref": xref,
+                            "width": w,
+                            "height": h,
+                            "area": w * h,
+                            "bbox_area": bbox_area,
+                            "bytes": base_image["image"],
+                            "bbox": img_bbox,
+                        })
+                    except Exception as e:
+                        logger.debug(f"Page {page_num+1} image {xref} extract error: {e}")
 
-            if not candidates:
-                continue
+                if not candidates:
+                    continue
 
-            for c in candidates:
-                c["score"] = _tile_score(c, page_area)
+                for c in candidates:
+                    c["score"] = _tile_score(c, page_area, min_width, min_height)
 
-            scored = sorted(candidates, key=lambda x: x["score"], reverse=True)
-            selected = [s for s in scored if s["score"] >= 0.3]
-            if not selected:
-                selected = scored[:1]
+                scored = sorted(candidates, key=lambda x: x["score"], reverse=True)
+                selected = [s for s in scored if s["score"] >= 0.3]
+                if not selected and scored and scored[0]["score"] > 0.0:
+                    selected = scored[:1]
 
-            if tiles_per_page and len(selected) > tiles_per_page:
-                selected = selected[:tiles_per_page]
+                if not selected:
+                    continue
 
-            text_blocks = []
-            for block in page_text:
-                if len(block) >= 5 and isinstance(block[4], str) and block[4].strip():
-                    text_blocks.append({"bbox": block[:4], "text": block[4].strip()})
+                if tiles_per_page and len(selected) > tiles_per_page:
+                    selected = selected[:tiles_per_page]
 
-            selection_with_bbox = [s for s in selected if s.get("bbox")]
-            if len(selection_with_bbox) >= 2:
-                rows, cols, cell_w, cell_h = _detect_grid_layout(selection_with_bbox, page_rect.width, page_rect.height)
-                cell_text_map = _assign_text_to_cells(selection_with_bbox, text_blocks, cols, rows, cell_w, cell_h)
-            else:
-                cell_text_map = None
+                text_blocks = []
+                for block in page_text:
+                    if len(block) >= 5 and isinstance(block[4], str) and block[4].strip():
+                        text_blocks.append({"bbox": block[:4], "text": block[4].strip()})
 
-            for idx, sel in enumerate(selected):
-                sel_bbox = sel.get("bbox")
-
-                if cell_text_map is not None and idx < len(selection_with_bbox):
-                    actual_idx = next(
-                        (i for i, s in enumerate(selection_with_bbox) if s["xref"] == sel["xref"]),
-                        idx
-                    )
-                    paired_text = cell_text_map.get(actual_idx, text_blocks)
+                selection_with_bbox = [s for s in selected if s.get("bbox")]
+                if len(selection_with_bbox) >= 2:
+                    rows, cols, cell_w, cell_h = _detect_grid_layout(selection_with_bbox, page_rect.width, page_rect.height)
+                    cell_text_map = _assign_text_to_cells(selection_with_bbox, text_blocks, cols, rows, cell_w, cell_h)
                 else:
-                    below_text = []
-                    overlapping_text = []
-                    other_text = []
+                    cell_text_map = None
 
-                    for tb in text_blocks:
-                        t_bbox = tb["bbox"]
-                        t_cx = (t_bbox[0] + t_bbox[2]) / 2
-                        t_cy = (t_bbox[1] + t_bbox[3]) / 2
+                for idx, sel in enumerate(selected):
+                    sel_bbox = sel.get("bbox")
 
-                        if sel_bbox:
-                            if t_cy > sel_bbox[3] and t_cx > sel_bbox[0] and t_cx < sel_bbox[2]:
-                                below_text.append(tb)
-                            elif t_cx > sel_bbox[0] and t_cx < sel_bbox[2]:
-                                overlapping_text.append(tb)
+                    if cell_text_map is not None and idx < len(selection_with_bbox):
+                        actual_idx = next(
+                            (i for i, s in enumerate(selection_with_bbox) if s["xref"] == sel["xref"]),
+                            idx
+                        )
+                        paired_text = cell_text_map.get(actual_idx, text_blocks)
+                    else:
+                        below_text = []
+                        overlapping_text = []
+                        other_text = []
+
+                        for tb in text_blocks:
+                            t_bbox = tb["bbox"]
+                            t_cx = (t_bbox[0] + t_bbox[2]) / 2
+                            t_cy = (t_bbox[1] + t_bbox[3]) / 2
+
+                            if sel_bbox:
+                                if t_cy > sel_bbox[3] and t_cx > sel_bbox[0] and t_cx < sel_bbox[2]:
+                                    below_text.append(tb)
+                                elif t_cx > sel_bbox[0] and t_cx < sel_bbox[2]:
+                                    overlapping_text.append(tb)
+                                else:
+                                    other_text.append(tb)
                             else:
                                 other_text.append(tb)
+
+                        if below_text:
+                            paired_text = below_text
+                        elif overlapping_text:
+                            paired_text = overlapping_text
                         else:
-                            other_text.append(tb)
+                            paired_text = other_text
 
-                    if below_text:
-                        paired_text = below_text
-                    elif overlapping_text:
-                        paired_text = overlapping_text
+                    tile_name, tile_number, tile_size = extract_text_info(paired_text)
+                    if tile_size_override:
+                        tile_size = tile_size_override
+
+                    # ONLY call crop OCR if we are missing either name or number
+                    extracted_name, extracted_number = None, None
+                    if sel_bbox and (not tile_name or not tile_number):
+                        extracted_name, extracted_number = extract_metadata_near_image(page, sel_bbox, page_rect)
+
+                    final_tile_number = tile_number or extracted_number
+                    final_tile_name = tile_name or extracted_name
+
+                    img_hash = _image_hash(sel["bytes"])
+                    image_url = None
+                    relative_path = None
+
+                    # Deduplicate filenames/images
+                    if img_hash in hash_to_url:
+                        image_url, relative_path = hash_to_url[img_hash]
                     else:
-                        paired_text = other_text
+                        public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
+                        if final_tile_number:
+                            filename_base = normalize_filename(final_tile_name, final_tile_number)
+                            original_number = filename_base
+                            suffix = 1
+                            while filename_base in seen_tile_numbers:
+                                filename_base = f"{os.path.splitext(original_number)[0]}_{suffix}.png"
+                                suffix += 1
+                            seen_tile_numbers.add(filename_base)
+                        else:
+                            filename_base = public_id
 
-                tile_name, tile_number, tile_size = extract_text_info(paired_text)
-                if tile_size_override:
-                    tile_size = tile_size_override
+                        # Save image to disk immediately
+                        res = _save_to_local_storage(sel["bytes"], filename_base)
+                        if res:
+                            image_url, relative_path = res
+                            hash_to_url[img_hash] = (image_url, relative_path)
 
-                final_tile_number = tile_number or f"PAGE-{page_num+1:03d}"
-                original_number = final_tile_number
-                suffix = 2
-                while final_tile_number in seen_tile_numbers:
-                    final_tile_number = f"{original_number}-{suffix}"
-                    suffix += 1
-                seen_tile_numbers.add(final_tile_number)
+                    # Save to database page-by-page immediately
+                    existing = None
+                    if final_tile_number:
+                        existing = db.query(TileCatalog).filter(
+                            TileCatalog.tile_number == final_tile_number,
+                            TileCatalog.catalog_name == catalog_name,
+                        ).first()
 
-                img_hash = _image_hash(sel["bytes"])
-                public_id = None
-                if img_hash not in seen_hashes:
-                    seen_hashes.add(img_hash)
-                    public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
+                    if not existing:
+                        db_tile = TileCatalog(
+                            tile_name=final_tile_name or f"Tile Page {page_num+1}",
+                            tile_number=final_tile_number,
+                            tile_size=tile_size,
+                            image_url=image_url,
+                            catalog_name=catalog_name,
+                            page_number=page_num + 1,
+                            relative_image_path=relative_path,
+                        )
+                        db.add(db_tile)
+                        db.commit()
 
-                raw_tiles.append({
-                    "tile_name": tile_name or f"Tile Page {page_num+1}",
-                    "tile_number": final_tile_number,
-                    "tile_size": tile_size,
-                    "img_hash": img_hash,
-                    "img_bytes": sel["bytes"] if public_id else None,
-                    "public_id": public_id,
-                    "catalog_name": catalog_name,
-                    "page_number": page_num + 1,
-                })
+                    raw_tiles.append({
+                        "tile_name": final_tile_name or f"Tile Page {page_num+1}",
+                        "tile_number": final_tile_number,
+                        "tile_size": tile_size,
+                        "image_url": image_url,
+                        "relative_image_path": relative_path,
+                        "catalog_name": catalog_name,
+                        "page_number": page_num + 1,
+                    })
 
-            if (page_num + 1) % 20 == 0:
-                logger.info(f"  ... extracted {page_num+1}/{total_pages} pages, {len(raw_tiles)} tiles queued")
+                # Explicitly free page object to avoid PyMuPDF memory build-up
+                page = None
 
-        except Exception as e:
-            logger.error(f"Page {page_num+1} failed: {e}", exc_info=True)
-            continue
+                if (page_num + 1) % 10 == 0:
+                    logger.info(f"  ... processed {page_num+1}/{total_pages} pages, {len(raw_tiles)} tiles saved")
+
+            except Exception as e:
+                logger.error(f"Page {page_num+1} failed: {e}", exc_info=True)
+                continue
+    finally:
+        db.close()
 
     doc.close()
-    logger.info(f"Extraction complete: {len(raw_tiles)} tiles from '{catalog_name}'. Uploading in parallel ({UPLOAD_WORKERS} workers)...")
-
-    unique_uploads = [
-        (t["img_bytes"], t["public_id"])
-        for t in raw_tiles
-        if t["img_bytes"] is not None
-    ]
-    hash_to_url = {}
-
-    if unique_uploads:
-        with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
-            future_to_public = {
-                executor.submit(_upload_to_cloudinary, img_bytes, public_id): public_id
-                for img_bytes, public_id in unique_uploads
-            }
-            for future in as_completed(future_to_public):
-                public_id = future_to_public[future]
-                try:
-                    url = future.result()
-                    hash_to_url[public_id] = url
-                except Exception as e:
-                    logger.warning(f"Upload failed for {public_id}: {e}")
-                    hash_to_url[public_id] = None
-
-    tiles = []
-    for t in raw_tiles:
-        tiles.append({
-            "tile_name": t["tile_name"],
-            "tile_number": t["tile_number"],
-            "tile_size": t["tile_size"],
-            "image_url": hash_to_url.get(t["public_id"]) if t["public_id"] else None,
-            "catalog_name": t["catalog_name"],
-            "page_number": t["page_number"],
-        })
-
-    success_count = sum(1 for t in tiles if t["image_url"])
-    logger.info(f"Done: {success_count}/{len(tiles)} tiles uploaded successfully for '{catalog_name}'")
-    return tiles
+    logger.info(f"Done: {len(raw_tiles)} tiles extracted and saved successfully for '{catalog_name}'")
+    return raw_tiles
 
 
 # ── Template-based extraction (fixed coordinates) ──────────────────────────
@@ -452,7 +784,11 @@ def _is_template_pdf(doc) -> bool:
     return True
 
 
-def extract_tiles_from_template(pdf_bytes: bytes, catalog_name: str) -> List[dict]:
+def extract_tiles_from_template(
+    pdf_bytes: bytes,
+    catalog_name: str,
+    tile_size_override: Optional[str] = None,
+) -> List[dict]:
     import fitz
     from collections import OrderedDict
 
@@ -500,7 +836,7 @@ def extract_tiles_from_template(pdf_bytes: bytes, catalog_name: str) -> List[dic
                     field_values[field_name] = val
 
             sku = field_values.get("sku", "")
-            size = field_values.get("size", "") or "600x1200"
+            size = tile_size_override or field_values.get("size", "") or "600x1200"
             brand = field_values.get("brand", "")
             finish = field_values.get("finish", "")
             model = field_values.get("model", "")
@@ -529,26 +865,34 @@ def extract_tiles_from_template(pdf_bytes: bytes, catalog_name: str) -> List[dic
 
     doc.close()
 
-    unique_uploads = [(t["img_bytes"], t["public_id"]) for t in raw_tiles]
+    unique_uploads = [(t["img_bytes"], t["tile_number"]) for t in raw_tiles if t["img_bytes"] is not None]
     hash_to_url = {}
     if unique_uploads:
         with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
-            future_to_public = {executor.submit(_upload_to_cloudinary, ib, pid): pid for ib, pid in unique_uploads}
-            for future in as_completed(future_to_public):
-                pid = future_to_public[future]
+            future_to_num = {
+                executor.submit(_save_to_local_storage, img_bytes, num): num
+                for img_bytes, num in unique_uploads
+            }
+            for future in as_completed(future_to_num):
+                num = future_to_num[future]
                 try:
-                    url = future.result()
-                    hash_to_url[pid] = url
-                except Exception:
-                    hash_to_url[pid] = None
+                    res = future.result()
+                    hash_to_url[num] = res
+                except Exception as e:
+                    logger.warning(f"Local save failed for {num}: {e}")
+                    hash_to_url[num] = None
 
     tiles = []
     for t in raw_tiles:
+        res = hash_to_url.get(t["tile_number"])
+        url = res[0] if res else None
+        rel = res[1] if res else None
         tiles.append({
             "tile_name": t["tile_name"],
             "tile_number": t["tile_number"],
             "tile_size": t["tile_size"],
-            "image_url": hash_to_url.get(t["public_id"]),
+            "image_url": url,
+            "relative_image_path": rel,
             "catalog_name": t["catalog_name"],
             "page_number": t["page_number"],
         })
@@ -559,37 +903,62 @@ def extract_tiles_from_template(pdf_bytes: bytes, catalog_name: str) -> List[dic
 
 # ── Scanned PDF extraction (OCR-based) ──────────────────────────────────────
 
-TESSERACT_CMD = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+_paddle_ocr_instance = None
+
+def get_paddle_ocr():
+    global _paddle_ocr_instance
+    if _paddle_ocr_instance is None:
+        import os
+        os.environ["FLAGS_use_mkldnn"] = "0"
+        os.environ["PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"] = "0"
+        from paddleocr import PaddleOCR
+        _paddle_ocr_instance = PaddleOCR(lang='en', enable_mkldnn=False)
+    return _paddle_ocr_instance
 
 
 def _perform_ocr_on_page(image_bytes: bytes) -> List[dict]:
-    import pytesseract
-    pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
-    from PIL import Image
+    from PIL import Image, ImageOps
     import io
+    import numpy as np
 
     try:
-        pil_image = Image.open(io.BytesIO(image_bytes))
-        ocd_data = pytesseract.image_to_data(pil_image, output_type=pytesseract.Output.DICT)
+        ocr = get_paddle_ocr()
+        pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        
+        # If the image is small (name/number crops), upscale it 2x to help the detector read small text
+        if pil_image.width < 300 or pil_image.height < 100:
+            try:
+                resample = Image.Resampling.LANCZOS
+            except AttributeError:
+                resample = Image.BICUBIC
+            pil_image = pil_image.resize((pil_image.width * 2, pil_image.height * 2), resample=resample)
+            
+        # Add a 40px white border padding. Tight crops (like name/number crops)
+        # often fail in the detector model because there's no white space margin.
+        pil_image = ImageOps.expand(pil_image, border=40, fill="white")
+        img_np = np.array(pil_image)
+        import cv2
+        img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+
+        result_list = list(ocr.predict(img_cv))
+        if not result_list:
+            return []
+            
+        res_dict = result_list[0]
         blocks = []
-        n = len(ocd_data["text"])
-        for i in range(n):
-            text = (ocd_data["text"][i] or "").strip()
-            if not text:
-                continue
-            conf = int(ocd_data["conf"][i]) if ocd_data["conf"][i] != "-1" else 0
-            x = ocd_data["left"][i]
-            y = ocd_data["top"][i]
-            w = ocd_data["width"][i]
-            h = ocd_data["height"][i]
-            blocks.append({
-                "bbox": (x, y, x + w, y + h),
-                "text": text,
-                "confidence": conf,
-            })
+        if "rec_texts" in res_dict:
+            for idx, text in enumerate(res_dict["rec_texts"]):
+                score = res_dict["rec_scores"][idx]
+                box = res_dict["rec_boxes"][idx]  # [xmin, ymin, xmax, ymax]
+                xmin, ymin, xmax, ymax = box
+                blocks.append({
+                    "bbox": (float(xmin), float(ymin), float(xmax), float(ymax)),
+                    "text": (text or "").strip(),
+                    "confidence": int(score * 100),
+                })
         return blocks
     except Exception as e:
-        logger.warning(f"OCR page failed: {e}")
+        logger.warning(f"PaddleOCR page failed: {e}")
         return []
 
 
@@ -616,6 +985,8 @@ def _detect_image_regions_opencv(page_image_bytes: bytes) -> List[dict]:
             area = cw * ch
             if area < 0.005 * page_area or area > 0.6 * page_area:
                 continue
+            if cw < 200 or ch < 200:
+                continue
             aspect = cw / max(ch, 1)
             if aspect < 0.1 or aspect > 10:
                 continue
@@ -633,17 +1004,24 @@ def _detect_image_regions_opencv(page_image_bytes: bytes) -> List[dict]:
         return []
 
 
-def extract_tiles_from_scanned_pdf(pdf_bytes: bytes, catalog_name: str) -> List[dict]:
+def extract_tiles_from_scanned_pdf(
+    pdf_bytes: bytes,
+    catalog_name: str,
+    tile_size_override: Optional[str] = None,
+) -> List[dict]:
     import fitz
     import cv2
     import numpy as np
+    import uuid
+    import os
+    from app.database import SessionLocal
+    from app.models.catalog import TileCatalog
 
     try:
-        import pytesseract
-        pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+        from paddleocr import PaddleOCR
     except ImportError:
-        logger.error("pytesseract not installed. Cannot process scanned PDF.")
-        raise ValueError("pytesseract is required for scanned PDF extraction. Install with: pip install pytesseract")
+        logger.error("paddleocr not installed. Cannot process scanned PDF.")
+        raise ValueError("paddleocr is required for scanned PDF extraction. Install with: pip install paddleocr paddlepaddle")
 
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
@@ -652,143 +1030,210 @@ def extract_tiles_from_scanned_pdf(pdf_bytes: bytes, catalog_name: str) -> List[
     raw_tiles = []
     seen_hashes = set()
     seen_tile_numbers = set()
+    hash_to_url = {}
 
-    for page_num in range(total_pages):
-        try:
-            page = doc[page_num]
-            page_rect = page.rect
-            page_area = page_rect.width * page_rect.height
+    db = SessionLocal()
+    try:
+        for page_num in range(total_pages):
+            try:
+                page = doc[page_num]
+                page_rect = page.rect
+                page_area = page_rect.width * page_rect.height
 
-            pix = page.get_pixmap(dpi=200)
-            page_img_bytes = pix.tobytes("png")
+                pix = page.get_pixmap(dpi=200)
+                page_img_bytes = pix.tobytes("png")
 
-            ocr_blocks = _perform_ocr_on_page(page_img_bytes)
+                ocr_blocks = _perform_ocr_on_page(page_img_bytes)
+                regions = _detect_image_regions_opencv(page_img_bytes)
 
-            regions = _detect_image_regions_opencv(page_img_bytes)
+                if not regions:
+                    logger.info(f"  Page {page_num+1}: no image regions detected via OpenCV, falling back to full-page extraction")
+                    clip = fitz.Rect(0, 0, page_rect.width, page_rect.height)
+                    page_pix = page.get_pixmap(clip=clip, dpi=150)
+                    img_bytes = page_pix.tobytes("png")
+                    img_hash = _image_hash(img_bytes)
 
-            if not regions:
-                logger.info(f"  Page {page_num+1}: no image regions detected via OpenCV, falling back to full-page extraction")
-                clip = fitz.Rect(0, 0, page_rect.width, page_rect.height)
-                page_pix = page.get_pixmap(clip=clip, dpi=150)
-                img_bytes = page_pix.tobytes("png")
-                img_hash = _image_hash(img_bytes)
+                    if img_hash not in seen_hashes:
+                        seen_hashes.add(img_hash)
+                        all_text = " ".join(b["text"] for b in ocr_blocks)
+                        
+                        tile_name, tile_number = extract_metadata_from_crop(ocr_blocks)
+                        
+                        size_match = SIZE_PATTERN.search(all_text)
+                        tile_size = f"{size_match.group(1)}x{size_match.group(2)}" if size_match else None
+                        if tile_size_override:
+                            tile_size = tile_size_override
 
-                if img_hash not in seen_hashes:
-                    seen_hashes.add(img_hash)
-                    all_text = " ".join(b["text"] for b in ocr_blocks)
-                    tile_name_match = re.search(r'([A-Za-z]{3,})', all_text)
-                    tile_name = tile_name_match.group(1) if tile_name_match else None
-                    size_match = SIZE_PATTERN.search(all_text)
-                    tile_size = f"{size_match.group(1)}x{size_match.group(2)}" if size_match else None
-                    code_match = CODE_PATTERN.search(all_text)
-                    tile_number = code_match.group(1) if code_match else f"PAGE-{page_num+1:03d}"
+                        final_tile_number = tile_number
+                        final_tile_name = tile_name
+                        public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
 
-                    public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
+                        image_url = None
+                        relative_path = None
+                        if final_tile_number:
+                            filename_base = normalize_filename(final_tile_name, final_tile_number)
+                            original_number = filename_base
+                            suffix = 1
+                            while filename_base in seen_tile_numbers:
+                                filename_base = f"{os.path.splitext(original_number)[0]}_{suffix}.png"
+                                suffix += 1
+                            seen_tile_numbers.add(filename_base)
+                        else:
+                            filename_base = public_id
+
+                        res = _save_to_local_storage(img_bytes, filename_base)
+                        if res:
+                            image_url, relative_path = res
+                            hash_to_url[img_hash] = (image_url, relative_path)
+
+                        existing = None
+                        if final_tile_number:
+                            existing = db.query(TileCatalog).filter(
+                                TileCatalog.tile_number == final_tile_number,
+                                TileCatalog.catalog_name == catalog_name,
+                            ).first()
+
+                        if not existing:
+                            db_tile = TileCatalog(
+                                tile_name=final_tile_name or f"Full Page {page_num+1}",
+                                tile_number=final_tile_number,
+                                tile_size=tile_size,
+                                image_url=image_url,
+                                catalog_name=catalog_name,
+                                page_number=page_num + 1,
+                                relative_image_path=relative_path,
+                            )
+                            db.add(db_tile)
+                            db.commit()
+
+                        raw_tiles.append({
+                            "tile_name": final_tile_name or f"Full Page {page_num+1}",
+                            "tile_number": final_tile_number,
+                            "tile_size": tile_size,
+                            "image_url": image_url,
+                            "relative_image_path": relative_path,
+                            "catalog_name": catalog_name,
+                            "page_number": page_num + 1,
+                        })
+                    continue
+
+                if len(regions) >= 2:
+                    rows, cols, cell_w, cell_h = _detect_grid_layout(
+                        [{"bbox": r["bbox"], "width": r["width"], "height": r["height"]} for r in regions],
+                        page_rect.width, page_rect.height
+                    )
+                else:
+                    rows, cols, cell_w, cell_h = 1, 1, page_rect.width, page_rect.height
+
+                for idx, region in enumerate(regions):
+                    bx0, by0, bx1, by1 = region["bbox"]
+                    clip = fitz.Rect(
+                        bx0 * page_rect.width / pix.width,
+                        by0 * page_rect.height / pix.height,
+                        bx1 * page_rect.width / pix.width,
+                        by1 * page_rect.height / pix.height,
+                    )
+                    page_pix = page.get_pixmap(clip=clip, dpi=150)
+                    img_bytes = page_pix.tobytes("png")
+                    img_hash = _image_hash(img_bytes)
+
+                    cx = (bx0 + bx1) / 2
+                    cy = (by0 + by1) / 2
+                    col = int((cx - (regions[0]["bbox"][0] if regions else 0)) / cell_w) if cell_w > 0 else 0
+                    row = int((cy - (regions[0]["bbox"][1] if regions else 0)) / cell_h) if cell_h > 0 else 0
+                    col = max(0, min(col, cols - 1))
+                    row = max(0, min(row, rows - 1))
+
+                    cell_x0 = (regions[0]["bbox"][0] if regions else 0) + col * cell_w
+                    cell_y0 = (regions[0]["bbox"][1] if regions else 0) + row * cell_h
+                    cell_x1 = cell_x0 + cell_w
+                    cell_y1 = cell_y0 + cell_h
+
+                    cell_text = [b for b in ocr_blocks if
+                        cell_x0 <= (b["bbox"][0] + b["bbox"][2]) / 2 <= cell_x1 and
+                        cell_y0 <= (b["bbox"][1] + b["bbox"][3]) / 2 <= cell_y1]
+
+                    tile_name, tile_number, tile_size = extract_text_info(cell_text)
+                    if tile_size_override:
+                        tile_size = tile_size_override
+
+                    nearest_tile_number = detect_nearest_tile_number(region["bbox"], ocr_blocks)
+
+                    # For scanned PDFs, use full page OCR results instead of crop OCR
+                    final_tile_number = nearest_tile_number or tile_number
+                    final_tile_name = tile_name
+
+                    image_url = None
+                    relative_path = None
+
+                    # Deduplicate filenames/images
+                    if img_hash in hash_to_url:
+                        image_url, relative_path = hash_to_url[img_hash]
+                    else:
+                        public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
+                        if final_tile_number:
+                            filename_base = normalize_filename(final_tile_name, final_tile_number)
+                            original_number = filename_base
+                            suffix = 1
+                            while filename_base in seen_tile_numbers:
+                                filename_base = f"{os.path.splitext(original_number)[0]}_{suffix}.png"
+                                suffix += 1
+                            seen_tile_numbers.add(filename_base)
+                        else:
+                            filename_base = public_id
+
+                        # Save image to disk immediately
+                        res = _save_to_local_storage(img_bytes, filename_base)
+                        if res:
+                            image_url, relative_path = res
+                            hash_to_url[img_hash] = (image_url, relative_path)
+
+                    # Save to database page-by-page immediately
+                    existing = None
+                    if final_tile_number:
+                        existing = db.query(TileCatalog).filter(
+                            TileCatalog.tile_number == final_tile_number,
+                            TileCatalog.catalog_name == catalog_name,
+                        ).first()
+
+                    if not existing:
+                        db_tile = TileCatalog(
+                            tile_name=final_tile_name or f"Tile Page {page_num+1}",
+                            tile_number=final_tile_number,
+                            tile_size=tile_size,
+                            image_url=image_url,
+                            catalog_name=catalog_name,
+                            page_number=page_num + 1,
+                            relative_image_path=relative_path,
+                        )
+                        db.add(db_tile)
+                        db.commit()
+
                     raw_tiles.append({
-                        "tile_name": tile_name or f"Full Page {page_num+1}",
-                        "tile_number": tile_number,
+                        "tile_name": final_tile_name or f"Tile Page {page_num+1}",
+                        "tile_number": final_tile_number,
                         "tile_size": tile_size,
-                        "img_hash": img_hash,
-                        "img_bytes": img_bytes,
-                        "public_id": public_id,
+                        "image_url": image_url,
+                        "relative_image_path": relative_path,
                         "catalog_name": catalog_name,
                         "page_number": page_num + 1,
                     })
+
+                # Explicitly free page object to avoid memory build-up
+                page = None
+
+                if (page_num + 1) % 10 == 0:
+                    logger.info(f"  ... processed scanned page {page_num+1}/{total_pages}")
+
+            except Exception as e:
+                logger.error(f"Scanned page {page_num+1} failed: {e}", exc_info=True)
                 continue
-
-            if len(regions) >= 2:
-                rows, cols, cell_w, cell_h = _detect_grid_layout(
-                    [{"bbox": r["bbox"], "width": r["width"], "height": r["height"]} for r in regions],
-                    page_rect.width, page_rect.height
-                )
-            else:
-                rows, cols, cell_w, cell_h = 1, 1, page_rect.width, page_rect.height
-
-            for idx, region in enumerate(regions):
-                bx0, by0, bx1, by1 = region["bbox"]
-                clip = fitz.Rect(
-                    bx0 * page_rect.width / pix.width,
-                    by0 * page_rect.height / pix.height,
-                    bx1 * page_rect.width / pix.width,
-                    by1 * page_rect.height / pix.height,
-                )
-                page_pix = page.get_pixmap(clip=clip, dpi=150)
-                img_bytes = page_pix.tobytes("png")
-                img_hash = _image_hash(img_bytes)
-
-                if img_hash in seen_hashes:
-                    continue
-                seen_hashes.add(img_hash)
-
-                cx = (bx0 + bx1) / 2
-                cy = (by0 + by1) / 2
-                col = int((cx - (regions[0]["bbox"][0] if regions else 0)) / cell_w) if cell_w > 0 else 0
-                row = int((cy - (regions[0]["bbox"][1] if regions else 0)) / cell_h) if cell_h > 0 else 0
-                col = max(0, min(col, cols - 1))
-                row = max(0, min(row, rows - 1))
-
-                cell_x0 = (regions[0]["bbox"][0] if regions else 0) + col * cell_w
-                cell_y0 = (regions[0]["bbox"][1] if regions else 0) + row * cell_h
-                cell_x1 = cell_x0 + cell_w
-                cell_y1 = cell_y0 + cell_h
-
-                cell_text = [b for b in ocr_blocks if
-                    cell_x0 <= (b["bbox"][0] + b["bbox"][2]) / 2 <= cell_x1 and
-                    cell_y0 <= (b["bbox"][1] + b["bbox"][3]) / 2 <= cell_y1]
-
-                tile_name, tile_number, tile_size = extract_text_info(cell_text)
-
-                final_tile_number = tile_number or f"PAGE-{page_num+1:03d}"
-                original_number = final_tile_number
-                suffix = 2
-                while final_tile_number in seen_tile_numbers:
-                    final_tile_number = f"{original_number}-{suffix}"
-                    suffix += 1
-                seen_tile_numbers.add(final_tile_number)
-
-                public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
-
-                raw_tiles.append({
-                    "tile_name": tile_name or f"Tile Page {page_num+1}",
-                    "tile_number": final_tile_number,
-                    "tile_size": tile_size,
-                    "img_hash": img_hash,
-                    "img_bytes": img_bytes,
-                    "public_id": public_id,
-                    "catalog_name": catalog_name,
-                    "page_number": page_num + 1,
-                })
-
-        except Exception as e:
-            logger.error(f"Scanned page {page_num+1} failed: {e}", exc_info=True)
-            continue
+    finally:
+        db.close()
 
     doc.close()
-    logger.info(f"Scanned extraction complete: {len(raw_tiles)} tiles from '{catalog_name}'. Uploading...")
+    logger.info(f"Scanned extraction done: {len(raw_tiles)} tiles from '{catalog_name}'")
+    return raw_tiles
 
-    unique_uploads = [(t["img_bytes"], t["public_id"]) for t in raw_tiles if t["img_bytes"] is not None]
-    hash_to_url = {}
-    if unique_uploads:
-        with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS) as executor:
-            future_to_public = {executor.submit(_upload_to_cloudinary, ib, pid): pid for ib, pid in unique_uploads}
-            for future in as_completed(future_to_public):
-                pid = future_to_public[future]
-                try:
-                    url = future.result()
-                    hash_to_url[pid] = url
-                except Exception:
-                    hash_to_url[pid] = None
 
-    tiles = []
-    for t in raw_tiles:
-        tiles.append({
-            "tile_name": t["tile_name"],
-            "tile_number": t["tile_number"],
-            "tile_size": t["tile_size"],
-            "image_url": hash_to_url.get(t["public_id"]),
-            "catalog_name": t["catalog_name"],
-            "page_number": t["page_number"],
-        })
 
-    logger.info(f"Scanned extraction done: {len(tiles)} tiles from '{catalog_name}'")
-    return tiles

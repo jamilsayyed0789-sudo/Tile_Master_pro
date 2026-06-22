@@ -56,8 +56,10 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
     ctx.fillStyle = hex;
     ctx.fillRect(0, 0, wPx, stripPx);
     const tex = new THREE.CanvasTexture(c);
-    tex.minFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = 16;
+    tex.generateMipmaps = true;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(1, 1);
     tex.needsUpdate = true;
@@ -85,9 +87,10 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       }
     }
     const tex = new THREE.CanvasTexture(c);
-    tex.minFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
     tex.magFilter = THREE.LinearFilter;
     tex.anisotropy = 16;
+    tex.generateMipmaps = true;
     tex.needsUpdate = true;
     return tex;
   };
@@ -528,10 +531,11 @@ export default function Kitchen3DPage() {
     if (!backsplashImg) { setBacksplashTex(null); }
     else {
       new THREE.TextureLoader().load(backsplashImg, (t) => {
-        t.minFilter = THREE.LinearFilter;
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.minFilter = THREE.LinearMipmapLinearFilter;
         t.magFilter = THREE.LinearFilter;
         t.anisotropy = 16;
-        t.generateMipmaps = false;
+        t.generateMipmaps = true;
         setBacksplashTex(t);
       });
     }
@@ -541,10 +545,11 @@ export default function Kitchen3DPage() {
     if (!countertopImg) { setCountertopTex(null); }
     else {
       new THREE.TextureLoader().load(countertopImg, (t) => {
-        t.minFilter = THREE.LinearFilter;
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.minFilter = THREE.LinearMipmapLinearFilter;
         t.magFilter = THREE.LinearFilter;
         t.anisotropy = 16;
-        t.generateMipmaps = false;
+        t.generateMipmaps = true;
         setCountertopTex(t);
       });
     }
@@ -554,10 +559,11 @@ export default function Kitchen3DPage() {
     if (!highlighterImg) { setHighlighterTex(null); }
     else {
       new THREE.TextureLoader().load(highlighterImg, (t) => {
-        t.minFilter = THREE.LinearFilter;
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.minFilter = THREE.LinearMipmapLinearFilter;
         t.magFilter = THREE.LinearFilter;
         t.anisotropy = 16;
-        t.generateMipmaps = false;
+        t.generateMipmaps = true;
         setHighlighterTex(t);
       });
     }
@@ -567,10 +573,11 @@ export default function Kitchen3DPage() {
     if (!floorImg) { setFloorTex(null); }
     else {
       new THREE.TextureLoader().load(floorImg, (t) => {
-        t.minFilter = THREE.LinearFilter;
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.minFilter = THREE.LinearMipmapLinearFilter;
         t.magFilter = THREE.LinearFilter;
         t.anisotropy = 16;
-        t.generateMipmaps = false;
+        t.generateMipmaps = true;
         setFloorTex(t);
       });
     }
@@ -591,7 +598,7 @@ export default function Kitchen3DPage() {
       <div className={`mx-auto mb-6 transition-all duration-500 ${isTheaterMode ? 'max-w-[1600px]' : 'max-w-7xl'}`}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-amber-500/10 text-amber-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20 flex items-center gap-1.5">
+            <span className="bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20 flex items-center gap-1.5">
               <CookingPot className="w-3.5 h-3.5" /> 3D Kitchen
             </span>
           </div>
@@ -612,20 +619,20 @@ export default function Kitchen3DPage() {
             </div>
             <div className="space-y-3">
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-amber-400">{roomWidth} ft</span></div>
-                <input type="range" min="6" max="24" step="0.5" value={roomWidth} onChange={e => setRoomWidth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-blue-400">{roomWidth} ft</span></div>
+                <input type="range" min="6" max="24" step="0.5" value={roomWidth} onChange={e => setRoomWidth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Length</span><span className="text-amber-400">{roomLength} ft</span></div>
-                <input type="range" min="8" max="30" step="0.5" value={roomLength} onChange={e => setRoomLength(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-500">Length</span><span className="text-blue-400">{roomLength} ft</span></div>
+                <input type="range" min="8" max="30" step="0.5" value={roomLength} onChange={e => setRoomLength(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Height</span><span className="text-amber-400">{roomHeight} ft</span></div>
-                <input type="range" min="7" max="14" step="0.5" value={roomHeight} onChange={e => setRoomHeight(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-500">Height</span><span className="text-blue-400">{roomHeight} ft</span></div>
+                <input type="range" min="7" max="14" step="0.5" value={roomHeight} onChange={e => setRoomHeight(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-500">Counter Depth</span><span className="text-amber-400">{counterDepth} ft</span></div>
-                <input type="range" min="1.5" max="4" step="0.1" value={counterDepth} onChange={e => setCounterDepth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                <div className="flex justify-between text-xs"><span className="text-neutral-500">Counter Depth</span><span className="text-blue-400">{counterDepth} ft</span></div>
+                <input type="range" min="1.5" max="4" step="0.1" value={counterDepth} onChange={e => setCounterDepth(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
               </div>
             </div>
           </div>
@@ -643,7 +650,7 @@ export default function Kitchen3DPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-1 mb-3">
-                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-amber-500/50 transition-colors">
+                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-blue-500/50 transition-colors">
                   <Upload className="w-4 h-4 text-neutral-500" />
                   <span className="text-xs text-neutral-500">Upload floor tile</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => {
@@ -673,7 +680,7 @@ export default function Kitchen3DPage() {
 
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
-              <Paintbrush className="w-4 h-4 text-amber-400" />
+              <Paintbrush className="w-4 h-4 text-blue-400" />
               <h3 className="font-bold text-white text-sm">Countertop Material</h3>
             </div>
 
@@ -685,7 +692,7 @@ export default function Kitchen3DPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-1 mb-3">
-                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-amber-500/50 transition-colors">
+                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-blue-500/50 transition-colors">
                   <Upload className="w-4 h-4 text-neutral-500" />
                   <span className="text-xs text-neutral-500">Upload granite/marble</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => {
@@ -701,7 +708,7 @@ export default function Kitchen3DPage() {
             <select
               value={countertopColor}
               onChange={(e) => setCountertopColor(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2 text-sm text-neutral-200 outline-none focus:border-amber-500"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2 text-sm text-neutral-200 outline-none focus:border-blue-500"
             >
               <option value="#8b7355">Default Wood</option>
               <option value="#1a1a1a">Black Granite</option>
@@ -723,7 +730,7 @@ export default function Kitchen3DPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-1 mb-3">
-                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-amber-500/50 transition-colors">
+                <label className="flex items-center gap-2 bg-neutral-900 border border-dashed border-neutral-700 rounded-lg px-3 py-3 cursor-pointer hover:border-blue-500/50 transition-colors">
                   <Upload className="w-4 h-4 text-neutral-500" />
                   <span className="text-xs text-neutral-500">Upload tile image</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
@@ -733,7 +740,7 @@ export default function Kitchen3DPage() {
             )}
             
             <div className="flex items-center gap-2 mt-4 mb-2">
-              <LayoutGrid className="w-4 h-4 text-amber-400" />
+              <LayoutGrid className="w-4 h-4 text-blue-400" />
               <h4 className="font-semibold text-white text-xs">Tile Size</h4>
             </div>
             <div className="grid grid-cols-3 gap-2 mb-3">
@@ -741,7 +748,7 @@ export default function Kitchen3DPage() {
                 <button
                   key={size}
                   onClick={() => setTileSize(size)}
-                  className={`py-2 text-[10px] font-bold rounded-lg border transition-all ${tileSize === size ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600"}`}
+                  className={`py-2 text-[10px] font-bold rounded-lg border transition-all ${tileSize === size ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600"}`}
                 >
                   {size === "12x18" ? "12x18\"" : size === "2x1" ? "2x1'" : "2x4'"}
                 </button>
@@ -752,7 +759,7 @@ export default function Kitchen3DPage() {
               <span className="text-xs text-neutral-400 flex items-center gap-1"><Rotate3d className="w-3 h-3"/> Rotate Tile</span>
               <button 
                 onClick={() => setTileRotation(tileRotation === 0 ? 90 : 0)} 
-                className={`px-3 py-1 border rounded text-xs font-bold transition-colors ${tileRotation === 90 ? "bg-amber-500/10 border-amber-500 text-amber-400" : "bg-neutral-800 border-neutral-700 text-neutral-400"}`}
+                className={`px-3 py-1 border rounded text-xs font-bold transition-colors ${tileRotation === 90 ? "bg-blue-500/10 border-blue-500 text-blue-400" : "bg-neutral-800 border-neutral-700 text-neutral-400"}`}
               >
                 {tileRotation}°
               </button>
@@ -762,7 +769,7 @@ export default function Kitchen3DPage() {
               <span className="text-xs text-neutral-400">Display Mode</span>
               <button 
                 onClick={() => setSlabMode(!slabMode)} 
-                className={`px-3 py-1 border rounded text-xs font-bold transition-colors ${slabMode ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-neutral-700 bg-neutral-800 text-neutral-400"}`}
+                className={`px-3 py-1 border rounded text-xs font-bold transition-colors ${slabMode ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-neutral-700 bg-neutral-800 text-neutral-400"}`}
               >
                 {slabMode ? "Slab" : "Tiled"}
               </button>
@@ -771,10 +778,10 @@ export default function Kitchen3DPage() {
             {/* Border Strip */}
             <div className="mt-4 pt-4 border-t border-white/5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-white text-sm flex items-center gap-2"><Paintbrush className="w-4 h-4 text-amber-400" />Border Strip</h3>
+                <h3 className="font-bold text-white text-sm flex items-center gap-2"><Paintbrush className="w-4 h-4 text-blue-400" />Border Strip</h3>
                 <button
                   onClick={() => setStripEnabled(!stripEnabled)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${stripEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${stripEnabled ? "bg-blue-500" : "bg-neutral-700"}`}
                 >
                   <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${stripEnabled ? "translate-x-5" : "translate-x-1"}`} />
                 </button>
@@ -784,22 +791,22 @@ export default function Kitchen3DPage() {
                   <div className="flex gap-2">
                     {["golden", "silver", "black"].map((c) => (
                       <button key={c} onClick={() => setStripColor(c)}
-                        className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all capitalize ${stripColor === c ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
+                        className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all capitalize ${stripColor === c ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
                         {c}
                       </button>
                     ))}
                   </div>
                   <div>
-                    <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-amber-400">{stripWidthMm} mm</span></div>
-                    <input type="range" min="1" max="3" value={stripWidthMm} onChange={e => setStripWidthMm(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500 mt-1" />
+                    <div className="flex justify-between text-xs"><span className="text-neutral-500">Width</span><span className="text-blue-400">{stripWidthMm} mm</span></div>
+                    <input type="range" min="1" max="3" value={stripWidthMm} onChange={e => setStripWidthMm(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
                   </div>
                   {(tileSize === "12x18" || tileSize === "2x1" || tileSize === "2x4") && (
                     <div>
-                      <div className="flex justify-between text-xs mb-1"><span className="text-neutral-500">Strip after every</span><span className="text-amber-400">{stripInterval} tiles</span></div>
+                      <div className="flex justify-between text-xs mb-1"><span className="text-neutral-500">Strip after every</span><span className="text-blue-400">{stripInterval} tiles</span></div>
                       <div className="flex gap-2">
                         {[1, 2, 3].map((n) => (
                           <button key={n} onClick={() => setStripInterval(n)}
-                            className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all ${stripInterval === n ? "border-amber-500 bg-amber-500/10 text-amber-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
+                            className={`flex-1 py-2 text-[10px] font-bold rounded-lg border transition-all ${stripInterval === n ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-neutral-800 bg-neutral-900 hover:border-neutral-600 text-neutral-400"}`}>
                             {n}
                           </button>
                         ))}
@@ -819,7 +826,7 @@ export default function Kitchen3DPage() {
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                  3D Viewport {isTheaterMode && <span className="text-amber-400 font-bold ml-1.5">(Showroom Mode)</span>}
+                  3D Viewport {isTheaterMode && <span className="text-blue-400 font-bold ml-1.5">(Showroom Mode)</span>}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -831,7 +838,7 @@ export default function Kitchen3DPage() {
                       onClick={() => setCameraPreset(p)}
                       className={`px-2 py-1 text-[9px] font-bold rounded-md transition capitalize ${
                         cameraPreset === p
-                          ? 'bg-amber-500/20 text-amber-400'
+                          ? 'bg-blue-500/20 text-blue-400'
                           : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'
                       }`}
                     >
@@ -868,7 +875,7 @@ export default function Kitchen3DPage() {
                   onClick={() => setShowInterior(!showInterior)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     showInterior
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
                       : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                   }`}
                   title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
@@ -883,7 +890,7 @@ export default function Kitchen3DPage() {
                   onClick={() => setIsTheaterMode(!isTheaterMode)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     isTheaterMode
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
                       : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                   }`}
                   title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
@@ -901,8 +908,8 @@ export default function Kitchen3DPage() {
             {isLoading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
                 <div className="text-center">
-                  <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                  <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-blue-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
                   <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
                 </div>
               </div>

@@ -327,37 +327,37 @@ export default function QuotationProjectPage() {
 
         {/* ===== CUSTOMER DETAILS ===== */}
         <div className="bg-neutral-900/80 border border-neutral-800/50 rounded-2xl p-5 mb-4 no-print">
-          <h2 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-4">Customer Details</h2>
+          <h2 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Customer Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Customer Name *</label>
               <input value={customerName} onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Mobile *</label>
               <input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Email</label>
               <input value={email} onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
             <div className="md:col-span-2">
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Address</label>
               <input value={address} onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Project Name</label>
               <input value={projectName} onChange={(e) => setProjectName(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Salesperson</label>
               <input value={salesperson} onChange={(e) => setSalesperson(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
             </div>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function QuotationProjectPage() {
                     <p className="text-xs text-neutral-400">{ROOM_LABELS[item.type] || item.type} · {item.area.toFixed(1)} sq.ft</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-amber-400 font-bold text-sm">{formatCurrency(item.price)}</p>
+                    <p className="text-blue-400 font-bold text-sm">{formatCurrency(item.price)}</p>
                     <p className="text-xs text-neutral-500">{item.boxesRequired} boxes</p>
                   </div>
                   {expandedRooms.has(item.id) ? <ChevronUp className="w-4 h-4 text-neutral-500" /> : <ChevronDown className="w-4 h-4 text-neutral-500" />}
@@ -422,11 +422,11 @@ export default function QuotationProjectPage() {
                       </div>
                       <div>
                         <div className="text-[10px] text-neutral-500 uppercase font-bold mb-1">Rate</div>
-                        <div className="text-amber-400 font-semibold">{formatCurrency(item.rate)}</div>
+                        <div className="text-blue-400 font-semibold">{formatCurrency(item.rate)}</div>
                       </div>
                       <div>
                         <div className="text-[10px] text-neutral-500 uppercase font-bold mb-1">Amount</div>
-                        <div className="text-amber-400 font-semibold">{formatCurrency(item.price)}</div>
+                        <div className="text-blue-400 font-semibold">{formatCurrency(item.price)}</div>
                       </div>
                       <div className="flex items-end">
                         <button
@@ -449,7 +449,7 @@ export default function QuotationProjectPage() {
           <>
             {/* Discount */}
             <div className="bg-neutral-900/80 border border-neutral-800/50 rounded-2xl p-5 mb-4 no-print">
-              <h2 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-4">Discount</h2>
+              <h2 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Discount</h2>
               <div className="flex flex-wrap gap-3 mb-3">
                 {(["percentage", "fixed"] as const).map((t) => (
                   <button
@@ -457,7 +457,7 @@ export default function QuotationProjectPage() {
                     onClick={() => { setDiscountType(t); setDiscountValue(0); }}
                     className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
                       discountType === t
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                        ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
                         : "bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-600"
                     }`}
                   >
@@ -471,7 +471,7 @@ export default function QuotationProjectPage() {
                   value={discountValue || ""}
                   onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
                   placeholder={discountType === "percentage" ? "10" : "5000"}
-                  className="w-40 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition"
+                  className="w-40 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition"
                 />
                 <span className="text-sm text-neutral-400">
                   {discountType === "percentage" ? "% off subtotal" : "₹ off subtotal"}
@@ -484,30 +484,30 @@ export default function QuotationProjectPage() {
 
             {/* Additional Charges */}
             <div className="bg-neutral-900/80 border border-neutral-800/50 rounded-2xl p-5 mb-4 no-print">
-              <h2 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-4">Additional Charges</h2>
+              <h2 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Additional Charges</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Transport (₹)</label>
                   <input type="number" min="0" step="1" value={transportCharge || ""} onChange={(e) => setTransportCharge(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Installation (₹)</label>
                   <input type="number" min="0" step="1" value={installationCharge || ""} onChange={(e) => setInstallationCharge(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Loading (₹)</label>
                   <input type="number" min="0" step="1" value={loadingCharge || ""} onChange={(e) => setLoadingCharge(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">{otherChargeLabel || "Other"} (₹)</label>
                   <div className="flex gap-1">
                     <input type="number" min="0" step="1" value={otherCharge || ""} onChange={(e) => setOtherCharge(parseFloat(e.target.value) || 0)}
-                      className="flex-1 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition" />
+                      className="flex-1 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50 transition" />
                     <input value={otherChargeLabel} onChange={(e) => setOtherChargeLabel(e.target.value)} placeholder="Label"
-                      className="w-20 bg-neutral-800 border border-neutral-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-500/50 transition" />
+                      className="w-20 bg-neutral-800 border border-neutral-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 transition" />
                   </div>
                 </div>
               </div>
@@ -517,10 +517,10 @@ export default function QuotationProjectPage() {
             <div className="bg-neutral-900/80 border border-neutral-800/50 rounded-2xl p-5 mb-4 no-print">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-sm font-bold text-amber-400 uppercase tracking-wider">GST</h2>
+                  <h2 className="text-sm font-bold text-blue-400 uppercase tracking-wider">GST</h2>
                   <button
                     onClick={() => setGstEnabled(!gstEnabled)}
-                    className={`relative w-10 h-5 rounded-full transition ${gstEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+                    className={`relative w-10 h-5 rounded-full transition ${gstEnabled ? "bg-blue-500" : "bg-neutral-700"}`}
                   >
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition ${gstEnabled ? "left-5" : "left-0.5"}`} />
                   </button>
@@ -529,7 +529,7 @@ export default function QuotationProjectPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-neutral-400">Rate:</span>
                     <select value={gstPercent} onChange={(e) => setGstPercent(parseInt(e.target.value))}
-                      className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500/50 transition">
+                      className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition">
                       <option value={0}>0%</option>
                       <option value={5}>5%</option>
                       <option value={12}>12%</option>
@@ -546,7 +546,7 @@ export default function QuotationProjectPage() {
         {/* ===== SUMMARY TOTALS ===== */}
         {items.length > 0 && (
           <div className="bg-neutral-900/80 border border-neutral-800/50 rounded-2xl p-5 mb-6">
-            <h2 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-4">Summary</h2>
+            <h2 className="text-sm font-bold text-blue-400 uppercase tracking-wider mb-4">Summary</h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               <div className="bg-neutral-800/50 rounded-xl p-3">
@@ -603,9 +603,9 @@ export default function QuotationProjectPage() {
                     <span className="text-white font-semibold">{formatCurrency(totals.gstAmt)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-base pt-2 border-t-2 border-amber-500/50">
+                <div className="flex justify-between text-base pt-2 border-t-2 border-blue-500/50">
                   <span className="text-white font-black">Grand Total</span>
-                  <span className="text-amber-400 font-black text-lg">{formatCurrency(totals.grandTotal)}</span>
+                  <span className="text-blue-400 font-black text-lg">{formatCurrency(totals.grandTotal)}</span>
                 </div>
               </div>
             </div>
@@ -618,7 +618,7 @@ export default function QuotationProjectPage() {
             <button
               onClick={handleSaveQuotation}
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-400 text-black font-bold rounded-xl transition disabled:opacity-50"
             >
               <FileText className="w-4 h-4" />
               {saving ? "Saving..." : "Save Quotation"}

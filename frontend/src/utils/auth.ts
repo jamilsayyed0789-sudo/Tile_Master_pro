@@ -9,15 +9,19 @@ function getCookie(name: string): string | null {
   return null;
 }
 
-export const getToken = (): string | null => {
-  return getCookie("better-auth.session_token");
+export const getToken = async (): Promise<string | null> => {
+  if (typeof window === "undefined") return null;
+  const { createClient } = await import("@/utils/supabase/client");
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
 };
 
 export const fetchWithAuth = async <T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
-  const token = getToken();
+  const token = await getToken();
 
   const headers = new Headers(options.headers);
   if (token) {

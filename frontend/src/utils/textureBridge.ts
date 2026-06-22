@@ -41,7 +41,7 @@ export function buildTileUrl(path: string): string {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
   const base = typeof window !== 'undefined'
-    ? `${window.location.protocol}//127.0.0.1:8000`
-    : 'http://127.0.0.1:8000';
+    ? (process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//127.0.0.1:8001`)
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001');
   return `${base}${path.startsWith('/') ? path : '/' + path}`;
 }

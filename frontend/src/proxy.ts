@@ -27,7 +27,8 @@ export async function proxy(request: NextRequest) {
   // );
 
   // if (isProtected) {
-  //   const sessionCookie = request.cookies.get("better-auth.session_token");
+  //   // Note: Supabase cookies look like "sb-[PROJECT-REF]-auth-token"
+  //   const sessionCookie = request.cookies.get("sb-[PROJECT-REF]-auth-token");
 
   //   if (!sessionCookie?.value) {
   //     return NextResponse.redirect(new URL("/auth", request.url));

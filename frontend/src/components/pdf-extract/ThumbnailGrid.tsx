@@ -27,27 +27,9 @@ export default function ThumbnailGrid({
   onCropPage,
   onDownloadPages,
 }: Props) {
-  const [visibleCount, setVisibleCount] = useState(12);
   const [showBulkMenu, setShowBulkMenu] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bulkMenuRef = useRef<HTMLDivElement>(null);
-
-  // Progressive loading via intersection observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisibleCount((prev) => Math.min(prev + 8, pages.length));
-          }
-        });
-      },
-      { rootMargin: "200px" }
-    );
-    const sentinel = containerRef.current?.querySelector("#load-sentinel");
-    if (sentinel) observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [pages.length, visibleCount]);
 
   // Close bulk menu on outside click
   useEffect(() => {
@@ -61,8 +43,8 @@ export default function ThumbnailGrid({
   }, []);
 
   const allVisibleSelected = useMemo(
-    () => pages.length > 0 && pages.slice(0, visibleCount).every((p) => selectedIds.has(p.index)),
-    [pages, selectedIds, visibleCount]
+    () => pages.length > 0 && pages.every((p) => selectedIds.has(p.index)),
+    [pages, selectedIds]
   );
 
   const toggleSelect = (index: number) => {
@@ -114,7 +96,7 @@ export default function ThumbnailGrid({
             {allVisibleSelected ? "Deselect All" : "Select All"}
           </button>
           {selectedIds.size > 0 && (
-            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
               {selectedIds.size} selected
             </span>
           )}
@@ -171,7 +153,7 @@ export default function ThumbnailGrid({
 
       {/* Thumbnail grid */}
       <div ref={containerRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {pages.slice(0, visibleCount).map((page) => {
+        {pages.map((page) => {
           const isSelected = selectedIds.has(page.index);
           return (
             <motion.div
@@ -181,7 +163,7 @@ export default function ThumbnailGrid({
               animate={{ opacity: 1, scale: 1 }}
               className={`group relative rounded-xl border overflow-hidden cursor-pointer transition-all ${
                 isSelected
-                  ? "border-amber-500 ring-2 ring-amber-500/30 bg-amber-500/5"
+                  ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-500/5"
                   : "border-neutral-800 hover:border-neutral-700 bg-neutral-900"
               }`}
               onClick={() => toggleSelect(page.index)}
@@ -190,7 +172,7 @@ export default function ThumbnailGrid({
               <div
                 className={`absolute top-2 left-2 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${
                   isSelected
-                    ? "bg-amber-500 border-amber-500"
+                    ? "bg-blue-500 border-blue-500"
                     : "bg-neutral-900/80 border-neutral-600 group-hover:border-neutral-400"
                 }`}
               >
@@ -216,7 +198,7 @@ export default function ThumbnailGrid({
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
                 <button
                   onClick={(e) => { e.stopPropagation(); onCropPage(page); }}
-                  className="p-1.5 rounded-lg bg-amber-500/90 text-black hover:bg-amber-400 transition"
+                  className="p-1.5 rounded-lg bg-blue-500/90 text-black hover:bg-blue-400 transition"
                   title="Crop"
                 >
                   <Crop className="w-3.5 h-3.5" />
@@ -233,12 +215,6 @@ export default function ThumbnailGrid({
           );
         })}
 
-        {/* Load sentinel */}
-        {visibleCount < pages.length && (
-          <div id="load-sentinel" className="flex items-center justify-center aspect-[3/4] rounded-xl border border-neutral-800 bg-neutral-900">
-            <Loader2 className="w-5 h-5 text-neutral-600 animate-spin" />
-          </div>
-        )}
       </div>
     </div>
   );

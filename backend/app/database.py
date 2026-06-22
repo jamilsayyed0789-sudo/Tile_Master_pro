@@ -16,17 +16,11 @@ if DATABASE_URL.startswith("sqlite"):
         pool_recycle=300,
     )
 else:
-    # PostgreSQL / Neon serverless: use NullPool or a small QueuePool
-    # pool_pre_ping detects stale SSL connections before reuse
-    # pool_recycle ensures connections are replaced before Neon's idle timeout
+    from sqlalchemy.pool import NullPool
     engine = create_engine(
         DATABASE_URL,
         connect_args=connect_args,
-        pool_pre_ping=True,
-        pool_recycle=60,          # Recycle every 60s — well within Neon's idle timeout
-        pool_size=5,
-        max_overflow=10,
-        pool_timeout=30,
+        poolclass=NullPool,
     )
 
     @event.listens_for(engine, "connect")

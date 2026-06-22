@@ -70,7 +70,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-neutral-950 text-white">
       {/* Background glow */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] bg-amber-500/5 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] bg-blue-500/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-indigo-500/5 rounded-full blur-[120px]" />
       </div>
 
@@ -84,8 +84,8 @@ export default function SettingsPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Extraction
           </Link>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
-              <HardDrive className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+              <HardDrive className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h1 className="text-3xl font-black text-white">Settings</h1>
@@ -102,7 +102,7 @@ export default function SettingsPage() {
           className="bg-neutral-900/60 backdrop-blur border border-white/8 rounded-3xl p-6 mb-6 shadow-xl"
         >
           <div className="flex items-center gap-3 mb-6">
-            <FolderOpen className="w-5 h-5 text-amber-400" />
+            <FolderOpen className="w-5 h-5 text-blue-400" />
             <h2 className="text-lg font-bold text-white">Tile Storage Location</h2>
           </div>
 
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                   ? "bg-red-500/10 border-red-500/25 text-red-400"
                   : !status.configured
                   ? "bg-neutral-800/60 border-neutral-700 text-neutral-400"
-                  : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                  : "bg-blue-500/10 border-blue-500/25 text-blue-400"
               }`}
             >
               {status.configured && status.writable ? (
@@ -147,13 +147,13 @@ export default function SettingsPage() {
               value={path}
               onChange={(e) => setPath(e.target.value)}
               placeholder="e.g. D:\TileMasterPro\Tiles or E:\My Tiles"
-              className="flex-1 bg-neutral-800 border border-neutral-700 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition"
+              className="flex-1 bg-neutral-800 border border-neutral-700 focus:border-blue-500/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none transition"
             />
           </div>
 
           <p className="text-[11px] text-neutral-600 mb-5 leading-relaxed">
             Enter the <strong className="text-neutral-400">absolute path</strong> to a folder on this computer where extracted tile images will be saved.
-            Images will be organised into <code className="text-amber-400/80">YYYY/MM/</code> subfolders automatically.
+            Images will be organised into <code className="text-blue-400/80">YYYY/MM/</code> subfolders automatically.
             The path must be writable by the server process.
           </p>
 
@@ -162,7 +162,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSave}
               disabled={saving || !isDirty}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-black text-sm font-bold transition shadow-lg shadow-amber-500/20"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-black text-sm font-bold transition shadow-lg shadow-blue-500/20"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? "Saving..." : isDirty ? "Save Changes" : "Saved"}
@@ -202,7 +202,7 @@ export default function SettingsPage() {
             <ExternalLink className="w-4 h-4" /> How Local Storage Works
           </h3>
           <ul className="space-y-2 text-xs text-neutral-400 leading-relaxed">
-            <li>• When a folder is configured, extracted tile images are <strong className="text-white">saved directly to your hard drive</strong> inside <code className="text-amber-400/80">YYYY/MM/</code> subfolders.</li>
+            <li>• When a folder is configured, extracted tile images are <strong className="text-white">saved directly to your hard drive</strong> inside <code className="text-blue-400/80">YYYY/MM/</code> subfolders.</li>
             <li>• Only metadata (name, number, size) is stored in the database — <strong className="text-white">no images are uploaded to the cloud</strong>.</li>
             <li>• If no folder is configured, tiles continue to save in the <strong className="text-white">browser's IndexedDB</strong> as before.</li>
             <li>• Changing the folder path does <strong className="text-white">not move existing images</strong> — only newly extracted tiles use the new folder.</li>

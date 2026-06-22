@@ -24,7 +24,7 @@ interface QuotationListItem {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  draft: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   final: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   completed: "bg-green-500/10 text-green-400 border-green-500/20",
   cancelled: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -129,7 +129,7 @@ export default function QuotationList() {
           </div>
           <button
             onClick={() => router.push("/quotation/new")}
-            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-black font-bold rounded-xl transition"
           >
             <Plus className="w-4 h-4" />
             New Quotation
@@ -144,7 +144,7 @@ export default function QuotationList() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name, number, mobile, or project..."
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/50 transition"
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -155,7 +155,7 @@ export default function QuotationList() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500/50 transition"
+            className="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition"
           >
             <option value="">All Status</option>
             <option value="draft">Draft</option>
@@ -190,7 +190,7 @@ export default function QuotationList() {
             <p className="text-neutral-500 text-sm mb-6">Create your first quotation to get started</p>
             <button
               onClick={() => router.push("/quotation/new")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-black font-bold rounded-xl transition"
             >
               <Plus className="w-4 h-4" />
               Create Quotation
@@ -211,7 +211,7 @@ export default function QuotationList() {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="text-amber-400 font-bold text-sm font-mono">{q.quotation_number}</span>
+                        <span className="text-blue-400 font-bold text-sm font-mono">{q.quotation_number}</span>
                         <span className={`px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full border ${STATUS_STYLES[q.status] || STATUS_STYLES.draft}`}>
                           {q.status}
                         </span>
@@ -222,7 +222,7 @@ export default function QuotationList() {
                         {q.project_name && <span className="truncate">{q.project_name}</span>}
                         <span>{q.date}</span>
                         <span>{q.total_boxes} boxes</span>
-                        <span className="text-amber-400 font-semibold">₹{Number(q.grand_total).toLocaleString()}</span>
+                        <span className="text-blue-400 font-semibold">₹{Number(q.grand_total).toLocaleString()}</span>
                       </div>
                     </div>
 

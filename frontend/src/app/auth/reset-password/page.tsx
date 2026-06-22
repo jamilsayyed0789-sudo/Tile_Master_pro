@@ -74,17 +74,17 @@ function ResetForm() {
           <label className="block text-xs font-medium text-muted-foreground">New Password</label>
           <div className="relative">
             <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground/60" />
-            <input type="password" required placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all" />
+            <input type="password" required placeholder="••••••••" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
           </div>
         </div>
         <div className="space-y-1">
           <label className="block text-xs font-medium text-muted-foreground">Confirm Password</label>
           <div className="relative">
             <Lock className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-muted-foreground/60" />
-            <input type="password" required placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all" />
+            <input type="password" required placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" />
           </div>
         </div>
-        <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl bg-blue-500 text-black font-extrabold text-sm hover:bg-blue-400 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
           {loading ? (
             <span className="flex items-center gap-2"><Activity className="w-4.5 h-4.5 animate-spin" /> Resetting...</span>
           ) : (
@@ -105,7 +105,7 @@ export default function ResetPasswordPage() {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="glass-card p-8 rounded-3xl w-full gold-glow-border relative">
-          <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-300 px-4 py-1.5 rounded-full text-xs font-semibold mb-6 mx-auto w-fit">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-300 px-4 py-1.5 rounded-full text-xs font-semibold mb-6 mx-auto w-fit">
             <Sparkles className="w-4 h-4" /> TileMaster Pro
           </div>
           <Suspense fallback={<div className="text-center py-8 text-neutral-400">Loading...</div>}>

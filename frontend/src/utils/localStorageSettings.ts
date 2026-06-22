@@ -57,6 +57,8 @@ export interface LocalTilePayload {
   catalog_name?: string;
   page_number?: number;
   image_data_url: string; // base64 data URL
+  has_name?: boolean;
+  has_number?: boolean;
 }
 
 /** Save a tile image to local disk via backend. Returns true if succeeded. */

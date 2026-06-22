@@ -1,66 +1,66 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf7f2;
-  --foreground: #1a1614;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 
   --card: #ffffff;
-  --card-foreground: #1a1614;
+  --card-foreground: #0f172a;
 
   --popover: #ffffff;
-  --popover-foreground: #1a1614;
+  --popover-foreground: #0f172a;
 
-  --primary: #b8860b;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
 
-  --secondary: #f4ede0;
-  --secondary-foreground: #1a1614;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
 
-  --muted: #f0e9dc;
-  --muted-foreground: #6b5d4f;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
-  --accent: #f4ede0;
-  --accent-foreground: #1a1614;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
 
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
 
-  --border: #e4d9c4;
-  --input: #e4d9c4;
-  --ring: #b8860b;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
 
   --radius: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0806;
-    --foreground: #faf7f2;
+    --background: #0f172a;
+    --foreground: #f8fafc;
 
-    --card: #1a1614;
-    --card-foreground: #faf7f2;
+    --card: #1e293b;
+    --card-foreground: #f8fafc;
 
-    --popover: #1a1614;
-    --popover-foreground: #faf7f2;
+    --popover: #1e293b;
+    --popover-foreground: #f8fafc;
 
-    --primary: #fcd34d;
-    --primary-foreground: #1a1614;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
 
-    --secondary: #2a2420;
-    --secondary-foreground: #faf7f2;
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
 
-    --muted: #2a2420;
-    --muted-foreground: #a8a29e;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
 
-    --accent: #2a2420;
-    --accent-foreground: #faf7f2;
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
 
     --destructive: #7f1d1d;
     --destructive-foreground: #fafafa;
 
-    --border: #3a302a;
-    --input: #3a302a;
-    --ring: #fcd34d;
+    --border: #334155;
+    --input: #334155;
+    --ring: #3b82f6;
   }
 }
 
@@ -126,18 +126,18 @@
 }
 
 .premium-gradient {
-  background: linear-gradient(135deg, #fcd34d 0%, #b8860b 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .text-gradient {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-image: linear-gradient(135deg, #b8860b 0%, #d4a017 40%, #fcd34d 100%);
+  background-image: linear-gradient(135deg, #2563eb 0%, #3b82f6 40%, #60a5fa 100%);
 }
 
 .dark .text-gradient {
-  background-image: linear-gradient(135deg, #fcd34d 0%, #fde68a 50%, #fef3c7 100%);
+  background-image: linear-gradient(135deg, #60a5fa 0%, #93c5fd 50%, #bfdbfe 100%);
 }
 
 /* =====================================================
@@ -235,18 +235,18 @@
 .mosaic-bg {
   background-color: transparent;
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(184, 134, 11, 0.04) 1px, transparent 1.5px),
-    radial-gradient(circle at 0% 50%, rgba(184, 134, 11, 0.04) 1px, transparent 1.5px),
-    radial-gradient(circle at 100% 50%, rgba(184, 134, 11, 0.04) 1px, transparent 1.5px);
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.04) 1px, transparent 1.5px),
+    radial-gradient(circle at 0% 50%, rgba(59, 130, 246, 0.04) 1px, transparent 1.5px),
+    radial-gradient(circle at 100% 50%, rgba(59, 130, 246, 0.04) 1px, transparent 1.5px);
   background-size: 24px 14px;
   background-position: 0 0, 12px 7px, 12px 7px;
 }
 
 .dark .mosaic-bg {
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(252, 211, 77, 0.05) 1px, transparent 1.5px),
-    radial-gradient(circle at 0% 50%, rgba(252, 211, 77, 0.05) 1px, transparent 1.5px),
-    radial-gradient(circle at 100% 50%, rgba(252, 211, 77, 0.05) 1px, transparent 1.5px);
+    radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.05) 1px, transparent 1.5px),
+    radial-gradient(circle at 0% 50%, rgba(96, 165, 250, 0.05) 1px, transparent 1.5px),
+    radial-gradient(circle at 100% 50%, rgba(96, 165, 250, 0.05) 1px, transparent 1.5px);
   background-size: 24px 14px;
   background-position: 0 0, 12px 7px, 12px 7px;
 }

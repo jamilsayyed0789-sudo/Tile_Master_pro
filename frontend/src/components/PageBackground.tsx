@@ -146,9 +146,9 @@ export default function PageBackground() {
           animate={{ rotateX: [360, 0], rotateZ: [0, 360] }}
           transition={{ duration: 55, repeat: Infinity, ease: "linear" }}
         >
-          <div className="absolute inset-0 border border-amber-400/[0.08]" style={{ transform: "rotateY(45deg)" }} />
-          <div className="absolute inset-0 border border-amber-400/[0.08]" style={{ transform: "rotateX(45deg)" }} />
-          <div className="absolute inset-0 border border-amber-400/[0.08]" style={{ transform: "rotateZ(45deg)" }} />
+          <div className="absolute inset-0 border border-blue-400/[0.08]" style={{ transform: "rotateY(45deg)" }} />
+          <div className="absolute inset-0 border border-blue-400/[0.08]" style={{ transform: "rotateX(45deg)" }} />
+          <div className="absolute inset-0 border border-blue-400/[0.08]" style={{ transform: "rotateZ(45deg)" }} />
         </motion.div>
 
         {/* Wireframe diamond — center-right, desktop only */}

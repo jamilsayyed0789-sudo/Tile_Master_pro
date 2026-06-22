@@ -73,7 +73,7 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
               {onAIDetect && (
                 <button
                   onClick={onAIDetect}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[10px] font-bold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition"
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 text-[10px] font-bold rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition"
                 >
                   <Sparkles className="w-3 h-3" /> AI Auto-Detect
                 </button>
@@ -103,7 +103,7 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
                     value={field.value}
                     onChange={(e) => { field.set(e.target.value); setUsingDetected(false); }}
                     placeholder={field.placeholder}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition placeholder:text-neutral-600"
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition placeholder:text-neutral-600"
                   />
                 </div>
               ))}
@@ -120,7 +120,7 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-black transition shadow-lg shadow-amber-500/20"
+              className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold rounded-xl bg-blue-500 hover:bg-blue-400 text-black transition shadow-lg shadow-blue-500/20"
             >
               <Save className="w-3.5 h-3.5" /> Save Tile
             </button>

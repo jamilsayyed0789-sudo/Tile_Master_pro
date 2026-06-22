@@ -10,7 +10,7 @@ from app.routers.subscription import subscription_router
 from app.routers.qr_code import qr_router
 from app.routers.settings import settings_router
 from app.routers.local_storage import local_storage_router
-# from app.routers.payment import payment_router  # Razorpay temporarily disabled
+from app.routers.payment import payment_router
 
 
 @asynccontextmanager
@@ -29,7 +29,7 @@ ALLOWED_ORIGINS = os.getenv(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in ALLOWED_ORIGINS],
+    allow_origin_regex="https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,7 +42,7 @@ app.include_router(subscription_router)
 app.include_router(qr_router)
 app.include_router(settings_router)
 app.include_router(local_storage_router)
-# app.include_router(payment_router)  # Razorpay temporarily disabled
+app.include_router(payment_router)
 
 os.makedirs(os.path.join(os.getcwd(), "uploads"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

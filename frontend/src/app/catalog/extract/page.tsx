@@ -55,7 +55,7 @@ export default function CatalogExtractPage() {
   const [showTemplateInfo, setShowTemplateInfo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+  const apiBase = "/api";
 
   const [settings, setSettings] = useState<Settings>({
     tile_size_preset: "",
@@ -496,7 +496,7 @@ export default function CatalogExtractPage() {
             </Link>
             <Link
               href="/catalog/review"
-              className="px-6 py-3 border border-amber-500/30 text-amber-300 hover:bg-amber-500/10 rounded-xl font-medium transition-colors"
+              className="px-6 py-3 border border-blue-500/30 text-blue-300 hover:bg-blue-500/10 rounded-xl font-medium transition-colors"
             >
               Review
             </Link>

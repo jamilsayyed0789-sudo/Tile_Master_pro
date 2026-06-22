@@ -52,7 +52,7 @@ function ConfirmDialog({
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.08),transparent_70%)] pointer-events-none" />
           <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${
-            variant === "danger" ? "from-red-500 via-rose-500 to-orange-500" : "from-indigo-500 via-purple-500 to-pink-500"
+            variant === "danger" ? "from-red-500 via-rose-500 to-blue-500" : "from-indigo-500 via-blue-500 to-pink-500"
           }`} />
 
           <div className="relative p-6">
@@ -72,7 +72,7 @@ function ConfirmDialog({
                 className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 ${
                   variant === "danger"
                     ? "bg-gradient-to-br from-red-500/20 to-rose-500/20 border border-red-500/30"
-                    : "bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30"
+                    : "bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/30"
                 }`}
               >
                 <div className={`absolute w-16 h-16 rounded-2xl ${
@@ -100,7 +100,7 @@ function ConfirmDialog({
                   className={`flex-1 px-5 py-3 rounded-xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
                     variant === "danger"
                       ? "bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-400 hover:to-rose-400 text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)] hover:shadow-[0_4px_25px_rgba(239,68,68,0.5)]"
-                      : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.5)]"
+                      : "bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 text-white shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:shadow-[0_4px_25px_rgba(99,102,241,0.5)]"
                   }`}
                 >
                   {loading ? (
@@ -150,22 +150,22 @@ function AlertDialog({
           onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-md bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
         >
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-blue-500 to-rose-500" />
           <div className="relative p-6">
             <div className="flex flex-col items-center text-center">
               <motion.div
                 initial={{ scale: 0.5 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", duration: 0.5, delay: 0.1 }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center mb-5"
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/20 border border-blue-500/30 flex items-center justify-center mb-5"
               >
-                <AlertTriangle className="w-8 h-8 text-amber-400" />
+                <AlertTriangle className="w-8 h-8 text-blue-400" />
               </motion.div>
               <h3 className="text-xl font-extrabold text-white mb-2">{title}</h3>
               <p className="text-sm text-neutral-400 leading-relaxed mb-6">{message}</p>
               <button
                 onClick={onClose}
-                className="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-extrabold text-sm transition-all shadow-[0_4px_20px_rgba(245,158,11,0.3)]"
+                className="w-full px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-500 hover:from-blue-400 hover:to-blue-400 text-black font-extrabold text-sm transition-all shadow-[0_4px_20px_rgba(245,158,11,0.3)]"
               >
                 Got it
               </button>
@@ -238,7 +238,7 @@ const SCENES = [
 
 const COLOR_CLASSES: Record<string, { badge: string; check: string; open: string }> = {
   indigo: { badge: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", check: "bg-indigo-500", open: "bg-indigo-500 hover:bg-indigo-400" },
-  amber:  { badge: "bg-amber-500/10  text-amber-300  border-amber-500/20",  check: "bg-amber-500",  open: "bg-amber-500  hover:bg-amber-400"  },
+  amber:  { badge: "bg-blue-500/10  text-blue-300  border-blue-500/20",  check: "bg-blue-500",  open: "bg-blue-500  hover:bg-blue-400"  },
   emerald:{ badge: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", check: "bg-emerald-500", open: "bg-emerald-500 hover:bg-emerald-400" },
   sky:    { badge: "bg-sky-500/10    text-sky-300    border-sky-500/20",    check: "bg-sky-500",    open: "bg-sky-500    hover:bg-sky-400"    },
 };
@@ -510,14 +510,9 @@ export default function CatalogSearchPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
-            <div className="flex items-center gap-4 mb-4">
-              <Link href="/catalog/upload" className="inline-flex items-center text-neutral-400 hover:text-white transition-colors">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back to Upload
-              </Link>
-              <Link href="/catalog/review" className="inline-flex items-center text-amber-400 hover:text-amber-300 transition-colors text-sm">
-                <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Review
-              </Link>
-            </div>
+            <Link href="/catalog/upload" className="inline-flex items-center text-neutral-400 hover:text-white mb-4 transition-colors">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Upload
+            </Link>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Tile Database</h1>
           </div>
 
@@ -584,30 +579,12 @@ export default function CatalogSearchPage() {
                   {/* Image */}
                   <div className="aspect-[4/3] bg-neutral-950 rounded-t-2xl overflow-hidden flex items-center justify-center">
                     {tile.image_url ? (
-                      <img
-                        src={tile.image_url}
-                        alt={tile.tile_name}
-                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          target.style.display = "none";
-                          const parent = target.parentElement;
-                          if (parent && !parent.querySelector(".missing-placeholder")) {
-                            const ph = document.createElement("div");
-                            ph.className = "missing-placeholder flex flex-col items-center justify-center w-full h-full gap-2 text-center px-3";
-                            ph.innerHTML = `
-                              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                              <p class="text-[9px] text-neutral-600 font-medium">Image not found<br/>in local storage</p>
-                            `;
-                            parent.appendChild(ph);
-                          }
-                        }}
-                      />
+                      <img src={tile.image_url} alt={tile.tile_name}
+                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <ImageIcon className="w-12 h-12 text-neutral-800" />
                     )}
                   </div>
-
 
                   {/* Info */}
                   <div className="p-4 border-t border-white/5 relative">

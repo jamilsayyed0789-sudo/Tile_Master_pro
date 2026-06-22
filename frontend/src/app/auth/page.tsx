@@ -16,7 +16,7 @@ import {
   Grid3X3,
   FileText,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/utils/supabase/client";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -30,13 +30,24 @@ export default function AuthPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
 
-  const { data: session } = authClient.useSession();
+  const supabase = createClient();
+  const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
-    if (session) {
-      router.push("/");
-    }
-  }, [session, router]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) router.push("/");
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) router.push("/");
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +78,7 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const { error: signInError } = await authClient.signIn.email({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -83,10 +94,15 @@ export default function AuthPage() {
           router.refresh();
         }, 1000);
       } else {
-        const { error: signUpError } = await authClient.signUp.email({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
-          name,
+          options: {
+            data: {
+              full_name: name,
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         });
 
         if (signUpError) {
@@ -96,12 +112,13 @@ export default function AuthPage() {
         }
 
         setSuccess(
-          "Account registered successfully! Your 3-Day free trial has started."
+          "Account registered successfully! Please check your email to verify your account."
         );
 
         setTimeout(() => {
-          router.push("/");
-          router.refresh();
+          // If auto sign-in is disabled or email confirmation is required,
+          // don't redirect immediately.
+          setLoading(false);
         }, 1500);
       }
     } catch (err: any) {
@@ -142,9 +159,28 @@ export default function AuthPage() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        throw new Error(error.message || "Failed to sign in with Google");
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+      setLoading(false);
+    }
+  };
+
   const features = [
     {
-      icon: <Layers className="w-5 h-5 text-amber-400" />,
+      icon: <Layers className="w-5 h-5 text-blue-400" />,
       title: "3D Bathroom Visualizer",
       description:
         "Customize walls, floors, borders, and rows in dynamic real-time 3D.",
@@ -162,7 +198,7 @@ export default function AuthPage() {
         "Instant Indian standard box and tile count calculations with wastage buffer.",
     },
     {
-      icon: <FileText className="w-5 h-5 text-purple-400" />,
+      icon: <FileText className="w-5 h-5 text-blue-400" />,
       title: "Seamless PDF & Sharing",
       description:
         "Export clean estimation tables and share layout configurations instantly.",
@@ -181,7 +217,7 @@ export default function AuthPage() {
           transition={{ duration: 0.6 }}
           className="md:col-span-6 space-y-6 text-left"
         >
-          <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-300 px-4 py-1.5 rounded-full text-xs font-semibold gold-glow-border">
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-300 px-4 py-1.5 rounded-full text-xs font-semibold gold-glow-border">
             <Sparkles className="w-4 h-4 animate-spin-slow" /> Elite Estimator
             Tool
           </div>
@@ -229,7 +265,7 @@ export default function AuthPage() {
         >
           <div className="glass-card p-8 rounded-3xl w-full max-w-md mx-auto gold-glow-border relative">
             {!isLogin && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-500 text-black px-4 py-1 rounded-full text-xs font-extrabold shadow-lg animate-bounce flex items-center gap-1.5">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-500 text-black px-4 py-1 rounded-full text-xs font-extrabold shadow-lg animate-bounce flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 fill-black" /> 3-Day Free
                 Trial
               </div>
@@ -295,14 +331,14 @@ export default function AuthPage() {
                         placeholder="name@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                   </div>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3.5 rounded-xl bg-blue-500 text-black font-extrabold text-sm hover:bg-blue-400 transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -336,6 +372,7 @@ export default function AuthPage() {
                     onClick={() => {
                       setIsLogin(true);
                       setError(null);
+                      setLoading(false);
                     }}
                     className={`py-2 rounded-lg text-sm font-semibold transition-all ${
                       isLogin
@@ -350,6 +387,7 @@ export default function AuthPage() {
                     onClick={() => {
                       setIsLogin(false);
                       setError(null);
+                      setLoading(false);
                     }}
                     className={`py-2 rounded-lg text-sm font-semibold transition-all relative ${
                       !isLogin
@@ -359,7 +397,7 @@ export default function AuthPage() {
                   >
                     Register
                     {isLogin && (
-                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping" />
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping" />
                     )}
                   </button>
                 </div>
@@ -402,7 +440,7 @@ export default function AuthPage() {
                           placeholder="Your Name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -420,7 +458,7 @@ export default function AuthPage() {
                         placeholder="name@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -437,7 +475,7 @@ export default function AuthPage() {
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                        className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                     {isLogin && (
@@ -448,7 +486,7 @@ export default function AuthPage() {
                           setError(null);
                           setSuccess(null);
                         }}
-                        className="text-xs text-amber-400 hover:text-amber-300 font-semibold mt-1 transition"
+                        className="text-xs text-blue-400 hover:text-blue-300 font-semibold mt-1 transition"
                       >
                         Forgot Password?
                       </button>
@@ -472,7 +510,7 @@ export default function AuthPage() {
                           placeholder="••••••••"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
+                          className="w-full bg-black/20 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                         />
                       </div>
                     </motion.div>
@@ -481,7 +519,7 @@ export default function AuthPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 text-black font-extrabold text-sm hover:bg-amber-400 transition-all flex items-center justify-center gap-2 mt-6 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3.5 rounded-xl bg-blue-500 text-black font-extrabold text-sm hover:bg-blue-400 transition-all flex items-center justify-center gap-2 mt-6 cursor-pointer shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
@@ -496,6 +534,27 @@ export default function AuthPage() {
                     )}
                   </button>
                 </form>
+
+                <div className="mt-6 flex items-center gap-4">
+                  <div className="h-px bg-white/10 flex-1"></div>
+                  <span className="text-xs text-muted-foreground font-medium">OR</span>
+                  <div className="h-px bg-white/10 flex-1"></div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-3 mt-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                  Continue with Google
+                </button>
 
                 <p className="text-[10px] text-muted-foreground/50 text-center mt-6">
                   By accessing TileMaster Pro, you agree to our Terms and agree

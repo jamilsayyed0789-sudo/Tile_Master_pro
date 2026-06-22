@@ -21,7 +21,7 @@ interface Lead {
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+  const baseUrl = "/api";
 
   useEffect(() => {
     fetch(`${baseUrl}/tile/leads/list`)

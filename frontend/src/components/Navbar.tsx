@@ -28,13 +28,13 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authClient } from "@/lib/auth-client";
+import { createClient } from "@/utils/supabase/client";
 
 const threeDItems = [
-  { name: "3D Room", path: "/room-previewer", icon: Rotate3d, accent: "text-amber-400" },
-  { name: "3D Bathroom", path: "/bathroom-3d", icon: ShowerHead, accent: "text-blue-400" },
-  { name: "3D Kitchen", path: "/kitchen-3d", icon: CookingPot, accent: "text-rose-400" },
-  { name: "3D Wall Elevation", path: "/wall-elevation", icon: Columns, accent: "text-purple-400" },
+  { name: "3D Room", path: "/room-previewer", icon: Rotate3d },
+  { name: "3D Bathroom", path: "/bathroom-3d", icon: ShowerHead },
+  { name: "3D Kitchen", path: "/kitchen-3d", icon: CookingPot },
+  { name: "3D Wall Elevation", path: "/wall-elevation", icon: Columns },
 ];
 
 const navItems = [
@@ -43,8 +43,8 @@ const navItems = [
   { name: "Floor Calculator", path: "/floor-calculator", icon: Calculator },
   { name: "Bathroom Calculator", path: "/bathroom-calculator", icon: Droplet },
   { name: "Designer Mode", path: "/designer", icon: Wand2 },
-  { name: "PDF Extract", path: "/catalog/pdf-extract", icon: FileText },
-  { name: "Tile Library", path: "/catalog/tile-library", icon: LayoutGrid },
+  { name: "Catalog Hub", path: "/catalog/pdf-extract", icon: FileText },
+  { name: "Tile Collection", path: "/catalog/tile-library", icon: LayoutGrid },
   { name: "QR Codes", path: "/dealer/qr-generator", icon: QrCode },
 ];
 
@@ -52,21 +52,62 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [threeDDropdownOpen, setThreeDDropdownOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const supabase = createClient();
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
   const isLoggedIn = !!session;
 
   const isThreeDActive = threeDItems.some((item) => pathname === item.path);
 
+  // Scroll logic for mobile/desktop
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 20);
+
+      // Show on scroll up, hide on scroll down
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHidden(true);
+      } else if (currentScrollY < lastScrollY - 10) {
+        setIsHidden(false);
+      }
+      setLastScrollY(currentScrollY);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [lastScrollY]);
+
+  // Mouse move logic for desktop edge-hover
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (e.clientY < 80) {
+        setIsHidden(false);
+      } else if (e.clientY > 150 && !isOpen && !threeDDropdownOpen && window.scrollY > 20) {
+        setIsHidden(true);
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [isOpen, threeDDropdownOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,54 +124,44 @@ export default function Navbar() {
 
   useEffect(() => {
     setThreeDDropdownOpen(false);
+    // Hide navbar after navigating to save space
+    if (pathname !== "/") {
+      setIsHidden(true);
+    }
   }, [pathname]);
 
   const handleLogout = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          setIsOpen(false);
-          router.push("/auth");
-          router.refresh();
-        },
-      },
-    });
+    await supabase.auth.signOut();
+    setIsOpen(false);
+    router.push("/auth");
+    router.refresh();
   };
 
   return (
     <>
       <header
-        className={`fixed top-3 left-3 right-3 z-50 transition-all duration-500 ${
-          scrolled ? "top-2" : "top-3"
+        className={`fixed left-3 right-3 z-[100] transition-all duration-500 ease-in-out ${
+          isHidden ? "-top-32 opacity-0 pointer-events-none" : scrolled ? "top-2 opacity-100" : "top-3 opacity-100"
         }`}
       >
         <div
           className={`mx-auto max-w-[1500px] rounded-2xl transition-all duration-500 ${
             scrolled
-              ? "bg-black/60 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.05)]"
-              : "bg-black/30 backdrop-blur-xl border border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.3)]"
+              ? "bg-slate-900/60 backdrop-blur-2xl border border-slate-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+              : "bg-slate-900/30 backdrop-blur-xl border border-slate-700/30"
           }`}
         >
-          {/* Gradient accent line */}
-          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
-
           <div className="px-3 sm:px-5">
             <div className="flex justify-between items-center h-14">
               {/* Brand */}
               <div className="flex items-center flex-shrink-0">
                 <Link href="/" className="flex items-center gap-2 group">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 blur-md opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                      <Box className="w-5 h-5 text-black" strokeWidth={2.5} />
-                    </div>
+                  <div className="relative w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center transition-all duration-300 shadow-lg shadow-blue-500/20">
+                    <Box className="w-4 h-4 text-white" strokeWidth={2.5} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-black text-base tracking-tight text-white leading-none">
-                      Tile<span className="text-gradient">Master</span> Pro
-                    </span>
-                    <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-[0.18em] leading-none mt-1">
-                      Premium Suite
+                    <span className="font-semibold text-base tracking-tight text-slate-50 font-space-grotesk leading-none">
+                      TileMasterPro
                     </span>
                   </div>
                 </Link>
@@ -145,25 +176,14 @@ export default function Navbar() {
                     <Link
                       key={item.name}
                       href={item.path}
-                      className={`relative px-3 py-2 rounded-lg text-[13.5px] font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap group ${
+                      className={`relative px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap group ${
                         isActive
-                          ? "text-white bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                          : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
+                          ? "text-blue-400 bg-slate-800/50 border border-slate-700/50"
+                          : "text-slate-400 hover:text-slate-50 hover:bg-slate-800/30 border border-transparent"
                       }`}
                     >
-                      <Icon
-                        className={`w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110 ${
-                          isActive ? "text-amber-400" : ""
-                        }`}
-                      />
+                      <Icon className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />
                       {item.name}
-                      {isActive && (
-                        <motion.div
-                          layoutId="navbar-pill"
-                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 -z-10"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                      )}
                     </Link>
                   );
                 })}
@@ -172,23 +192,19 @@ export default function Navbar() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setThreeDDropdownOpen(!threeDDropdownOpen)}
-                    className={`relative px-3 py-2 rounded-lg text-[13.5px] font-semibold transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                    className={`relative px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                       isThreeDActive
-                        ? "text-white bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                        : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
+                        ? "text-blue-400 bg-slate-800/50 border border-slate-700/50"
+                        : "text-slate-400 hover:text-slate-50 hover:bg-slate-800/30 border border-transparent"
                     }`}
                   >
-                    <Boxes className={`w-3.5 h-3.5 ${isThreeDActive ? "text-amber-400" : ""}`} />
+                    <Boxes className="w-3.5 h-3.5" />
                     3D View
                     <ChevronDown
                       className={`w-3 h-3 transition-transform duration-200 ${
                         threeDDropdownOpen ? "rotate-180" : ""
                       }`}
                     />
-                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                    </span>
                   </button>
 
                   <AnimatePresence>
@@ -198,13 +214,13 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.96 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+                        className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-slate-900/95 backdrop-blur-2xl border border-slate-700 rounded-2xl shadow-2xl overflow-hidden"
                       >
                         <div className="p-2">
                           <div className="px-3 py-2 flex items-center gap-2">
-                            <Sparkles className="w-3 h-3 text-amber-400" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-                              Immersive 3D Tools
+                            <Sparkles className="w-3 h-3 text-blue-500" />
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                              Immersive Tools
                             </span>
                           </div>
                           {threeDItems.map((item) => {
@@ -215,29 +231,20 @@ export default function Navbar() {
                                 key={item.name}
                                 href={item.path}
                                 onClick={() => setThreeDDropdownOpen(false)}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                                   isActive
-                                    ? "bg-gradient-to-r from-amber-500/15 to-orange-500/10 text-white border border-amber-500/20"
-                                    : "text-neutral-300 hover:bg-white/5 hover:text-white border border-transparent"
+                                    ? "bg-slate-800/80 text-blue-400 border border-slate-700"
+                                    : "text-slate-300 hover:bg-slate-800/50 hover:text-slate-50 border border-transparent"
                                 }`}
                               >
-                                <div
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                                    isActive ? "bg-amber-500/20" : "bg-white/5"
-                                  }`}
-                                >
-                                  <Icon className={`w-3.5 h-3.5 ${item.accent}`} />
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-800">
+                                  <Icon className="w-3.5 h-3.5" />
                                 </div>
                                 {item.name}
-                                <ArrowUpRight className="w-3 h-3 ml-auto text-neutral-500" />
+                                <ArrowUpRight className="w-3 h-3 ml-auto text-slate-500" />
                               </Link>
                             );
                           })}
-                        </div>
-                        <div className="px-4 py-2.5 border-t border-white/5 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
-                          <span className="text-[10px] text-amber-300/80 font-semibold">
-                            ✨ New: Wall Elevation 3D
-                          </span>
                         </div>
                       </motion.div>
                     )}
@@ -250,7 +257,7 @@ export default function Navbar() {
                 {isLoggedIn ? (
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-2 rounded-lg text-[12px] font-bold bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 hover:border-red-500/40 transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-2 rounded-lg text-[12px] font-medium text-slate-400 hover:text-slate-50 hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <LogOut className="w-3 h-3" />
                     Logout
@@ -258,9 +265,8 @@ export default function Navbar() {
                 ) : (
                   <Link
                     href="/auth"
-                    className="px-4 py-2 rounded-lg text-[12.5px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black transition-all flex items-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]"
+                    className="px-5 py-2 rounded-xl text-[13px] font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-all flex items-center gap-1.5 shadow-lg shadow-blue-500/20"
                   >
-                    <Sparkles className="w-3 h-3" />
                     Start Free
                   </Link>
                 )}
@@ -270,7 +276,7 @@ export default function Navbar() {
               <div className="md:hidden flex items-center">
                 <button
                   onClick={() => setIsOpen(!isOpen)}
-                  className="text-white focus:outline-none p-2 rounded-lg hover:bg-white/5 transition-colors"
+                  className="text-slate-300 focus:outline-none p-2 rounded-lg hover:bg-slate-800 transition-colors"
                 >
                   {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
@@ -287,7 +293,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-2xl md:hidden pt-20 overflow-y-auto"
+            className="fixed inset-0 z-40 bg-slate-900/95 backdrop-blur-2xl md:hidden pt-20 overflow-y-auto"
           >
             <div className="px-4 pt-4 pb-8 space-y-2">
               {navItems.map((item) => {
@@ -298,16 +304,14 @@ export default function Navbar() {
                     key={item.name}
                     href={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-gradient-to-r from-amber-500/15 to-orange-500/10 text-white border border-amber-500/20"
-                        : "text-neutral-300 hover:bg-white/5 hover:text-white border border-transparent"
+                        ? "bg-slate-800 border border-slate-700 text-blue-400"
+                        : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-50 border border-transparent"
                     }`}
                   >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                      isActive ? "bg-amber-500/20" : "bg-white/5"
-                    }`}>
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? "text-amber-400" : ""}`} />
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-800">
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
                     {item.name}
                   </Link>
@@ -315,7 +319,7 @@ export default function Navbar() {
               })}
 
               <div className="pt-2">
-                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
+                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-medium uppercase tracking-widest text-slate-500">
                   <Boxes className="w-3 h-3" />
                   3D View
                 </div>
@@ -328,16 +332,14 @@ export default function Navbar() {
                         key={item.name}
                         href={item.path}
                         onClick={() => setIsOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                           isActive
-                            ? "bg-gradient-to-r from-amber-500/15 to-orange-500/10 text-white border border-amber-500/20"
-                            : "text-neutral-300 hover:bg-white/5 hover:text-white border border-transparent"
+                            ? "bg-slate-800 border border-slate-700 text-blue-400"
+                            : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-50 border border-transparent"
                         }`}
                       >
-                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
-                          isActive ? "bg-amber-500/20" : "bg-white/5"
-                        }`}>
-                          <Icon className={`w-3 h-3 ${item.accent}`} />
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-slate-800">
+                          <Icon className="w-3 h-3" />
                         </div>
                         {item.name}
                       </Link>
@@ -349,20 +351,19 @@ export default function Navbar() {
               {isLoggedIn ? (
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-bold bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20 transition-colors cursor-pointer mt-4"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer mt-4"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
                 </button>
               ) : (
-                <Link
-                  href="/auth"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-black mt-4"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Start Free
-                </Link>
+               <Link
+                 href="/auth"
+                 onClick={() => setIsOpen(false)}
+                 className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium bg-blue-500 text-white shadow-lg shadow-blue-500/20 mt-4"
+               >
+                 Start Free
+               </Link>
               )}
             </div>
           </motion.div>

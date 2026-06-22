@@ -5,6 +5,9 @@ from app.services.catalog_service import extract_tiles_from_pdf
 from app.models.catalog import TileCatalog
 import json
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 def test_extraction():
     db = SessionLocal()
     with open("test_tiles.pdf", "rb") as f:

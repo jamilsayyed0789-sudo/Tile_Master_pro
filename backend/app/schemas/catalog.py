@@ -5,8 +5,8 @@ from datetime import datetime
 
 class TileCatalogResponse(BaseModel):
     id: int
-    tile_name: str
-    tile_number: str
+    tile_name: Optional[str] = None
+    tile_number: Optional[str] = None
     tile_size: Optional[str] = None
     image_url: Optional[str] = None
     catalog_name: Optional[str] = None
@@ -17,8 +17,8 @@ class TileCatalogResponse(BaseModel):
 
 
 class TileSearchResult(BaseModel):
-    tile_name: str
-    tile_number: str
+    tile_name: Optional[str] = None
+    tile_number: Optional[str] = None
     tile_size: Optional[str] = None
     image_url: Optional[str] = None
 

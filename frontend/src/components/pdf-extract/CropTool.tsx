@@ -7,7 +7,12 @@ import type { CropRegion } from "@/types/tile";
 
 interface Props {
   imageUrl: string;
-  onSave: (croppedDataUrl: string) => void;
+  onSave: (
+    croppedDataUrl: string,
+    nameDataUrl?: string,
+    numberDataUrl?: string,
+    allCrops?: { imageDataUrl: string; nameDataUrl?: string; numberDataUrl?: string }[]
+  ) => void;
   onApplyToAll?: (regions: CropRegion[], rotation: number, removeBg: boolean) => void;
   selectedCount?: number;
   onClose: () => void;
@@ -23,7 +28,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [removeBg, setRemoveBg] = useState(false);
-  const [crops, setCrops] = useState<CropRegion[]>([{ x: 10, y: 10, width: 400, height: 300 }]);
+  const [crops, setCrops] = useState<CropRegion[]>([{ x: 10, y: 10, width: 400, height: 300, type: "image" }]);
   const [activeCropIndex, setActiveCropIndex] = useState(0);
   const [dragging, setDragging] = useState<Handle>(null);
   const [dragStart, setDragStart] = useState({ mx: 0, my: 0, crop: { x: 0, y: 0, width: 0, height: 0 } });
@@ -33,11 +38,11 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
 
   const activeCrop = crops[activeCropIndex] || crops[0];
 
-  const updateActiveCrop = useCallback((updater: (prev: CropRegion) => CropRegion) => {
+  const updateActiveCrop = useCallback((updater: (prev: CropRegion) => Partial<CropRegion>) => {
     setCrops((prev) => {
       const next = [...prev];
       if (next[activeCropIndex]) {
-        next[activeCropIndex] = updater(next[activeCropIndex]);
+        next[activeCropIndex] = { ...next[activeCropIndex], ...updater(next[activeCropIndex]) };
       }
       return next;
     });
@@ -49,7 +54,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
     const w = img.clientWidth;
     const h = img.clientHeight;
     const margin = Math.round(Math.min(w, h) * 0.05);
-    setCrops([{ x: margin, y: margin, width: w - margin * 2, height: h - margin * 2 }]);
+    setCrops([{ x: margin, y: margin, width: w - margin * 2, height: h - margin * 2, type: "image" }]);
     setActiveCropIndex(0);
     setImageLoaded(true);
   }, []);
@@ -69,20 +74,59 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
     setRotation(0);
   }, [fitToImage]);
 
-  const addCrop = () => {
+  const addNameCrop = () => {
     const img = imageRef.current;
     if (!img) return;
     const w = img.clientWidth;
     const h = img.clientHeight;
-    const newCrop = { x: w * 0.25, y: h * 0.25, width: w * 0.5, height: h * 0.5 };
+    const newCrop: CropRegion = { x: w * 0.1, y: h * 0.75, width: w * 0.4, height: Math.min(50, h * 0.12), type: "name" };
     setCrops((prev) => [...prev, newCrop]);
-    setActiveCropIndex(crops.length);
+    setTimeout(() => {
+      setCrops((prev) => {
+        setActiveCropIndex(prev.length - 1);
+        return prev;
+      });
+    }, 50);
+  };
+
+  const addNumberCrop = () => {
+    const img = imageRef.current;
+    if (!img) return;
+    const w = img.clientWidth;
+    const h = img.clientHeight;
+    const newCrop: CropRegion = { x: w * 0.55, y: h * 0.75, width: w * 0.35, height: Math.min(50, h * 0.12), type: "number" };
+    setCrops((prev) => [...prev, newCrop]);
+    setTimeout(() => {
+      setCrops((prev) => {
+        setActiveCropIndex(prev.length - 1);
+        return prev;
+      });
+    }, 50);
+  };
+
+  const addImageCrop = () => {
+    const img = imageRef.current;
+    if (!img) return;
+    const w = img.clientWidth;
+    const h = img.clientHeight;
+    const newCrop: CropRegion = { x: w * 0.25, y: h * 0.25, width: w * 0.5, height: h * 0.5, type: "image" };
+    setCrops((prev) => [...prev, newCrop]);
+    setTimeout(() => {
+      setCrops((prev) => {
+        setActiveCropIndex(prev.length - 1);
+        return prev;
+      });
+    }, 50);
   };
 
   const removeActiveCrop = () => {
-    if (crops.length <= 1) return;
+    const active = crops[activeCropIndex];
+    if (!active) return;
+    if (active.type === "image" && crops.filter(c => c.type === "image").length <= 1) {
+      return;
+    }
     setCrops((prev) => prev.filter((_, i) => i !== activeCropIndex));
-    setActiveCropIndex((prev) => Math.max(0, prev - 1));
+    setActiveCropIndex(0);
   };
 
   const handleMouseDown = (e: React.MouseEvent, handle: Handle, cropIndex: number) => {
@@ -169,40 +213,77 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
   const applyCrop = async () => {
     const img = imageRef.current;
     if (!img) return;
-    setIsProcessing(true);
-    let dataUrl = cropToCanvas(img, activeCrop, rotation);
     
-    if (removeBg) {
-      try {
-        setProgressText("Loading AI models...");
-        const { removeBackground } = await import("@imgly/background-removal");
-        const blob = await (await fetch(dataUrl)).blob();
-        const bgRemovedBlob = await removeBackground(blob, {
-          publicPath: "/assets/background-removal/",
-          progress: (key, current, total) => {
-            if (key.includes("fetch") && total) {
-              const percent = Math.round((current / total) * 100);
-              setProgressText(`Downloading AI... ${percent}%`);
-            } else if (key.includes("compute")) {
+    const imageCrops = crops.filter(c => c.type === "image" || !c.type);
+    const nameCrops = crops.filter(c => c.type === "name");
+    const numberCrops = crops.filter(c => c.type === "number");
+    
+    setIsProcessing(true);
+
+    const findNearest = (target: CropRegion, candidates: CropRegion[]): CropRegion | undefined => {
+      if (candidates.length === 0) return undefined;
+      const tcX = target.x + target.width / 2;
+      const tcY = target.y + target.height / 2;
+      let nearest: CropRegion | undefined = undefined;
+      let minDistance = Infinity;
+      for (const c of candidates) {
+        const ccX = c.x + c.width / 2;
+        const ccY = c.y + c.height / 2;
+        const dist = Math.pow(tcX - ccX, 2) + Math.pow(tcY - ccY, 2);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = c;
+        }
+      }
+      return nearest;
+    };
+    
+    try {
+      const croppedItems = await Promise.all(
+        imageCrops.map(async (imageCrop) => {
+          let dataUrl = cropToCanvas(img, imageCrop, rotation);
+          const nearestName = findNearest(imageCrop, nameCrops);
+          const nearestNumber = findNearest(imageCrop, numberCrops);
+          
+          const nameDataUrl = nearestName ? cropToCanvas(img, nearestName, rotation) : undefined;
+          const numberDataUrl = nearestNumber ? cropToCanvas(img, nearestNumber, rotation) : undefined;
+          
+          if (removeBg) {
+            try {
               setProgressText("Removing background...");
+              const { removeBackground } = await import("@imgly/background-removal");
+              const blob = await (await fetch(dataUrl)).blob();
+              const bgRemovedBlob = await removeBackground(blob, {
+                publicPath: "/assets/background-removal/",
+                progress: () => {}
+              });
+              dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(bgRemovedBlob);
+              });
+            } catch (err) {
+              console.error("Background removal failed for crop item", err);
             }
           }
-        });
-        dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(bgRemovedBlob);
-        });
-      } catch (err) {
-        console.error("Background removal failed", err);
-      } finally {
-        setProgressText("");
+          
+          return {
+            imageDataUrl: dataUrl,
+            nameDataUrl,
+            numberDataUrl
+          };
+        })
+      );
+      
+      setIsProcessing(false);
+      if (croppedItems.length > 0) {
+        onSave(croppedItems[0].imageDataUrl, croppedItems[0].nameDataUrl, croppedItems[0].numberDataUrl, croppedItems);
       }
+    } catch (err) {
+      console.error("Failed to apply crops", err);
+      setIsProcessing(false);
     }
-    
-    setIsProcessing(false);
-    onSave(dataUrl);
   };
 
   const nudge = (dx: number, dy: number) => {
@@ -236,16 +317,27 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800">
             <div className="flex items-center gap-2">
-              <Crop className="w-4 h-4 text-amber-400" />
+              <Crop className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-bold text-white">Multi-Crop Tile Image</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={addCrop} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 transition text-xs font-bold" title="Add another crop box">
-                <Plus className="w-3.5 h-3.5" /> Add Crop
+              <button onClick={addImageCrop} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 transition text-xs font-bold" title="Add another Tile Image crop box">
+                <Plus className="w-3.5 h-3.5" /> Add Image Box
               </button>
-              {crops.length > 1 && (
-                <button onClick={removeActiveCrop} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition text-xs font-bold" title="Remove active crop box">
-                  <Trash2 className="w-3.5 h-3.5" /> Remove
+              <button onClick={addNameCrop} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 transition text-xs font-bold" title="Add crop box for Tile Name — used for OCR text extraction only, not saved as an image">
+                <Plus className="w-3.5 h-3.5" /> Add Name Box
+              </button>
+              <button onClick={addNumberCrop} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 transition text-xs font-bold" title="Add crop box for Tile Number — used for OCR text extraction only, not saved as an image">
+                <Plus className="w-3.5 h-3.5" /> Add Number Box
+              </button>
+              {(crops.some(c => c.type === "name") || crops.some(c => c.type === "number")) && (
+                <span className="text-[9px] text-neutral-500 italic px-1.5">
+                  Name/Number boxes → OCR only, not saved as images
+                </span>
+              )}
+              {(crops[activeCropIndex]?.type !== "image" || crops.filter(c => c.type === "image").length > 1) && (
+                <button onClick={removeActiveCrop} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition text-xs font-bold" title="Remove selected crop box">
+                  <Trash2 className="w-3.5 h-3.5" /> Remove Box
                 </button>
               )}
               <div className="w-px h-5 bg-neutral-800 mx-1" />
@@ -319,10 +411,34 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
                   
                   {crops.map((c, i) => {
                     const isActive = i === activeCropIndex;
+                    const type = c.type || "image";
+                    
+                    let borderClass = "border-blue-500/60 z-10 hover:border-blue-400";
+                    let bgLabelClass = "bg-blue-600 text-white";
+                    let handleBgClass = "bg-blue-400";
+                    let label = "Tile Image";
+                    
+                    if (type === "image") {
+                      borderClass = isActive ? "border-blue-400 z-20" : "border-blue-500/60 z-10 hover:border-blue-400";
+                      bgLabelClass = isActive ? "bg-blue-400 text-black" : "bg-blue-600 text-white";
+                      handleBgClass = "bg-blue-400";
+                      label = "Tile Image";
+                    } else if (type === "name") {
+                      borderClass = isActive ? "border-purple-400 z-20" : "border-purple-500/60 z-10 hover:border-purple-400";
+                      bgLabelClass = isActive ? "bg-purple-400 text-black" : "bg-purple-600 text-white";
+                      handleBgClass = "bg-purple-400";
+                      label = "Tile Name";
+                    } else if (type === "number") {
+                      borderClass = isActive ? "border-emerald-400 z-20" : "border-emerald-500/60 z-10 hover:border-emerald-400";
+                      bgLabelClass = isActive ? "bg-emerald-400 text-black" : "bg-emerald-600 text-white";
+                      handleBgClass = "bg-emerald-400";
+                      label = "Tile Number";
+                    }
+                    
                     return (
                       <div
                         key={i}
-                        className={`absolute border-2 shadow-inner cursor-move ${isActive ? 'border-amber-400 z-20' : 'border-neutral-500 z-10 opacity-70 hover:opacity-100 hover:border-amber-200'}`}
+                        className={`absolute border-2 shadow-inner cursor-move ${borderClass}`}
                         style={{
                           left: c.x,
                           top: c.y,
@@ -338,10 +454,10 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
                         {isActive && handles.map((h) => (
                           <div
                             key={h.key}
-                            className="absolute w-5 h-5 bg-amber-400 border-2 border-black rounded-sm shadow-lg hover:scale-125 transition-transform z-10"
+                            className={`absolute w-4 h-4 ${handleBgClass} border border-black rounded-sm shadow-md hover:scale-125 transition-transform z-10`}
                             style={{
-                              left: `calc(${h.cx * 100}% - 10px)`,
-                              top: `calc(${h.cy * 100}% - 10px)`,
+                              left: `calc(${h.cx * 100}% - 8px)`,
+                              top: `calc(${h.cy * 100}% - 8px)`,
                               cursor: h.cursor,
                             }}
                             onMouseDown={(e) => {
@@ -351,8 +467,8 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
                           />
                         ))}
                         {/* Box label */}
-                        <div className={`absolute top-0 left-0 px-1.5 py-0.5 text-[9px] font-bold ${isActive ? 'bg-amber-400 text-black' : 'bg-neutral-600 text-white'}`}>
-                          {i + 1}
+                        <div className={`absolute top-0 left-0 px-1.5 py-0.5 text-[9px] font-bold ${bgLabelClass}`}>
+                          {label}
                         </div>
                       </div>
                     );
@@ -405,7 +521,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
                 title="Remove background from each cropped tile using AI"
                 className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition ${
                   removeBg
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-lg shadow-purple-500/10'
+                    ? 'bg-blue-500/20 text-purple-300 border-blue-500/40 shadow-lg shadow-blue-500/10'
                     : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-white'
                 }`}
               >
@@ -432,6 +548,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
                       yRatio: c.y / displayH,
                       wRatio: c.width / displayW,
                       hRatio: c.height / displayH,
+                      type: c.type || "image",
                     })) as any;
                     
                     onApplyToAll(normalizedRegions, rotation, removeBg);
@@ -444,7 +561,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
               <button
                 onClick={applyCrop}
                 disabled={isProcessing}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-black transition shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-blue-500 hover:bg-blue-400 text-black transition shadow-lg shadow-blue-500/20 disabled:opacity-50"
               >
                 {isProcessing ? (
                   <>

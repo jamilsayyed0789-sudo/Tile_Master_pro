@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8001";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["kysely"],
   async rewrites() {
     return [
       {
@@ -24,6 +25,14 @@ const nextConfig: NextConfig = {
       {
         source: "/api/settings/:path*",
         destination: `${BACKEND_URL}/api/settings/:path*`,
+      },
+      {
+        source: "/api/auth/:path*",
+        destination: `${BACKEND_URL}/auth/:path*`,
+      },
+      {
+        source: "/api/payment/:path*",
+        destination: `${BACKEND_URL}/payment/:path*`,
       },
     ];
   },

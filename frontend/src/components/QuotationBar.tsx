@@ -26,8 +26,8 @@ export default function QuotationBar() {
         <div className="max-w-5xl mx-auto pointer-events-auto">
           <div className="bg-neutral-900/95 backdrop-blur-xl border border-neutral-800/80 rounded-2xl shadow-2xl shadow-black/50 px-5 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-amber-400" />
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-blue-400" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-white">
@@ -48,7 +48,7 @@ export default function QuotationBar() {
               </button>
               <button
                 onClick={() => router.push("/quotation-project")}
-                className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition text-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-black font-bold rounded-xl transition text-sm"
               >
                 <FileText className="w-4 h-4" />
                 Generate Quotation

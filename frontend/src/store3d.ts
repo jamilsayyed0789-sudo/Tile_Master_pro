@@ -150,24 +150,6 @@ interface WallElevationState {
   setWallHeight: (v: number) => void;
   tileSize: string | null;
   setTileSize: (v: string | null) => void;
-  showDoor: boolean;
-  setShowDoor: (v: boolean) => void;
-  doorW: number;
-  setDoorW: (v: number) => void;
-  doorH: number;
-  setDoorH: (v: number) => void;
-  doorPosX: number;
-  setDoorPosX: (v: number) => void;
-  showWindow: boolean;
-  setShowWindow: (v: boolean) => void;
-  winW: number;
-  setWinW: (v: number) => void;
-  winH: number;
-  setWinH: (v: number) => void;
-  winPosX: number;
-  setWinPosX: (v: number) => void;
-  winPosY: number;
-  setWinPosY: (v: number) => void;
   reset: () => void;
 }
 
@@ -245,19 +227,10 @@ const defaultKitchen3D: Omit<Kitchen3DState, 'setRoomWidth' | 'setRoomLength' | 
   stripInterval: 2,
 };
 
-const defaultWallElevation: Omit<WallElevationState, 'setWallWidth' | 'setWallHeight' | 'setTileSize' | 'setShowDoor' | 'setDoorW' | 'setDoorH' | 'setDoorPosX' | 'setShowWindow' | 'setWinW' | 'setWinH' | 'setWinPosX' | 'setWinPosY' | 'reset'> = {
+const defaultWallElevation: Omit<WallElevationState, 'setWallWidth' | 'setWallHeight' | 'setTileSize' | 'reset'> = {
   wallWidth: 10,
   wallHeight: 9,
   tileSize: '12x18',
-  showDoor: true,
-  doorW: 3,
-  doorH: 7,
-  doorPosX: 25,
-  showWindow: true,
-  winW: 3,
-  winH: 3,
-  winPosX: 70,
-  winPosY: 65,
 };
 
 export const useRoomPreviewerStore = create<RoomPreviewerState>()(
@@ -371,15 +344,6 @@ export const useWallElevationStore = create<WallElevationState>()(
       setWallWidth: (v) => set({ wallWidth: v }),
       setWallHeight: (v) => set({ wallHeight: v }),
       setTileSize: (v) => set({ tileSize: v }),
-      setShowDoor: (v) => set({ showDoor: v }),
-      setDoorW: (v) => set({ doorW: v }),
-      setDoorH: (v) => set({ doorH: v }),
-      setDoorPosX: (v) => set({ doorPosX: v }),
-      setShowWindow: (v) => set({ showWindow: v }),
-      setWinW: (v) => set({ winW: v }),
-      setWinH: (v) => set({ winH: v }),
-      setWinPosX: (v) => set({ winPosX: v }),
-      setWinPosY: (v) => set({ winPosY: v }),
       reset: () => set(defaultWallElevation),
     }),
     {

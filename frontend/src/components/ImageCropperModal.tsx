@@ -59,7 +59,7 @@ export default function ImageCropperModal({
       <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-4xl w-full flex flex-col max-h-[90vh] shadow-2xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <CropIcon className="w-5 h-5 text-amber-500" /> Crop Tile Image
+            <CropIcon className="w-5 h-5 text-blue-500" /> Crop Tile Image
           </h2>
           <button onClick={onClose} className="text-neutral-400 hover:text-white p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 transition">
             <X className="w-5 h-5" />
@@ -90,7 +90,7 @@ export default function ImageCropperModal({
           </button>
           <button 
             onClick={handleComplete} 
-            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl flex items-center gap-2 shadow-lg"
+            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-400 text-black font-bold rounded-xl flex items-center gap-2 shadow-lg"
           >
             <Check className="w-4 h-4" /> Apply Crop
           </button>

@@ -13,8 +13,9 @@ export default function CatalogUploadPage() {
   const [uploadMessage, setUploadMessage] = useState("");
   const [useTemplate, setUseTemplate] = useState(false);
   const [showTemplateInfo, setShowTemplateInfo] = useState(false);
+  const [tileSize, setTileSize] = useState("");
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+  const baseUrl = "/api";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -42,6 +43,10 @@ export default function CatalogUploadPage() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("use_template", useTemplate ? "true" : "false");
+    
+    if (tileSize) {
+      formData.append("settings_json", JSON.stringify({ tile_size: tileSize }));
+    }
 
     try {
       const response = await fetch(`${baseUrl}/catalog/upload`, {
@@ -203,6 +208,37 @@ export default function CatalogUploadPage() {
                 </div>
               </div>
 
+              {/* Tile Size Dropdown */}
+              <div className="mt-6">
+                <label className="block text-sm font-semibold text-neutral-300 mb-2">
+                  Override Tile Size (Optional)
+                </label>
+                <div className="relative">
+                  <select
+                    value={tileSize}
+                    onChange={(e) => setTileSize(e.target.value)}
+                    className="w-full bg-neutral-800/80 border border-neutral-700 rounded-xl py-3 px-4 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                  >
+                    <option value="">Auto-detect size</option>
+                    <option value="300x300 mm">300x300 mm</option>
+                    <option value="600x600 mm">600x600 mm</option>
+                    <option value="800x800 mm">800x800 mm</option>
+                    <option value="600x1200 mm">600x1200 mm</option>
+                    <option value="800x1600 mm">800x1600 mm</option>
+                    <option value="1200x1200 mm">1200x1200 mm</option>
+                    <option value="1200x2400 mm">1200x2400 mm</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <svg className="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1.5">
+                  If selected, all tiles in this catalog will be assigned this size.
+                </p>
+              </div>
+
               {/* Error */}
               {error && (
                 <motion.div
@@ -264,7 +300,7 @@ export default function CatalogUploadPage() {
                 </Link>
                 <Link
                   href="/catalog/review"
-                  className="px-6 py-3 border border-amber-500/30 text-amber-300 rounded-full hover:bg-amber-500/10 transition-colors"
+                  className="px-6 py-3 border border-blue-500/30 text-blue-300 rounded-full hover:bg-blue-500/10 transition-colors"
                 >
                   Review
                 </Link>

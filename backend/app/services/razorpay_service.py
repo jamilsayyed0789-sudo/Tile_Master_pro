@@ -20,7 +20,7 @@ def get_client() -> razorpay.Client:
 
 
 PLAN_AMOUNTS = {
-    "monthly": 219900,
+    "monthly": 159900,
     "lifetime": 1699900,
 }
 
@@ -44,6 +44,21 @@ def create_order(plan_type: str, user_id: str) -> dict:
     return order
 
 
+def create_subscription(plan_id: str, user_id: str) -> dict:
+    client = get_client()
+    subscription = client.subscription.create(
+        {
+            "plan_id": plan_id,
+            "customer_notify": 1,
+            "total_count": 12, # E.g., 12 months, or customize as needed
+            "notes": {
+                "user_id": user_id,
+            },
+        }
+    )
+    return subscription
+
+
 def verify_signature(
     razorpay_order_id: str,
     razorpay_payment_id: str,
@@ -54,6 +69,25 @@ def verify_signature(
         client.utility.verify_payment_signature(
             {
                 "razorpay_order_id": razorpay_order_id,
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_signature": razorpay_signature,
+            }
+        )
+        return True
+    except razorpay.errors.SignatureVerificationError:
+        return False
+
+
+def verify_subscription_signature(
+    razorpay_subscription_id: str,
+    razorpay_payment_id: str,
+    razorpay_signature: str,
+) -> bool:
+    client = get_client()
+    try:
+        client.utility.verify_subscription_payment_signature(
+            {
+                "razorpay_subscription_id": razorpay_subscription_id,
                 "razorpay_payment_id": razorpay_payment_id,
                 "razorpay_signature": razorpay_signature,
             }

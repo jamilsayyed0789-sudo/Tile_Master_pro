@@ -24,7 +24,7 @@ export default function ReviewPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
+  const baseUrl = "/api";
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -84,7 +84,7 @@ export default function ReviewPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <AlertTriangle className="text-amber-400" size={28} />
+              <AlertTriangle className="text-blue-400" size={28} />
               Tiles Needing Review
             </h1>
             <p className="text-gray-400 mt-1">

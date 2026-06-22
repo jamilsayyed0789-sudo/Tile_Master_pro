@@ -174,8 +174,9 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
         ctx.fillRect(c.width - hm, 0, hm, c.height);
         const tex = new THREE.CanvasTexture(c);
         tex.wrapS = tex.wrapT = bookmatchEnabled ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
-        tex.minFilter = THREE.LinearFilter;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
         tex.magFilter = THREE.LinearFilter;
+        tex.anisotropy = 16;
         tex.repeat.set(roomWidth / wFeet, roomLength / lFeet);
         tex.needsUpdate = true;
         return (
@@ -656,7 +657,7 @@ export default function RoomPreviewer() {
         >
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="bg-amber-500/10 text-amber-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20 shadow-sm flex items-center gap-1.5">
+              <span className="bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-blue-500/20 shadow-sm flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" /> Interactive 3D Visualizer
               </span>
             </div>
@@ -688,7 +689,7 @@ export default function RoomPreviewer() {
           {/* 1. Room Dimension Canvas Sliders */}
           <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Ruler className="w-5 h-5" />
               </div>
               <div>
@@ -701,7 +702,7 @@ export default function RoomPreviewer() {
               <div>
                 <div className="flex justify-between text-sm mb-1.5 font-semibold">
                   <span className="text-neutral-300">Room Length (ft)</span>
-                  <span className="text-amber-400">{roomLength} ft</span>
+                  <span className="text-blue-400">{roomLength} ft</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <input
@@ -710,7 +711,7 @@ export default function RoomPreviewer() {
                     max="25"
                     value={roomLength}
                     onChange={(e) => setRoomLength(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <div className="flex gap-1">
                     <button 
@@ -732,7 +733,7 @@ export default function RoomPreviewer() {
               <div>
                 <div className="flex justify-between text-sm mb-1.5 font-semibold">
                   <span className="text-neutral-300">Room Width (ft)</span>
-                  <span className="text-amber-400">{roomWidth} ft</span>
+                  <span className="text-blue-400">{roomWidth} ft</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <input
@@ -741,7 +742,7 @@ export default function RoomPreviewer() {
                     max="25"
                     value={roomWidth}
                     onChange={(e) => setRoomWidth(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <div className="flex gap-1">
                     <button 
@@ -767,31 +768,31 @@ export default function RoomPreviewer() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => applyRoomPreset(6, 6, 'pooja')}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'pooja' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'pooja' ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Pooja Room (6x6)
                 </button>
                 <button
                   onClick={() => applyRoomPreset(10, 8, 'bathroom')}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bathroom' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bathroom' ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Bath (10x8)
                 </button>
                 <button
                   onClick={() => applyRoomPreset(10, 8, 'kitchen')}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'kitchen' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'kitchen' ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Kitchen (10x8)
                 </button>
                 <button
                   onClick={() => applyRoomPreset(14, 12, 'bedroom')}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bedroom' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'bedroom' ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Bedroom (14x12)
                 </button>
                 <button
                   onClick={() => applyRoomPreset(18, 16, 'hall')}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'hall' ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition ${roomType === 'hall' ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : 'bg-neutral-900 border-neutral-800/80 hover:bg-neutral-850 hover:border-neutral-700 text-neutral-300'}`}
                 >
                   Hall (18x16)
                 </button>
@@ -820,7 +821,7 @@ export default function RoomPreviewer() {
                     onClick={() => setSizeUnit(u)}
                     className={`px-3 py-1 text-xs font-bold rounded-md capitalize transition-all ${
                       sizeUnit === u
-                        ? 'bg-amber-500 text-black shadow'
+                        ? 'bg-blue-500 text-black shadow'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
@@ -841,7 +842,7 @@ export default function RoomPreviewer() {
                   step="any"
                   value={tileWidthInput}
                   onChange={(e) => setTileWidthInput(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 font-mono text-white focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 font-mono text-white focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 transition"
                   placeholder="Width"
                 />
               </div>
@@ -855,7 +856,7 @@ export default function RoomPreviewer() {
                   step="any"
                   value={tileLengthInput}
                   onChange={(e) => setTileLengthInput(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 font-mono text-white focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/10 transition"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 font-mono text-white focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 transition"
                   placeholder="Length"
                 />
               </div>
@@ -872,7 +873,7 @@ export default function RoomPreviewer() {
               </div>
               <button
                 onClick={() => setBookmatchEnabled(!bookmatchEnabled)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${bookmatchEnabled ? "bg-amber-500" : "bg-neutral-700"}`}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${bookmatchEnabled ? "bg-blue-500" : "bg-neutral-700"}`}
               >
                 <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${bookmatchEnabled ? "translate-x-5" : "translate-x-1"}`} />
               </button>
@@ -883,7 +884,7 @@ export default function RoomPreviewer() {
           {/* 3. Tile Style Selector & Custom Image Texture Import */}
           <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative">
             <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
-              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Layers className="w-5 h-5" />
               </div>
               <div>
@@ -920,7 +921,7 @@ export default function RoomPreviewer() {
                     onClick={triggerUpload}
                     className="w-full border-2 border-dashed border-neutral-800 hover:border-neutral-700 bg-neutral-600/40 rounded-2xl p-6 text-center group cursor-pointer transition"
                   >
-                    <Upload className="w-8 h-8 text-neutral-500 group-hover:text-amber-400 mx-auto mb-2.5 transition" />
+                    <Upload className="w-8 h-8 text-neutral-500 group-hover:text-blue-400 mx-auto mb-2.5 transition" />
                     <span className="block text-sm font-bold text-neutral-300 mb-0.5">Select image file</span>
                     <span className="text-xs text-neutral-500">Supports PNG, JPG, JPEG, WEBP from your local disk</span>
                   </button>
@@ -992,7 +993,7 @@ export default function RoomPreviewer() {
                 <select
                   value={selectedPattern}
                   onChange={(e) => setSelectedPattern(e.target.value as 'grid' | 'brick')}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-white font-semibold focus:outline-none focus:border-amber-500/50 transition cursor-pointer"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2 text-white font-semibold focus:outline-none focus:border-blue-500/50 transition cursor-pointer"
                 >
                   <option value="grid">Standard Stacked Grid</option>
                   <option value="brick">Brick Bond (50% Offset)</option>
@@ -1011,7 +1012,7 @@ export default function RoomPreviewer() {
                     step="1"
                     value={groutWidth}
                     onChange={(e) => setGroutWidth(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-blue-500"
                   />
                   <span className="font-mono text-white text-sm font-semibold w-10 text-right">{groutWidth}mm</span>
                 </div>
@@ -1039,7 +1040,7 @@ export default function RoomPreviewer() {
                           onClick={() => setGroutColor(c)}
                           className={`w-7 h-7 rounded-full border transition-all cursor-pointer relative flex items-center justify-center ${
                             isActive
-                              ? 'border-amber-500 scale-110 shadow-lg shadow-amber-500/10'
+                              ? 'border-blue-500 scale-110 shadow-lg shadow-blue-500/10'
                               : 'border-neutral-800 hover:border-neutral-700 hover:scale-105'
                           }`}
                           style={{ backgroundColor: c }}
@@ -1061,7 +1062,7 @@ export default function RoomPreviewer() {
                   </span>
                   <div className="flex items-center gap-2.5">
                     {/* Native Color Picker styled as a premium round button */}
-                    <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-amber-500/50 transition">
+                    <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-blue-500/50 transition">
                       <input
                         type="color"
                         value={groutColor}
@@ -1087,7 +1088,7 @@ export default function RoomPreviewer() {
                             }
                           }
                         }}
-                        className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-amber-500/50 transition-all font-semibold"
+                        className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-blue-500/50 transition-all font-semibold"
                         placeholder="HEX"
                       />
                     </div>
@@ -1100,7 +1101,7 @@ export default function RoomPreviewer() {
           {/* 5. Skirting Controls */}
           <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative">
             <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Ruler className="w-5 h-5" />
               </div>
               <div>
@@ -1131,7 +1132,7 @@ export default function RoomPreviewer() {
                     title={label}
                     className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition ${
                       skirtingColor === color
-                        ? 'border-amber-500 bg-neutral-800'
+                        ? 'border-blue-500 bg-neutral-800'
                         : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'
                     }`}
                   >
@@ -1148,7 +1149,7 @@ export default function RoomPreviewer() {
                     type="checkbox"
                     checked={skirtingUseTexture}
                     onChange={(e) => setSkirtingUseTexture(e.target.checked)}
-                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 accent-amber-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 accent-blue-500 cursor-pointer"
                   />
                   <span className="text-xs text-neutral-400 font-semibold">Apply custom texture to skirting</span>
                 </label>
@@ -1159,7 +1160,7 @@ export default function RoomPreviewer() {
             <div>
               <div className="flex justify-between text-sm mb-1.5 font-semibold">
                 <span className="text-neutral-300">Skirting Height (ft)</span>
-                <span className="text-amber-400">{skirtingHeight.toFixed(1)} ft</span>
+                <span className="text-blue-400">{skirtingHeight.toFixed(1)} ft</span>
               </div>
               <div className="flex items-center gap-4">
                 <input
@@ -1169,7 +1170,7 @@ export default function RoomPreviewer() {
                   step="0.05"
                   value={skirtingHeight}
                   onChange={(e) => setSkirtingHeight(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  className="w-full h-1.5 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
                 <div className="flex gap-1">
                   <button 
@@ -1222,7 +1223,7 @@ export default function RoomPreviewer() {
                     title={label}
                     className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition ${
                       wallColor.toLowerCase() === color.toLowerCase()
-                        ? 'border-amber-500 bg-neutral-800 shadow-md scale-105'
+                        ? 'border-blue-500 bg-neutral-800 shadow-md scale-105'
                         : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'
                     }`}
                   >
@@ -1239,7 +1240,7 @@ export default function RoomPreviewer() {
                 Custom Wall Paint Color
               </span>
               <div className="flex items-center gap-2.5">
-                <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-amber-500/50 transition">
+                <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-blue-500/50 transition">
                   <input
                     type="color"
                     value={wallColor}
@@ -1262,7 +1263,7 @@ export default function RoomPreviewer() {
                         }
                       }
                     }}
-                    className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-amber-500/50 transition-all font-semibold"
+                    className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-blue-500/50 transition-all font-semibold"
                     placeholder="HEX"
                   />
                 </div>
@@ -1283,7 +1284,7 @@ export default function RoomPreviewer() {
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                  Live Viewport Preview {isTheaterMode && <span className="text-amber-400 font-bold ml-1.5">(Showroom Mode)</span>}
+                  Live Viewport Preview {isTheaterMode && <span className="text-blue-400 font-bold ml-1.5">(Showroom Mode)</span>}
                 </span>
               </div>
 
@@ -1294,7 +1295,7 @@ export default function RoomPreviewer() {
                     onClick={() => setShowInterior(!showInterior)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                       showInterior
-                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20'
                         : 'bg-neutral-650 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                     }`}
                     title={showInterior ? "Hide Furnishings / Interior" : "Show Furnishings / Interior"}
@@ -1311,7 +1312,7 @@ export default function RoomPreviewer() {
                   onClick={() => setIsTheaterMode(!isTheaterMode)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     isTheaterMode
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-md shadow-amber-500/5'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
                       : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
                   }`}
                   title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
@@ -1335,7 +1336,7 @@ export default function RoomPreviewer() {
                     onClick={() => setIs3DMode(false)}
                     className={`flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-full transition-all ${
                       !is3DMode
-                        ? 'bg-amber-500 text-black shadow'
+                        ? 'bg-blue-500 text-black shadow'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
@@ -1345,7 +1346,7 @@ export default function RoomPreviewer() {
                     onClick={() => setIs3DMode(true)}
                     className={`flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-full transition-all ${
                       is3DMode
-                        ? 'bg-amber-500 text-black shadow'
+                        ? 'bg-blue-500 text-black shadow'
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
@@ -1365,10 +1366,10 @@ export default function RoomPreviewer() {
               {/* 2D Mode dimension overlays */}
               {!is3DMode && (
                 <>
-                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-black text-amber-500 z-10 shadow">
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-black text-blue-500 z-10 shadow">
                     {roomWidth} ft (Width)
                   </div>
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-black text-amber-500 z-10 rotate-90 shadow">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/75 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs font-black text-blue-500 z-10 rotate-90 shadow">
                     {roomLength} ft (Length)
                   </div>
                 </>
@@ -1377,8 +1378,8 @@ export default function RoomPreviewer() {
               {isLoading && (
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm transition-opacity duration-700">
                   <div className="text-center">
-                    <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-amber-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
+                    <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-blue-400 text-sm font-bold tracking-wide">Loading 3D Scene…</p>
                     <p className="text-neutral-500 text-xs mt-1">Preparing your showroom</p>
                   </div>
                 </div>
@@ -1407,7 +1408,7 @@ export default function RoomPreviewer() {
                 <>
                   {/* Main Tiled Floor plane */}
                   <div
-                    className="relative bg-neutral-900 border-2 border-amber-500/30 shadow-2xl transition-all duration-300 overflow-hidden"
+                    className="relative bg-neutral-900 border-2 border-blue-500/30 shadow-2xl transition-all duration-300 overflow-hidden"
                     style={{
                       width: `${roomWidth * scale}px`,
                       height: `${roomLength * scale}px`,
@@ -1450,7 +1451,7 @@ export default function RoomPreviewer() {
           {/* Quick Design advice panel */}
           <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-lg">
             <div className="flex gap-4">
-              <div className="mt-1 p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex-shrink-0">
+              <div className="mt-1 p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex-shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div>
@@ -1486,7 +1487,7 @@ export default function RoomPreviewer() {
 
               <div className="p-6 sm:p-8">
                 <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-2">
-                  <Printer className="text-amber-500 w-6 h-6" /> Quotation Builder
+                  <Printer className="text-blue-500 w-6 h-6" /> Quotation Builder
                 </h3>
                 <p className="text-neutral-400 text-xs mb-6">
                   Input customer details below to generate a beautiful, formatted billing quote.
@@ -1502,7 +1503,7 @@ export default function RoomPreviewer() {
                       placeholder="e.g. Ramesh Kumar"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500/50 transition text-sm"
+                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 transition text-sm"
                     />
                   </div>
 
@@ -1514,7 +1515,7 @@ export default function RoomPreviewer() {
                       type="text"
                       value={shopName}
                       onChange={(e) => setShopName(e.target.value)}
-                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500/50 transition text-sm"
+                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-blue-500/50 transition text-sm"
                     />
                   </div>
 
@@ -1526,7 +1527,7 @@ export default function RoomPreviewer() {
                       type="number"
                       value={laborCost}
                       onChange={(e) => setLaborCost(parseInt(e.target.value) || 0)}
-                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white font-mono focus:outline-none focus:border-amber-500/50 transition text-sm"
+                      className="w-full bg-neutral-600 border border-neutral-800 rounded-xl px-4 py-2.5 text-white font-mono focus:outline-none focus:border-blue-500/50 transition text-sm"
                     />
                   </div>
 
@@ -1676,7 +1677,7 @@ export default function RoomPreviewer() {
                         document.head.removeChild(styleElement);
                       }
                     }}
-                    className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-sm transition shadow flex items-center gap-2 cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-black font-black text-sm transition shadow flex items-center gap-2 cursor-pointer"
                   >
                     <Printer className="w-4 h-4" /> Print Quotation Sheet
                   </button>
