@@ -21,5 +21,6 @@ fpdf2==2.8.3
 razorpay==1.4.2
 setuptools>=68.0.0
 pytesseract==0.3.13
-paddleocr>=2.6.0
-paddlepaddle>=2.5.0
+# PaddleOCR v2 — stable API, works on CPU, compatible with paddlepaddle 2.6.x
+paddleocr==2.9.1
+paddlepaddle==2.6.2

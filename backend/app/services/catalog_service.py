@@ -1046,16 +1046,42 @@ def _perform_ocr_on_page(image_bytes: bytes) -> List[dict]:
         # Load image
         pil_image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
         img_np = np.array(pil_image)
-        # Perform OCR; cls=False as angle classification disabled
-        results = ocr_engine.ocr(img_np, cls=False)
+
+        # --- PaddleOCR v2 vs v3 compatibility ---
+        # v2: ocr(img, cls=False) → List[List[[bbox,(text,conf)]]]
+        # v3: ocr(img)            → List[Result] or flat List[[bbox,(text,conf)]]
+        # Call without 'cls' to work on both versions.
+        results = ocr_engine.ocr(img_np)
         blocks = []
 
-        # PaddleOCR returns: List[ List[ [bbox, (text, conf)] ] ]
-        # The outer list is per-image (we pass 1 image → results[0])
         if not results:
             return []
 
-        # Flatten: support both [[bbox,(text,conf)], ...] and [[[bbox,(text,conf)],...]]
+        # ── Detect v3 Result objects (have .boxes/.txts/.scores attrs) ──────────
+        first = results[0] if results else None
+        if first is not None and hasattr(first, 'boxes') and hasattr(first, 'txts'):
+            # PaddleOCR v3 single-image result object
+            res_obj = first
+            for bbox, text, conf in zip(res_obj.boxes or [], res_obj.txts or [], res_obj.scores or []):
+                text = (text or "").strip()
+                if not text:
+                    continue
+                try:
+                    xs = [pt[0] for pt in bbox]
+                    ys = [pt[1] for pt in bbox]
+                    left, top, right, bottom = min(xs), min(ys), max(xs), max(ys)
+                except Exception:
+                    continue
+                blocks.append({
+                    "bbox": (left, top, right, bottom),
+                    "text": text,
+                    "confidence": round(float(conf) * 100) if float(conf) <= 1.0 else int(conf)
+                })
+            logger.info(f"PaddleOCR v3 extracted {len(blocks)} text blocks")
+            return blocks
+
+        # ── v2 nested list format ─────────────────────────────────────────────
+        # Flatten: support [[bbox,(text,conf)], ...] and [[[bbox,(text,conf)],...]]
         page_results = results[0] if results and isinstance(results[0], list) else results
 
         if not page_results:
