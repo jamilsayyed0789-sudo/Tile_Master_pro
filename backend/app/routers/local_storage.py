@@ -118,36 +118,35 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
             detail=f"Image too small to be a tile ({len(img_bytes)} bytes). Name/number crop images should not be saved directly."
         )
 
-    # Build file paths using clean and robust extraction criteria
+    # Strictly respect what the user chose to crop:
+    # has_name=True  → user drew a "Tile Name" crop box  → include name
+    # has_number=True → user drew a "Tile Number" crop box → include number
+    # If neither flag passed, fall back to heuristic validity
     import re
-    is_name_valid = False
-    if payload.tile_name:
-        name_clean = payload.tile_name.strip()
-        name_lower = name_clean.lower()
-        if name_lower not in ("", "unknown", "untitled") and not name_lower.startswith("untitled page") and not name_lower.startswith("tile page"):
-            is_name_valid = True
-            
-    is_number_valid = False
-    if payload.tile_number:
-        num_clean = payload.tile_number.strip()
-        num_lower = num_clean.lower()
-        if num_lower not in ("", "unknown"):
-            is_number_valid = True
 
-    # Combine or select based on validity
-    if is_name_valid and is_number_valid:
-        if payload.tile_name.strip().lower() == payload.tile_number.strip().lower():
-            filename_base = payload.tile_number.strip()
-        else:
-            filename_base = f"{payload.tile_name.strip()}_{payload.tile_number.strip()}"
-    elif is_number_valid:
-        filename_base = payload.tile_number.strip()
-    elif is_name_valid:
-        filename_base = payload.tile_name.strip()
+    def _clean(s: str) -> str:
+        s = s.strip()
+        s = re.sub(r'\s+', '_', s)
+        s = "".join(c for c in s if c.isalnum() or c in "-_")
+        return s
+
+    use_name   = payload.has_name   if payload.has_name   is not None else bool(payload.tile_name and payload.tile_name.strip() not in ("", "unknown", "untitled"))
+    use_number = payload.has_number if payload.has_number is not None else bool(payload.tile_number and payload.tile_number.strip() not in ("", "unknown"))
+
+    clean_name   = _clean(payload.tile_name   or "") if use_name   else ""
+    clean_number = _clean(payload.tile_number or "") if use_number else ""
+
+    # Build filename based on user selection
+    if clean_name and clean_number:
+        filename_base = f"{clean_name}_{clean_number}"
+    elif clean_number:
+        filename_base = clean_number
+    elif clean_name:
+        filename_base = clean_name
     else:
-        # Fallback to whatever we have
         filename_base = payload.tile_number or payload.tile_name or "tile"
 
+    # Build file path and save to disk
     relative_path, filename = _build_relative_path(filename_base)
     now = datetime.utcnow()
     year = now.strftime("%Y")
@@ -156,30 +155,26 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     os.makedirs(folder, exist_ok=True)
     abs_path = os.path.join(folder, filename)
 
-    # If file already exists (duplicate number), add UUID suffix
+    # If file already exists (duplicate), add short UUID suffix
     if os.path.exists(abs_path):
-        base_name, ext = os.path.splitext(filename)
+        base_name_f, ext = os.path.splitext(filename)
         uid = str(uuid.uuid4()).replace("-", "")[:6]
-        filename = f"{base_name}_{uid}{ext}"
+        filename = f"{base_name_f}_{uid}{ext}"
         relative_path = f"{year}/{month}/{filename}"
         abs_path = os.path.join(folder, filename)
 
-    # Write image to disk
+    # Write image bytes to disk
     with open(abs_path, "wb") as f:
         f.write(img_bytes)
 
-    # Build a local image URL that the frontend can use
+    # URL the frontend can use to display the image
     image_serve_url = f"/api/local/image?path={relative_path}"
 
-    # Determine database name and number to store
-    db_name = payload.tile_name
-    db_number = payload.tile_number
-    if payload.has_name is False:
-        db_name = None
-    if payload.has_number is False:
-        db_number = None
+    # DB fields: store only what the user selected
+    db_name   = payload.tile_name   if use_name   else None
+    db_number = payload.tile_number if use_number else None
 
-    # Fallback if both are empty in DB
+    # Fallback display name if both are empty
     if not db_name and not db_number:
         db_name = f"Tile Page {payload.page_number or 1}"
 

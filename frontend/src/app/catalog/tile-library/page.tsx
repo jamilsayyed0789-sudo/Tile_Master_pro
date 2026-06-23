@@ -643,7 +643,15 @@ export default function TileLibraryPage() {
                   {/* Info */}
                   <div className="p-4 border-t border-white/5 relative">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-semibold text-base text-white truncate flex-1">{tile.tile_name}</h3>
+                      {/* Show tile name as heading only if it exists */}
+                      {tile.tile_name ? (
+                        <h3 className="font-semibold text-base text-white truncate flex-1">{tile.tile_name}</h3>
+                      ) : tile.tile_number ? (
+                        /* If no name but has number, use number as heading */
+                        <h3 className="font-semibold text-base text-white truncate flex-1 font-mono">{tile.tile_number}</h3>
+                      ) : (
+                        <h3 className="font-semibold text-base text-neutral-500 italic truncate flex-1">Untitled Tile</h3>
+                      )}
                       <button
                         onClick={() => handleDelete(tile)}
                         disabled={deletingId === tile.tile_number}
@@ -658,10 +666,13 @@ export default function TileLibraryPage() {
                       </button>
                     </div>
                     <div className="flex flex-col gap-1.5 mt-2">
-                      <div className="flex items-center text-sm text-neutral-400">
-                        <Hash className="w-3.5 h-3.5 mr-1.5 text-indigo-400 flex-shrink-0" />
-                        <span className="font-mono truncate">{tile.tile_number}</span>
-                      </div>
+                      {/* Show tile number row only if both name AND number exist */}
+                      {tile.tile_name && tile.tile_number && (
+                        <div className="flex items-center text-sm text-neutral-400">
+                          <Hash className="w-3.5 h-3.5 mr-1.5 text-indigo-400 flex-shrink-0" />
+                          <span className="font-mono truncate">{tile.tile_number}</span>
+                        </div>
+                      )}
                       {tile.tile_size && (
                         <div className="flex items-center text-sm text-neutral-400">
                           <Ruler className="w-3.5 h-3.5 mr-1.5 text-emerald-400 flex-shrink-0" />
