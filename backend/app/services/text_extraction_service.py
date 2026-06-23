@@ -9,9 +9,10 @@ try:
     from PIL import Image
     import numpy as np
     import cv2
-    HAS_PADDLE = True
+    import pytesseract
+    HAS_TESSERACT = True
 except ImportError:
-    HAS_PADDLE = False
+    HAS_TESSERACT = False
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class TextExtractionService:
                 result = self._extract_metadata(text_blocks, 0, 0)
                 
             ocr_blocks = []
-            if image_base64 and HAS_PADDLE:
+            if image_base64 and HAS_TESSERACT:
                 ocr_blocks = self._extract_from_base64_image(image_base64)
                 
                 # If basic extraction failed or we want to run the intelligent layer
@@ -78,8 +79,8 @@ class TextExtractionService:
             if result["tileNumber"] and result["tileNumber"].strip():
                 result["tileName"] = result["tileNumber"]
 
-            # DEBUG: Output raw page text and PaddleOCR status to the 'finish' field so it shows up in the UI
-            debug_text = f"PaddleOCR: {HAS_PADDLE} | Text: {page_text[:100]}"
+            # DEBUG: Output raw page text and Tesseract status to the 'finish' field so it shows up in the UI
+            debug_text = f"Tesseract: {HAS_TESSERACT} | Text: {page_text[:100]}"
             result["finish"] = debug_text
 
             return result

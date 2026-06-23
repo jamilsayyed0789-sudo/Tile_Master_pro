@@ -236,7 +236,7 @@ def extract_metadata_near_image(page, sel_bbox, page_rect) -> Tuple[Optional[str
     if tile_number:
         return tile_name, tile_number
 
-    # 4. Fallback to PaddleOCR if the PDF has no text layer in the regions
+    # 4. Fallback to Tesseract OCR if the PDF has no text layer in the regions
     text_blocks = []
     if ty1 > ty0:
         try:
@@ -903,62 +903,63 @@ def extract_tiles_from_template(
 
 # ── Scanned PDF extraction (OCR-based) ──────────────────────────────────────
 
-_paddle_ocr_instance = None
-
-def get_paddle_ocr():
-    global _paddle_ocr_instance
-    if _paddle_ocr_instance is None:
-        import os
-        os.environ["FLAGS_use_mkldnn"] = "0"
-        os.environ["PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"] = "0"
-        from paddleocr import PaddleOCR
-        _paddle_ocr_instance = PaddleOCR(lang='en', enable_mkldnn=False)
-    return _paddle_ocr_instance
-
-
 def _perform_ocr_on_page(image_bytes: bytes) -> List[dict]:
     from PIL import Image, ImageOps
     import io
-    import numpy as np
+    import pytesseract
 
     try:
-        ocr = get_paddle_ocr()
         pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         
-        # If the image is small (name/number crops), upscale it 2x to help the detector read small text
+        # If the image is small (name/number crops), upscale it 2x to help the detector read text
+        upscaled = False
         if pil_image.width < 300 or pil_image.height < 100:
             try:
                 resample = Image.Resampling.LANCZOS
             except AttributeError:
                 resample = Image.BICUBIC
             pil_image = pil_image.resize((pil_image.width * 2, pil_image.height * 2), resample=resample)
+            upscaled = True
             
-        # Add a 40px white border padding. Tight crops (like name/number crops)
-        # often fail in the detector model because there's no white space margin.
         pil_image = ImageOps.expand(pil_image, border=40, fill="white")
-        img_np = np.array(pil_image)
-        import cv2
-        img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
-
-        result_list = list(ocr.predict(img_cv))
-        if not result_list:
-            return []
-            
-        res_dict = result_list[0]
+        
+        # Run Tesseract OCR and extract layout data
+        data = pytesseract.image_to_data(pil_image, output_type=pytesseract.Output.DICT)
+        
         blocks = []
-        if "rec_texts" in res_dict:
-            for idx, text in enumerate(res_dict["rec_texts"]):
-                score = res_dict["rec_scores"][idx]
-                box = res_dict["rec_boxes"][idx]  # [xmin, ymin, xmax, ymax]
-                xmin, ymin, xmax, ymax = box
+        n_boxes = len(data['text'])
+        for i in range(n_boxes):
+            conf = float(data['conf'][i])
+            text = (data['text'][i] or "").strip()
+            # Tesseract returns conf -1 for structural blocks
+            if conf > 0 and text:
+                left = float(data['left'][i])
+                top = float(data['top'][i])
+                width = float(data['width'][i])
+                height = float(data['height'][i])
+                
+                # Compensate for the 40px border padding
+                left = left - 40.0
+                top = top - 40.0
+                
+                # Compensate for the 2x upscale if it was applied
+                if upscaled:
+                    left = left / 2.0
+                    top = top / 2.0
+                    width = width / 2.0
+                    height = height / 2.0
+                    
+                left = max(0.0, left)
+                top = max(0.0, top)
+                
                 blocks.append({
-                    "bbox": (float(xmin), float(ymin), float(xmax), float(ymax)),
-                    "text": (text or "").strip(),
-                    "confidence": int(score * 100),
+                    "bbox": (left, top, left + width, top + height),
+                    "text": text,
+                    "confidence": int(conf)
                 })
         return blocks
     except Exception as e:
-        logger.warning(f"PaddleOCR page failed: {e}")
+        logger.error(f"Tesseract OCR failed: {e}")
         return []
 
 
@@ -1018,10 +1019,10 @@ def extract_tiles_from_scanned_pdf(
     from app.models.catalog import TileCatalog
 
     try:
-        from paddleocr import PaddleOCR
+        import pytesseract
     except ImportError:
-        logger.error("paddleocr not installed. Cannot process scanned PDF.")
-        raise ValueError("paddleocr is required for scanned PDF extraction. Install with: pip install paddleocr paddlepaddle")
+        logger.error("pytesseract not installed. Cannot process scanned PDF.")
+        raise ValueError("pytesseract is required for scanned PDF extraction. Install with: pip install pytesseract")
 
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)

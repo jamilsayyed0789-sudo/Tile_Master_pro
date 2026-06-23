@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     gcc \
     python3-dev \
+    tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

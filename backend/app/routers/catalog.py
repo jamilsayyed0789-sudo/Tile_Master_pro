@@ -180,7 +180,7 @@ def extract_text_hybrid(hybrid_requests: List[HybridTextRequest]):
         )
         import base64
         for req in hybrid_requests:
-            # If specific name or number crop regions are defined, bypass running PaddleOCR on the main large tile photo
+            # If specific name or number crop regions are defined, bypass running Tesseract OCR on the main large tile photo
             tile_image_for_ocr = req.image_base64
             if req.name_image_base64 or req.number_image_base64:
                 tile_image_for_ocr = ""

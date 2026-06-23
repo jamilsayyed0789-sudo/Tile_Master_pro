@@ -21,5 +21,4 @@ fpdf2==2.8.3
 razorpay==1.4.2
 setuptools>=68.0.0
 
-paddlepaddle
-paddleocr
+pytesseract==0.3.13
