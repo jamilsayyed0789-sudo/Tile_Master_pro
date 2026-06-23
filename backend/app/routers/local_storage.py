@@ -131,7 +131,7 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     if payload.tile_number:
         num_clean = payload.tile_number.strip()
         num_lower = num_clean.lower()
-        if num_lower not in ("", "unknown") and not re.match(r'^[ppPp]\d+(?:-\d+)?$', num_lower):
+        if num_lower not in ("", "unknown"):
             is_number_valid = True
 
     # Combine or select based on validity

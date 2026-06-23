@@ -106,6 +106,17 @@ export default function PdfExtractClient() {
       throw new Error(msg);
     }
 
+    const pageNum = pageNumber ?? tileData.pageNumber ?? 1;
+    const defaultPlaceholderWithSuffix = new RegExp(`^P${pageNum}(?:-\\d+)?$`);
+    
+    const finalHasName = tileData.hasName !== undefined
+      ? tileData.hasName
+      : (!!tileData.tileName && !tileData.tileName.startsWith("Untitled Page") && !tileData.tileName.startsWith("Tile Page") && tileData.tileName.trim().toLowerCase() !== "unknown");
+      
+    const finalHasNumber = tileData.hasNumber !== undefined
+      ? tileData.hasNumber
+      : (!!tileData.tileNumber && !defaultPlaceholderWithSuffix.test(tileData.tileNumber) && tileData.tileNumber.trim().toLowerCase() !== "unknown");
+
     // 1. Direct browser folder save if configured (works in cloud/production)
     try {
       const { getStoredHandle, verifyDirectoryPermission, saveBase64ToDirectoryHandle, buildFilename } = await import("@/utils/localStorageSettings");
@@ -113,7 +124,7 @@ export default function PdfExtractClient() {
       if (browserDirHandle) {
         const hasPermission = await verifyDirectoryPermission(browserDirHandle, true);
         if (hasPermission) {
-          const fname = buildFilename(tileData.tileName, tileData.tileNumber, tileData.hasName, tileData.hasNumber);
+          const fname = buildFilename(tileData.tileName, tileData.tileNumber, finalHasName, finalHasNumber);
           await saveBase64ToDirectoryHandle(browserDirHandle, tileData.imageDataUrl, fname);
           console.log("[hybridSaveTile] Saved directly to browser-selected folder:", fname);
         } else {
@@ -132,10 +143,10 @@ export default function PdfExtractClient() {
         tile_size: tileData.tileSize,
         finish: tileData.finish,
         color: tileData.color,
-        page_number: pageNumber,
+        page_number: pageNum,
         image_data_url: tileData.imageDataUrl,
-        has_name: tileData.hasName,
-        has_number: tileData.hasNumber,
+        has_name: finalHasName,
+        has_number: finalHasNumber,
       });
       if (!result.ok) {
         console.warn("Backend local save failed:", result.message);
@@ -903,9 +914,7 @@ export default function PdfExtractClient() {
 
     try {
       const compressed = await compressImage(tileData.imageDataUrl, 1920, 0.92);
-      const hasName = !!tileData.tileName && !tileData.tileName.startsWith("Untitled Page") && !tileData.tileName.startsWith("Tile Page") && tileData.tileName.trim().toLowerCase() !== "unknown";
-      const hasNumber = !!tileData.tileNumber && !/^[Pp]\d+(?:-\d+)?$/.test(tileData.tileNumber) && tileData.tileNumber.trim().toLowerCase() !== "unknown";
-      await hybridSaveTile({ ...tileData, imageDataUrl: compressed, hasName, hasNumber }, tileData.pageNumber);
+      await hybridSaveTile({ ...tileData, imageDataUrl: compressed }, tileData.pageNumber);
       showNotify(storageStatus?.configured ? "Tile saved to local folder!" : "Tile saved!");
     } catch (err: any) {
       showNotify(err.message || "Failed to save tile");

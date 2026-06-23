@@ -16,6 +16,7 @@ from app.services.catalog_service import (
     extract_tiles_from_template,
     extract_tiles_from_scanned_pdf,
     _detect_pdf_type,
+    resolve_tile_number,
 )
 from app.services.text_extraction_service import TextExtractionService
 
@@ -229,16 +230,17 @@ def extract_text_hybrid(hybrid_requests: List[HybridTextRequest]):
                 except Exception as e:
                     logger.error(f"Number crop OCR failed: {e}")
 
+            # Pre-populate text_blocks for scanned PDFs if empty and full-page image is available
+            if not req.text_blocks and req.full_page_image_base64:
+                try:
+                    header, encoded = req.full_page_image_base64.split(",", 1) if "," in req.full_page_image_base64 else ("", req.full_page_image_base64)
+                    img_bytes = base64.b64decode(encoded)
+                    req.text_blocks = _perform_ocr_on_page(img_bytes)
+                except Exception as e:
+                    logger.error(f"Full page OCR failed: {e}")
+
             # Fallback: if name or number is still missing, try using page text blocks (PDF text layer)
             if not res.get("tileNumber") or not res.get("tileName"):
-                if not req.text_blocks and req.full_page_image_base64:
-                    try:
-                        header, encoded = req.full_page_image_base64.split(",", 1) if "," in req.full_page_image_base64 else ("", req.full_page_image_base64)
-                        img_bytes = base64.b64decode(encoded)
-                        req.text_blocks = _perform_ocr_on_page(img_bytes)
-                    except Exception as e:
-                        logger.error(f"Full page OCR failed: {e}")
-
                 if req.text_blocks and len(req.text_blocks) > 0:
                     img_bbox = [req.crop_x, req.crop_y, req.crop_x + req.crop_w, req.crop_y + req.crop_h]
                     
@@ -251,6 +253,13 @@ def extract_text_hybrid(hybrid_requests: List[HybridTextRequest]):
                         nearest_name = detect_nearest_tile_name(img_bbox, req.text_blocks, res.get("tileNumber"))
                         if nearest_name:
                             res["tileName"] = nearest_name
+
+            # Intercept and combine pattern/face suffixes (like P3, P4) with parent series number
+            if res.get("tileNumber") and req.text_blocks:
+                img_bbox = [req.crop_x, req.crop_y, req.crop_x + req.crop_w, req.crop_y + req.crop_h]
+                combined_num = resolve_tile_number(res["tileNumber"], req.text_blocks, img_bbox)
+                if combined_num:
+                    res["tileNumber"] = combined_num
 
             # Per user request: Use the Tile Number as the Tile Name to prevent duplicate names IF name is still empty/invalid
             if res.get("tileNumber") and (not res.get("tileName") or res.get("tileName").strip().lower() in ("", "unknown", "untitled")):

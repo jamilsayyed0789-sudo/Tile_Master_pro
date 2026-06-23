@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 SIZE_PATTERN = re.compile(r'(\d{2,4})\s*[xX×*/]\s*(\d{2,4})')
-CODE_PATTERN = re.compile(r'(?:^|\s)([A-Za-z]{0,5}[-_.]?\d{3,8})(?:\s|$)')
+CODE_PATTERN = re.compile(r'(?:^|\s)([A-Za-z]{1,5}[-_.]?\d{1,8}|[A-Za-z]{0,5}[-_.]?\d{3,8})(?:\s|$)')
 
 import math
 
@@ -22,8 +22,8 @@ TEXT_DENSITY_THRESHOLD = 50  # chars per page
 
 TILE_NUMBER_REGEXES = [
     re.compile(r'(?<!\d)\d{3,8}(?!\d)'),                  # 3 to 8 digits
-    re.compile(r'\b[A-Za-z]{1,8}[-_./]?\d{3,8}\b'),       # Letters then digits
-    re.compile(r'\b[A-Za-z]{1,8}\s+\d{3,8}\b'),           # Letters space digits
+    re.compile(r'\b[A-Za-z]{1,8}[-_./]?\d{1,8}\b'),       # Letters then digits (e.g. P3, P-04)
+    re.compile(r'\b[A-Za-z]{1,8}\s+\d{1,8}\b'),           # Letters space digits (e.g. P 3)
 ]
 
 def detect_nearest_tile_number(img_bbox, text_blocks):
@@ -62,38 +62,133 @@ def detect_nearest_tile_number(img_bbox, text_blocks):
 def detect_nearest_tile_name(img_bbox, text_blocks, tile_number=None):
     if not img_bbox or not text_blocks:
         return None
-        
+
     img_cx = (img_bbox[0] + img_bbox[2]) / 2
     img_cy = (img_bbox[1] + img_bbox[3]) / 2
-    
-    best_match = None
-    min_dist = float('inf')
-    
+
+    # Words to ignore as tile names
+    IGNORE_WORDS = {"email", "website", "address", "www", "http", "page", "finish", "mm", "cm",
+                    "glossy", "matte", "matt", "satin", "polished", "lappato", "sugar", "box"}
+    STONE_KEYWORDS = ["stone", "marble", "granite", "wood", "slate", "cement", "concrete",
+                      "bianco", "nero", "crema", "dark", "light", "grey", "gray", "white",
+                      "black", "beige", "ivory", "brown", "green", "blue", "gold", "silver",
+                      "travertine", "onyx", "quartz", "ceramic", "porcelain", "vitrified",
+                      "calacatta", "statuario", "carrara", "azul", "verde", "rosso"]
+
+    scored = []
     for tb in text_blocks:
         if "bbox" not in tb or "text" not in tb:
             continue
         text = tb["text"].strip()
-        if len(text) < 3 or len(text) > 40:
+        if len(text) < 3 or len(text) > 60:
             continue
+        # Skip if it IS the tile number
         if tile_number and text.lower() == tile_number.lower():
             continue
-            
+        # Skip pure numbers
+        if re.match(r'^[\d\s\.\-_/x×X]+$', text):
+            continue
+        # Skip dimension strings like 600x1200
+        if re.search(r'\d+\s*[xX×]\s*\d+', text):
+            continue
+        # Skip ignored words
+        text_lower = text.lower()
+        if any(w in text_lower for w in IGNORE_WORDS):
+            continue
+        # Must have at least 2 letters
+        letter_count = sum(1 for c in text if c.isalpha())
+        if letter_count < 2:
+            continue
+
         tb_bbox = tb["bbox"]
         tb_cx = (tb_bbox[0] + tb_bbox[2]) / 2
         tb_cy = (tb_bbox[1] + tb_bbox[3]) / 2
-        
         dist = math.hypot(tb_cx - img_cx, tb_cy - img_cy)
+
+        # Scoring: prefer text below the image, prefer stone keywords, prefer title/upper case
+        score = 1.0
+        # Below image is most likely to be the label
+        if tb_cy > img_cy:
+            score += 2.0
+        # Known stone/tile keywords get a big boost
+        if any(kw in text_lower for kw in STONE_KEYWORDS):
+            score += 3.0
+        # Title or upper case is more likely a product name
+        if text.isupper() or text.istitle():
+            score += 1.0
+        # Longer names are more likely to be tile names (vs short codes)
+        if len(text) >= 6:
+            score += 0.5
+
+        # Use score/dist so closer AND better scored text wins
+        weighted = score / (dist + 1)
+        scored.append((weighted, text))
+
+    if not scored:
+        return None
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return scored[0][1]
+
+def resolve_tile_number(extracted_num: Optional[str], page_text_blocks: List[dict], img_bbox: Optional[list] = None) -> Optional[str]:
+    if not extracted_num:
+        return extracted_num
+
+    extracted_num = extracted_num.strip()
+    num_clean = extracted_num
+    num_lower = num_clean.lower()
+    is_suffix = False
+    if re.match(r'^[pPfFrR]\d+$', num_clean):
+        is_suffix = True
+    elif re.match(r'^(?:face|pattern|random|p|f|r)[-_\s]*\d+$', num_lower):
+        is_suffix = True
+    elif len(num_clean) <= 2:
+        is_suffix = True
         
-        has_digit = any(c.isdigit() for c in text)
-        is_upper_or_title = text.isupper() or text.istitle()
-        has_stone_keyword = any(kw in text.lower() for kw in ["stone", "marble", "granite", "wood", "slate", "cement", "concrete", "bianco", "nero", "crema", "dark", "light", "grey", "white"])
+    if is_suffix:
+        # Search the page text blocks for a valid parent series number (3+ digits)
+        parent_num = None
+        min_dist = float('inf')
         
-        if (not has_digit and is_upper_or_title) or has_stone_keyword:
-            if dist < min_dist:
-                min_dist = dist
-                best_match = text
+        # Calculate image center if bbox is available
+        img_cx, img_cy = None, None
+        if img_bbox:
+            img_cx = (img_bbox[0] + img_bbox[2]) / 2
+            img_cy = (img_bbox[1] + img_bbox[3]) / 2
+            
+        for tb in page_text_blocks:
+            text = tb.get("text", "").strip()
+            if not text or "box" in text.lower():
+                continue
+            
+            # Find any pattern matching 3 to 8 digits
+            for pattern in TILE_NUMBER_REGEXES:
+                matches = pattern.findall(text)
+                for m in matches:
+                    # Make sure it's not a short code (must have at least 3 digits or be longer)
+                    cleaned_digits = re.sub(r'\D', '', m)
+                    if len(cleaned_digits) >= 3:
+                        # If bbox is available, find the closest one
+                        if img_cx is not None and "bbox" in tb:
+                            tb_bbox = tb["bbox"]
+                            tb_cx = (tb_bbox[0] + tb_bbox[2]) / 2
+                            tb_cy = (tb_bbox[1] + tb_bbox[3]) / 2
+                            dist = math.hypot(tb_cx - img_cx, tb_cy - img_cy)
+                            if dist < min_dist:
+                                min_dist = dist
+                                parent_num = m
+                        else:
+                            parent_num = m
+                            break
+            if parent_num and img_cx is None:
+                break
                 
-    return best_match
+        if parent_num and parent_num.lower() != num_lower:
+            # Combine them, e.g. "2150-P3"
+            return f"{parent_num}-{num_clean}"
+            
+    return extracted_num
+
 
 def normalize_filename(
     tile_name: Optional[str],
@@ -117,8 +212,8 @@ def normalize_filename(
     is_number_valid = False
     if tile_number:
         num_lower = tile_number.lower().strip()
-        # Heuristic check: ignore pattern of P followed by digits (e.g. p1, p2, p1-1)
-        if num_lower not in ("", "unknown") and not re.match(r'^[pp]\d+(?:-\d+)?$', num_lower):
+        # Heuristic check: ignore pattern of unknown/empty
+        if num_lower not in ("", "unknown"):
             is_number_valid = True
 
     # If has_number is explicitly passed, let it override heuristic
@@ -169,40 +264,64 @@ def extract_metadata_from_crop(ocr_blocks) -> Tuple[Optional[str], Optional[str]
     tile_name = None
     tile_number = None
     candidate_names = []
-    
+
+    IGNORE_WORDS = {"email", "website", "address", "www", "http", "page", "finish", "mm", "cm", "box"}
+
     for block in ocr_blocks:
         text = block.get("text", "").strip()
         if not text:
             continue
-            
+
         # Ignore box numbers/codes
         if "box" in text.lower():
             continue
-            
-        # Check for Tile Number
-        found_num = False
-        for pattern in TILE_NUMBER_REGEXES:
-            match = pattern.search(text)
-            if match:
-                tile_number = match.group(0)
-                # Remove the number from this block text to see if anything else is left
-                text = text.replace(tile_number, "").strip()
-                found_num = True
-                break
-                
-        # Skip dimensions/sizes and other common ignore words
-        if not text or len(text) < 2:
-            continue
-        if any(w in text.lower() for w in ["email", "website", "address", "www", "http", "page", "mm", "cm", "finish"]):
-            continue
-        if re.search(r'\d+\s?[xX×]\s?\d+', text):
-            continue
-            
-        candidate_names.append(text)
-        
+
+        # Check for Tile Number (only if no number found yet)
+        if not tile_number:
+            for pattern in TILE_NUMBER_REGEXES:
+                match = pattern.search(text)
+                if match:
+                    tile_number = match.group(0).strip()
+                    # Remove the matched number from remaining text
+                    remaining = text.replace(tile_number, "").strip()
+                    # If there's meaningful text left after removing the number, keep as name candidate
+                    if remaining and len(remaining) >= 3 and sum(c.isalpha() for c in remaining) >= 2:
+                        candidate_names.append(remaining)
+                    break
+            else:
+                # No tile number matched in this block — evaluate as name candidate
+                # Skip pure numbers / sizes / ignored words
+                if re.match(r'^[\d\s\.\-_/x×X]+$', text):
+                    continue
+                if re.search(r'\d+\s*[xX×]\s*\d+', text):
+                    continue
+                text_lower = text.lower()
+                if any(w in text_lower for w in IGNORE_WORDS):
+                    continue
+                letter_count = sum(1 for c in text if c.isalpha())
+                if letter_count < 2:
+                    continue
+                if len(text) >= 3:
+                    candidate_names.append(text)
+        else:
+            # Already found number — any remaining text block could be the name
+            if re.match(r'^[\d\s\.\-_/x×X]+$', text):
+                continue
+            if re.search(r'\d+\s*[xX×]\s*\d+', text):
+                continue
+            text_lower = text.lower()
+            if any(w in text_lower for w in IGNORE_WORDS):
+                continue
+            letter_count = sum(1 for c in text if c.isalpha())
+            if letter_count < 2:
+                continue
+            if len(text) >= 3:
+                candidate_names.append(text)
+
     if candidate_names:
-        tile_name = candidate_names[0]
-        
+        # Prefer the candidate with the most letters (most likely a proper name)
+        tile_name = max(candidate_names, key=lambda t: sum(c.isalpha() for c in t))
+
     return tile_name, tile_number
 
 def extract_metadata_near_image(page, sel_bbox, page_rect) -> Tuple[Optional[str], Optional[str]]:
@@ -663,6 +782,7 @@ def extract_tiles_from_pdf(
                         extracted_name, extracted_number = extract_metadata_near_image(page, sel_bbox, page_rect)
 
                     final_tile_number = tile_number or extracted_number
+                    final_tile_number = resolve_tile_number(final_tile_number, text_blocks, sel_bbox)
                     final_tile_name = tile_name or extracted_name
 
                     img_hash = _image_hash(sel["bytes"])
@@ -912,96 +1032,66 @@ def extract_tiles_from_template(
     return tiles
 
 
-# ── Scanned PDF extraction (OCR-based) ──────────────────────────────────────
-
+# ── Scanned PDF extraction (OCR-based) ───────────    # PaddleOCR OCR implementation
 def _perform_ocr_on_page(image_bytes: bytes) -> List[dict]:
-    from PIL import Image, ImageOps
-    import io
-    import pytesseract
-
     try:
-        pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        
-        # If the image is small (name/number crops), upscale it 2x to help the detector read text
-        upscaled = False
-        if pil_image.width < 300 or pil_image.height < 100:
-            try:
-                resample = Image.Resampling.LANCZOS
-            except AttributeError:
-                resample = Image.BICUBIC
-            pil_image = pil_image.resize((pil_image.width * 2, pil_image.height * 2), resample=resample)
-            upscaled = True
-            
-        pil_image = ImageOps.expand(pil_image, border=40, fill="white")
-        
-        # Run Tesseract OCR and extract layout data
-        data = pytesseract.image_to_data(pil_image, output_type=pytesseract.Output.DICT)
-        
-        # Group word indices by (block_num, par_num, line_num)
-        lines_dict = {}
-        n_boxes = len(data['text'])
-        for i in range(n_boxes):
-            conf = float(data['conf'][i])
-            text = (data['text'][i] or "").strip()
-            if conf > 0 and text:
-                b_num = data['block_num'][i]
-                p_num = data['par_num'][i]
-                l_num = data['line_num'][i]
-                key = (b_num, p_num, l_num)
-                if key not in lines_dict:
-                    lines_dict[key] = []
-                lines_dict[key].append(i)
-                
+        from app.main import get_ocr_engine
+        import numpy as np
+        from PIL import Image
+        import io
+        ocr_engine = get_ocr_engine()
+        if ocr_engine is None:
+            logger.warning("PaddleOCR engine not initialized; OCR skipped.")
+            return []
+        # Load image
+        pil_image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        img_np = np.array(pil_image)
+        # Perform OCR; cls=False as angle classification disabled
+        results = ocr_engine.ocr(img_np, cls=False)
         blocks = []
-        for key, indices in lines_dict.items():
-            words = [data['text'][idx].strip() for idx in indices if data['text'][idx].strip()]
-            if not words:
+
+        # PaddleOCR returns: List[ List[ [bbox, (text, conf)] ] ]
+        # The outer list is per-image (we pass 1 image → results[0])
+        if not results:
+            return []
+
+        # Flatten: support both [[bbox,(text,conf)], ...] and [[[bbox,(text,conf)],...]]
+        page_results = results[0] if results and isinstance(results[0], list) else results
+
+        if not page_results:
+            return []
+
+        for line in page_results:
+            if not line:
                 continue
-            line_text = " ".join(words)
-            
-            # Skip any lines containing "box" (case insensitive)
-            if "box" in line_text.lower():
+            # Each line: [bbox, (text, confidence)]
+            if len(line) < 2:
                 continue
-                
-            # Compute line bounding box
-            lefts = [float(data['left'][idx]) for idx in indices]
-            tops = [float(data['top'][idx]) for idx in indices]
-            widths = [float(data['width'][idx]) for idx in indices]
-            heights = [float(data['height'][idx]) for idx in indices]
-            
-            x0 = min(lefts)
-            y0 = min(tops)
-            x1 = max(l + w for l, w in zip(lefts, widths))
-            y1 = max(t + h for t, h in zip(tops, heights))
-            
-            # Compensate for the 40px border padding
-            left = x0 - 40.0
-            top = y0 - 40.0
-            width = x1 - x0
-            height = y1 - y0
-            
-            # Compensate for the 2x upscale if it was applied
-            if upscaled:
-                left = left / 2.0
-                top = top / 2.0
-                width = width / 2.0
-                height = height / 2.0
-                
-            left = max(0.0, left)
-            top = max(0.0, top)
-            
-            confs = [float(data['conf'][idx]) for idx in indices if data['conf'][idx] is not None]
-            avg_conf = sum(confs) / len(confs) if confs else 0.0
-            
+            bbox = line[0]
+            text_info = line[1]
+            if not bbox or not text_info:
+                continue
+            text = text_info[0] if isinstance(text_info, (list, tuple)) else str(text_info)
+            conf = text_info[1] if isinstance(text_info, (list, tuple)) and len(text_info) > 1 else 1.0
+            text = text.strip()
+            if not text:
+                continue
+            # bbox is list of four corner points [[x,y],[x,y],[x,y],[x,y]]
+            try:
+                xs = [pt[0] for pt in bbox]
+                ys = [pt[1] for pt in bbox]
+                left, top, right, bottom = min(xs), min(ys), max(xs), max(ys)
+            except Exception:
+                continue
             blocks.append({
-                "bbox": (left, top, left + width, top + height),
-                "text": line_text,
-                "confidence": int(avg_conf)
+                "bbox": (left, top, right, bottom),
+                "text": text,
+                "confidence": round(float(conf) * 100) if float(conf) <= 1.0 else int(conf)
             })
-            
+        logger.info(f"PaddleOCR extracted {len(blocks)} text blocks")
         return blocks
     except Exception as e:
-        logger.error(f"Tesseract OCR failed: {e}")
+        logger.error(f"PaddleOCR failed: {e}", exc_info=True)
         return []
 
 
@@ -1060,11 +1150,8 @@ def extract_tiles_from_scanned_pdf(
     from app.database import SessionLocal
     from app.models.catalog import TileCatalog
 
-    try:
-        import pytesseract
-    except ImportError:
-        logger.error("pytesseract not installed. Cannot process scanned PDF.")
-        raise ValueError("pytesseract is required for scanned PDF extraction. Install with: pip install pytesseract")
+    # PaddleOCR will be used for OCR; if initialization fails, OCR will be skipped for scanned PDFs.
+    # No pytesseract dependency required.
 
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     total_pages = len(doc)
@@ -1108,6 +1195,7 @@ def extract_tiles_from_scanned_pdf(
                             tile_size = tile_size_override
 
                         final_tile_number = tile_number
+                        final_tile_number = resolve_tile_number(final_tile_number, ocr_blocks, None)
                         final_tile_name = tile_name
                         public_id = f"{catalog_name}_p{page_num+1}_{uuid.uuid4().hex[:8]}"
 
@@ -1204,6 +1292,7 @@ def extract_tiles_from_scanned_pdf(
 
                     # For scanned PDFs, use full page OCR results instead of crop OCR
                     final_tile_number = nearest_tile_number or tile_number
+                    final_tile_number = resolve_tile_number(final_tile_number, ocr_blocks, region["bbox"])
                     final_tile_name = tile_name
 
                     image_url = None
