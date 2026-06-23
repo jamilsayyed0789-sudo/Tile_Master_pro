@@ -615,6 +615,22 @@ export default function TileLibraryPage() {
               const panelKey   = tile.tile_number + "-" + i;
               const isOpen     = activePanelId === panelKey;
 
+              // Detect placeholder / fallback values so they're not displayed
+              const isPlaceholderName = (n: string | null | undefined) => {
+                if (!n) return true;
+                const l = n.trim().toLowerCase();
+                return l === "" || l === "unknown" || l === "untitled" || l === "n/a" ||
+                  l.startsWith("untitled page") || l.startsWith("tile page") || l.startsWith("untitled tile");
+              };
+              const isPlaceholderNumber = (n: string | null | undefined) => {
+                if (!n) return true;
+                const l = n.trim().toLowerCase();
+                return l === "" || l === "unknown" || l === "n/a" || /^p\d+(-\d+)?$/.test(l);
+              };
+
+              const displayName   = isPlaceholderName(tile.tile_name)   ? null : tile.tile_name;
+              const displayNumber = isPlaceholderNumber(tile.tile_number) ? null : tile.tile_number;
+
               // Count how many surfaces from this tile have been applied (approximation by any slot)
               const sceneAppliedCount = SCENES.reduce(
                 (acc, s) => acc + s.surfaces.filter(sf => appliedSlots.has(sf.slot)).length, 0
@@ -643,14 +659,13 @@ export default function TileLibraryPage() {
                   {/* Info */}
                   <div className="p-4 border-t border-white/5 relative">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      {/* Show tile name as heading only if it exists */}
-                      {tile.tile_name ? (
-                        <h3 className="font-semibold text-base text-white truncate flex-1">{tile.tile_name}</h3>
-                      ) : tile.tile_number ? (
-                        /* If no name but has number, use number as heading */
-                        <h3 className="font-semibold text-base text-white truncate flex-1 font-mono">{tile.tile_number}</h3>
+                      {/* Heading: real name > real number > grey placeholder */}
+                      {displayName ? (
+                        <h3 className="font-semibold text-base text-white truncate flex-1">{displayName}</h3>
+                      ) : displayNumber ? (
+                        <h3 className="font-semibold text-base text-white truncate flex-1 font-mono">{displayNumber}</h3>
                       ) : (
-                        <h3 className="font-semibold text-base text-neutral-500 italic truncate flex-1">Untitled Tile</h3>
+                        <h3 className="font-semibold text-base text-neutral-500 italic truncate flex-1">No label</h3>
                       )}
                       <button
                         onClick={() => handleDelete(tile)}
@@ -666,11 +681,11 @@ export default function TileLibraryPage() {
                       </button>
                     </div>
                     <div className="flex flex-col gap-1.5 mt-2">
-                      {/* Show tile number row only if both name AND number exist */}
-                      {tile.tile_name && tile.tile_number && (
+                      {/* Show # number row only when BOTH real name AND real number exist */}
+                      {displayName && displayNumber && (
                         <div className="flex items-center text-sm text-neutral-400">
                           <Hash className="w-3.5 h-3.5 mr-1.5 text-indigo-400 flex-shrink-0" />
-                          <span className="font-mono truncate">{tile.tile_number}</span>
+                          <span className="font-mono truncate">{displayNumber}</span>
                         </div>
                       )}
                       {tile.tile_size && (

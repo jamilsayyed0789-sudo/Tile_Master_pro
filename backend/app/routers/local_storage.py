@@ -130,8 +130,31 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
         s = "".join(c for c in s if c.isalnum() or c in "-_")
         return s
 
-    use_name   = payload.has_name   if payload.has_name   is not None else bool(payload.tile_name and payload.tile_name.strip() not in ("", "unknown", "untitled"))
-    use_number = payload.has_number if payload.has_number is not None else bool(payload.tile_number and payload.tile_number.strip() not in ("", "unknown"))
+    def _is_placeholder_name(s: str) -> bool:
+        """Returns True if the name is a generated placeholder, not a real tile name."""
+        if not s:
+            return True
+        sl = s.strip().lower()
+        return (
+            sl in ("", "unknown", "untitled", "n/a") or
+            sl.startswith("untitled page") or
+            sl.startswith("tile page") or
+            sl.startswith("untitled tile")
+        )
+
+    def _is_placeholder_number(s: str) -> bool:
+        """Returns True if the number is a generated placeholder, not a real tile number."""
+        if not s:
+            return True
+        sl = s.strip().lower()
+        import re as _re
+        return (
+            sl in ("", "unknown", "n/a") or
+            bool(_re.match(r'^p\d+(-\d+)?$', sl))   # P3, P5, P5-1 etc.
+        )
+
+    use_name   = payload.has_name   if payload.has_name   is not None else not _is_placeholder_name(payload.tile_name)
+    use_number = payload.has_number if payload.has_number is not None else not _is_placeholder_number(payload.tile_number)
 
     clean_name   = _clean(payload.tile_name   or "") if use_name   else ""
     clean_number = _clean(payload.tile_number or "") if use_number else ""
