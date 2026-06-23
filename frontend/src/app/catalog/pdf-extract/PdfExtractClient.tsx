@@ -419,6 +419,22 @@ export default function PdfExtractClient() {
 
   const handleApplyToAll = async (regions: any[], rotation: number, removeBg: boolean = false) => {
     if (selectedIds.size === 0) return;
+    
+    // Verify browser folder permission first if configured (runs in user gesture context)
+    try {
+      const { getStoredHandle, verifyDirectoryPermission } = await import("@/utils/localStorageSettings");
+      const browserDirHandle = await getStoredHandle("browser-output-directory");
+      if (browserDirHandle) {
+        const hasPermission = await verifyDirectoryPermission(browserDirHandle, true);
+        if (!hasPermission) {
+          showNotify("Permission to save to local folder was denied!");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Directory permission check failed:", err);
+    }
+
     const sortedIds = Array.from(selectedIds).sort((a, b) => a - b);
     const total = sortedIds.length;
 
@@ -680,6 +696,21 @@ export default function PdfExtractClient() {
     numberDataUrl?: string,
     allCrops?: { imageDataUrl: string; nameDataUrl?: string; numberDataUrl?: string }[]
   ) => {
+    // Verify browser folder permission first if configured (runs in user gesture context)
+    try {
+      const { getStoredHandle, verifyDirectoryPermission } = await import("@/utils/localStorageSettings");
+      const browserDirHandle = await getStoredHandle("browser-output-directory");
+      if (browserDirHandle) {
+        const hasPermission = await verifyDirectoryPermission(browserDirHandle, true);
+        if (!hasPermission) {
+          showNotify("Permission to save to local folder was denied!");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Directory permission check failed:", err);
+    }
+
     if (allCrops && allCrops.length > 1) {
       showNotify(`Processing ${allCrops.length} crops for page ${currentPageIdx + 1}...`);
       setCropImage(null);
@@ -855,6 +886,21 @@ export default function PdfExtractClient() {
   };
 
   const handleSaveTile = async (tileData: Omit<import("@/types/tile").Tile, "id" | "createdAt">) => {
+    // Verify browser folder permission first if configured (runs in user gesture context)
+    try {
+      const { getStoredHandle, verifyDirectoryPermission } = await import("@/utils/localStorageSettings");
+      const browserDirHandle = await getStoredHandle("browser-output-directory");
+      if (browserDirHandle) {
+        const hasPermission = await verifyDirectoryPermission(browserDirHandle, true);
+        if (!hasPermission) {
+          showNotify("Permission to save to local folder was denied!");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Directory permission check failed:", err);
+    }
+
     try {
       const compressed = await compressImage(tileData.imageDataUrl, 1920, 0.92);
       const hasName = !!tileData.tileName && !tileData.tileName.startsWith("Untitled Page") && !tileData.tileName.startsWith("Tile Page") && tileData.tileName.trim().toLowerCase() !== "unknown";

@@ -39,6 +39,11 @@ def detect_nearest_tile_number(img_bbox, text_blocks):
     for tb in text_blocks:
         if "bbox" not in tb or "text" not in tb:
             continue
+            
+        # Ignore box numbers/codes
+        if "box" in tb["text"].lower():
+            continue
+            
         tb_bbox = tb["bbox"]
         tb_cx = (tb_bbox[0] + tb_bbox[2]) / 2
         tb_cy = (tb_bbox[1] + tb_bbox[3]) / 2
@@ -168,6 +173,10 @@ def extract_metadata_from_crop(ocr_blocks) -> Tuple[Optional[str], Optional[str]
     for block in ocr_blocks:
         text = block.get("text", "").strip()
         if not text:
+            continue
+            
+        # Ignore box numbers/codes
+        if "box" in text.lower():
             continue
             
         # Check for Tile Number
@@ -314,6 +323,8 @@ def extract_text_info(text_blocks: List[dict]) -> Tuple[Optional[str], Optional[
         tile_size = f"{w}x{h}"
 
     for line in all_lines:
+        if "box" in line.lower():
+            continue
         codes = CODE_PATTERN.findall(line)
         if codes:
             tile_number = codes[0]

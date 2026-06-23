@@ -25,7 +25,7 @@ class TextExtractionService:
     def __init__(self):
         self.tile_number_pattern = re.compile(r'\b[A-Z0-9-]{4,20}\b', re.IGNORECASE)
         self.tile_size_pattern = re.compile(r'\b\d+\s?[xX×]\s?\d+\b')
-        self.ignore_words = ['email', 'website', 'address', 'ph:', 'tel:', 'mob:', 'com', 'www', 'info@', 'page', 'mm', 'cm']
+        self.ignore_words = ['email', 'website', 'address', 'ph:', 'tel:', 'mob:', 'com', 'www', 'info@', 'page', 'mm', 'cm', 'box']
         
         # Enhanced patterns for intelligent extraction
         self.strict_number_pattern = re.compile(r'^(?:#|No\.|Ref|Code)?\s*([A-Za-z]{0,5}[-_.]?\s?\d{3,8})$', re.IGNORECASE)
