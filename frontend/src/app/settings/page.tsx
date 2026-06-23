@@ -7,7 +7,7 @@ import {
   HardDrive, AlertTriangle, ArrowLeft, ExternalLink, Folder,
 } from "lucide-react";
 import Link from "next/link";
-import { getStorageSettings, getStorageStatus, setStoragePath, StorageStatus } from "@/utils/localStorageSettings";
+import { getStorageSettings, getStorageStatus, setStoragePath, StorageStatus, getStoredHandle, setStoredHandle } from "@/utils/localStorageSettings";
 
 export default function SettingsPage() {
   const [path, setPath] = useState("");
@@ -16,6 +16,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  
+  const [browserDirName, setBrowserDirName] = useState("");
+  const [hasBrowserSupport, setHasBrowserSupport] = useState(false);
 
   const showMessage = (type: "success" | "error", text: string) => {
     setMessage({ type, text });
@@ -27,9 +30,21 @@ export default function SettingsPage() {
     setPath(settings.local_storage_path || "");
     setSavedPath(settings.local_storage_path || "");
     setStatus(statusData);
+
+    try {
+      const browserHandle = await getStoredHandle("browser-output-directory");
+      if (browserHandle) {
+        setBrowserDirName(browserHandle.name);
+      }
+    } catch (err) {
+      console.warn("Failed to load browser folder handle:", err);
+    }
   };
 
-  useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { 
+    loadSettings(); 
+    setHasBrowserSupport(typeof window !== "undefined" && "showDirectoryPicker" in window);
+  }, []);
 
   const handleSave = async () => {
     if (!path.trim()) {
@@ -61,6 +76,29 @@ export default function SettingsPage() {
       showMessage("error", "Folder exists but cannot be written to. Check permissions.");
     } else {
       showMessage("error", "No folder configured yet.");
+    }
+  };
+
+  const handleSelectBrowserFolder = async () => {
+    try {
+      const handle = await (window as any).showDirectoryPicker({ mode: "readwrite" });
+      await setStoredHandle("browser-output-directory", handle);
+      setBrowserDirName(handle.name);
+      showMessage("success", `Direct output folder "${handle.name}" set successfully ✓`);
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        showMessage("error", `Failed to select folder: ${err.message}`);
+      }
+    }
+  };
+
+  const handleClearBrowserFolder = async () => {
+    try {
+      await setStoredHandle("browser-output-directory", null);
+      setBrowserDirName("");
+      showMessage("success", "Direct browser folder configuration cleared");
+    } catch (err: any) {
+      showMessage("error", `Failed to clear folder: ${err.message}`);
     }
   };
 
@@ -190,6 +228,55 @@ export default function SettingsPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Browser Directory Card */}
+        {hasBrowserSupport && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-neutral-900/60 backdrop-blur border border-white/8 rounded-3xl p-6 mb-6 shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <FolderOpen className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-white">Browser Direct Save (For Cloud/Production)</h2>
+            </div>
+
+            {browserDirName ? (
+              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl mb-5 text-sm font-medium border bg-indigo-500/10 border-indigo-500/25 text-indigo-400">
+                <CheckCircle className="w-4 h-4" /> Browser is configured to save directly to: <strong>{browserDirName}</strong>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl mb-5 text-sm font-medium border bg-neutral-800/60 border-neutral-700 text-neutral-400">
+                <AlertTriangle className="w-4 h-4" /> No direct browser folder selected. Extracted tiles will save to browser IndexedDB storage.
+              </div>
+            )}
+
+            <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
+              If your backend is running in the cloud (e.g. Railway), it cannot access your physical computer folder. 
+              Use this option to select a folder on your computer. The browser will save extracted tile images 
+              <strong> directly to your hard drive</strong> inside <code className="text-indigo-400">YYYY/MM/</code> subfolders!
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSelectBrowserFolder}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition shadow-lg shadow-indigo-600/20"
+              >
+                <FolderOpen className="w-4 h-4" /> Select Folder
+              </button>
+
+              {browserDirName && (
+                <button
+                  onClick={handleClearBrowserFolder}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold transition border border-red-500/20"
+                >
+                  <XCircle className="w-4 h-4" /> Clear Folder
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Info card */}
         <motion.div

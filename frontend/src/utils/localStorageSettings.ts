@@ -101,3 +101,114 @@ export async function saveTileToLocalStorage(payload: LocalTilePayload): Promise
     return { ok: false, message: e.message || "Network error" };
   }
 }
+
+// ─── File System Access API (Direct Local Save from Browser) ───────────────────
+
+export function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("tile-storage-db", 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains("handles")) {
+        request.result.createObjectStore("handles");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function setStoredHandle(key: string, val: any): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readwrite");
+    const store = tx.objectStore("handles");
+    const req = store.put(val, key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getStoredHandle(key: string): Promise<any> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("handles", "readonly");
+    const store = tx.objectStore("handles");
+    const req = store.get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function verifyDirectoryPermission(handle: any, readWrite: boolean = true): Promise<boolean> {
+  if (!handle) return false;
+  const options = { mode: readWrite ? "readwrite" as const : "read" as const };
+  try {
+    if ((await handle.queryPermission(options)) === "granted") {
+      return true;
+    }
+    if ((await handle.requestPermission(options)) === "granted") {
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("Failed to query/request permission on folder:", err);
+    return false;
+  }
+}
+
+export function buildFilename(tileName: string, tileNumber: string, hasName?: boolean, hasNumber?: boolean): string {
+  let cleanName = (tileName || "").trim();
+  let cleanNumber = (tileNumber || "").trim();
+  
+  const nameIsPlaceholder = !cleanName || 
+    /untitled/i.test(cleanName) || 
+    /page/i.test(cleanName);
+    
+  const numIsPlaceholder = !cleanNumber || 
+    /^[pP]\d+$/.test(cleanNumber) || 
+    /untitled/i.test(cleanNumber);
+    
+  const useName = hasName !== undefined ? hasName : !nameIsPlaceholder;
+  const useNumber = hasNumber !== undefined ? hasNumber : !numIsPlaceholder;
+  
+  let baseName = "";
+  if (useName && useNumber) {
+    baseName = `${cleanName}__${cleanNumber}`;
+  } else if (useNumber) {
+    baseName = cleanNumber;
+  } else if (useName) {
+    baseName = cleanName;
+  } else {
+    baseName = `tile_${Math.random().toString(36).substring(2, 10)}`;
+  }
+  
+  let safeBase = baseName.replace(/\s+/g, "_");
+  safeBase = safeBase.replace(/[^a-zA-Z0-9-_]/g, "");
+  if (!safeBase) {
+    safeBase = `tile_${Math.random().toString(36).substring(2, 10)}`;
+  }
+  
+  return `${safeBase}.jpg`;
+}
+
+export async function saveBase64ToDirectoryHandle(
+  dirHandle: any,
+  base64Data: string,
+  filename: string
+): Promise<void> {
+  const res = await fetch(base64Data);
+  const blob = await res.blob();
+
+  // Organize in YYYY/MM subfolders
+  const now = new Date();
+  const year = now.getFullYear().toString();
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  
+  const yearHandle = await dirHandle.getDirectoryHandle(year, { create: true });
+  const monthHandle = await yearHandle.getDirectoryHandle(month, { create: true });
+  
+  const fileHandle = await monthHandle.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+}

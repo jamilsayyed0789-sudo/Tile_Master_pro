@@ -106,6 +106,24 @@ export default function PdfExtractClient() {
       throw new Error(msg);
     }
 
+    // 1. Direct browser folder save if configured (works in cloud/production)
+    try {
+      const { getStoredHandle, verifyDirectoryPermission, saveBase64ToDirectoryHandle, buildFilename } = await import("@/utils/localStorageSettings");
+      const browserDirHandle = await getStoredHandle("browser-output-directory");
+      if (browserDirHandle) {
+        const hasPermission = await verifyDirectoryPermission(browserDirHandle, true);
+        if (hasPermission) {
+          const fname = buildFilename(tileData.tileName, tileData.tileNumber, tileData.hasName, tileData.hasNumber);
+          await saveBase64ToDirectoryHandle(browserDirHandle, tileData.imageDataUrl, fname);
+          console.log("[hybridSaveTile] Saved directly to browser-selected folder:", fname);
+        } else {
+          console.warn("[hybridSaveTile] Permission denied for browser-selected folder.");
+        }
+      }
+    } catch (err) {
+      console.error("[hybridSaveTile] Browser directory save failed:", err);
+    }
+
     const st = storageStatus ?? await getStorageStatus();
     if (st.configured && st.writable) {
       const result = await saveTileToLocalStorage({
