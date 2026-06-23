@@ -937,37 +937,68 @@ def _perform_ocr_on_page(image_bytes: bytes) -> List[dict]:
         # Run Tesseract OCR and extract layout data
         data = pytesseract.image_to_data(pil_image, output_type=pytesseract.Output.DICT)
         
-        blocks = []
+        # Group word indices by (block_num, par_num, line_num)
+        lines_dict = {}
         n_boxes = len(data['text'])
         for i in range(n_boxes):
             conf = float(data['conf'][i])
             text = (data['text'][i] or "").strip()
-            # Tesseract returns conf -1 for structural blocks
             if conf > 0 and text:
-                left = float(data['left'][i])
-                top = float(data['top'][i])
-                width = float(data['width'][i])
-                height = float(data['height'][i])
+                b_num = data['block_num'][i]
+                p_num = data['par_num'][i]
+                l_num = data['line_num'][i]
+                key = (b_num, p_num, l_num)
+                if key not in lines_dict:
+                    lines_dict[key] = []
+                lines_dict[key].append(i)
                 
-                # Compensate for the 40px border padding
-                left = left - 40.0
-                top = top - 40.0
+        blocks = []
+        for key, indices in lines_dict.items():
+            words = [data['text'][idx].strip() for idx in indices if data['text'][idx].strip()]
+            if not words:
+                continue
+            line_text = " ".join(words)
+            
+            # Skip any lines containing "box" (case insensitive)
+            if "box" in line_text.lower():
+                continue
                 
-                # Compensate for the 2x upscale if it was applied
-                if upscaled:
-                    left = left / 2.0
-                    top = top / 2.0
-                    width = width / 2.0
-                    height = height / 2.0
-                    
-                left = max(0.0, left)
-                top = max(0.0, top)
+            # Compute line bounding box
+            lefts = [float(data['left'][idx]) for idx in indices]
+            tops = [float(data['top'][idx]) for idx in indices]
+            widths = [float(data['width'][idx]) for idx in indices]
+            heights = [float(data['height'][idx]) for idx in indices]
+            
+            x0 = min(lefts)
+            y0 = min(tops)
+            x1 = max(l + w for l, w in zip(lefts, widths))
+            y1 = max(t + h for t, h in zip(tops, heights))
+            
+            # Compensate for the 40px border padding
+            left = x0 - 40.0
+            top = y0 - 40.0
+            width = x1 - x0
+            height = y1 - y0
+            
+            # Compensate for the 2x upscale if it was applied
+            if upscaled:
+                left = left / 2.0
+                top = top / 2.0
+                width = width / 2.0
+                height = height / 2.0
                 
-                blocks.append({
-                    "bbox": (left, top, left + width, top + height),
-                    "text": text,
-                    "confidence": int(conf)
-                })
+            left = max(0.0, left)
+            top = max(0.0, top)
+            
+            confs = [float(data['conf'][idx]) for idx in indices if data['conf'][idx] is not None]
+            avg_conf = sum(confs) / len(confs) if confs else 0.0
+            
+            blocks.append({
+                "bbox": (left, top, left + width, top + height),
+                "text": line_text,
+                "confidence": int(avg_conf)
+            })
+            
         return blocks
     except Exception as e:
         logger.error(f"Tesseract OCR failed: {e}")
