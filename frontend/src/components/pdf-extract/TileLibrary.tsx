@@ -176,7 +176,24 @@ export default function TileLibrary({ tiles: externalTiles, onTilesChange, compa
         </div>
       ) : (
         <div className={`grid gap-4 ${compact ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'}`}>
-          {filtered.map((tile) => (
+          {filtered.map((tile) => {
+            // Filter placeholders
+            const isPlaceholderName = (n: string | null | undefined) => {
+              if (!n) return true;
+              const l = n.trim().toLowerCase();
+              return l === "" || l === "unknown" || l === "untitled" || l === "n/a" ||
+                l.startsWith("untitled page") || l.startsWith("tile page") || l.startsWith("untitled tile");
+            };
+            const isPlaceholderNumber = (n: string | null | undefined) => {
+              if (!n) return true;
+              const l = n.trim().toLowerCase();
+              return l === "" || l === "unknown" || l === "n/a" || /^p\d+(-\d+)?$/.test(l);
+            };
+
+            const displayName = isPlaceholderName(tile.tileName) ? null : tile.tileName;
+            const displayNumber = isPlaceholderNumber(tile.tileNumber) ? null : tile.tileNumber;
+
+            return (
             <motion.div
               key={tile.id}
               layout
@@ -207,8 +224,20 @@ export default function TileLibrary({ tiles: externalTiles, onTilesChange, compa
                 />
               </div>
               <div className="p-2.5 space-y-0.5">
-                <p className="text-[11px] font-bold text-white truncate">{tile.tileName}</p>
-                <p className="text-[9px] font-mono text-neutral-500 truncate">{tile.tileNumber}</p>
+                {/* Heading: real name > real number > grey placeholder */}
+                {displayName ? (
+                  <p className="text-[11px] font-bold text-white truncate">{displayName}</p>
+                ) : displayNumber ? (
+                  <p className="text-[11px] font-bold text-white truncate font-mono">{displayNumber}</p>
+                ) : (
+                  <p className="text-[11px] font-bold text-neutral-500 italic truncate">No label</p>
+                )}
+                
+                {/* Only show number row if both name and number are present */}
+                {displayName && displayNumber && (
+                  <p className="text-[9px] font-mono text-neutral-500 truncate"># {displayNumber}</p>
+                )}
+
                 <div className="flex items-center gap-2 text-[9px] text-neutral-500">
                   <span>{tile.tileSize}</span>
                   {tile.finish !== "N/A" && <span className="text-neutral-700">|</span>}
@@ -216,7 +245,7 @@ export default function TileLibrary({ tiles: externalTiles, onTilesChange, compa
                 </div>
               </div>
             </motion.div>
-          ))}
+          )})}
         </div>
       )}
 
