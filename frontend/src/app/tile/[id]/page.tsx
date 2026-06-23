@@ -7,6 +7,7 @@ import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { useParams } from "next/navigation";
+import { buildTileUrl } from "@/utils/textureBridge";
 
 function fallbackTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -230,7 +231,7 @@ export default function PublicTilePage() {
           <div className="bg-neutral-900/60 border border-white/5 rounded-2xl overflow-hidden mb-6">
             {tile.tile_image_url && (
               <div className="aspect-video bg-neutral-800 relative">
-                <img src={tile.tile_image_url} alt={tile.tile_name}
+                <img src={buildTileUrl(tile.tile_image_url)} alt={tile.tile_name}
                   className="w-full h-full object-contain" />
               </div>
             )}
@@ -331,7 +332,7 @@ export default function PublicTilePage() {
                       target={[0, 0.5, 0]} />
                     <Environment preset="apartment" />
                     <Room3D length={length} width={width}
-                      tileImageUrl={tile.tile_image_url || ""} />
+                      tileImageUrl={buildTileUrl(tile.tile_image_url || "")} />
                   </Suspense>
                 </Canvas>
               </div>

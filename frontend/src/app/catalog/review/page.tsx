@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, CheckCircle, Save, X, Search, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { buildTileUrl } from "@/utils/textureBridge";
 
 interface Tile {
   id: number;
@@ -128,7 +129,7 @@ export default function ReviewPage() {
                 >
                   <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-700">
                     {tile.image_url ? (
-                      <img src={tile.image_url} alt="" className="w-full h-full object-cover" />
+                      <img src={buildTileUrl(tile.image_url)} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">No img</div>
                     )}

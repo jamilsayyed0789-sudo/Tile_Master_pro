@@ -116,20 +116,42 @@ def download_qr_code(
 
     tile_img_bytes = None
     if tile.tile_image_url:
-        import requests
-        try:
-            # Handle local storage image urls starting with /api/local/image
-            if tile.tile_image_url.startswith("/api/local/image"):
-                # Construct absolute url assuming backend runs on localhost:8001
-                img_url = f"http://127.0.0.1:8001{tile.tile_image_url}"
-            else:
-                img_url = tile.tile_image_url
+        is_local = False
+        local_file_path = None
+        
+        # Handle relative local storage URLs
+        if tile.tile_image_url.startswith("/api/local/image"):
+            import urllib.parse
+            parsed = urllib.parse.urlparse(tile.tile_image_url)
+            params = urllib.parse.parse_qs(parsed.query)
+            relative_path = params.get("path", [None])[0]
+            if relative_path:
+                from app.routers.local_storage import _get_storage_path
+                local_file_path = os.path.join(_get_storage_path(), relative_path.lstrip("/\\"))
+                is_local = True
+        elif tile.tile_image_url.startswith("/uploads/"):
+            relative_path = tile.tile_image_url[len("/uploads/"):]
+            local_file_path = os.path.join(os.getcwd(), "uploads", relative_path.lstrip("/\\"))
+            is_local = True
             
-            resp = requests.get(img_url, timeout=10)
-            if resp.status_code == 200:
-                tile_img_bytes = resp.content
-        except Exception as e:
-            logger.warning(f"Could not fetch tile image for QR label: {e}")
+        if is_local and local_file_path and os.path.exists(local_file_path):
+            try:
+                with open(local_file_path, "rb") as f:
+                    tile_img_bytes = f.read()
+            except Exception as e:
+                logger.warning(f"Could not read local tile image file {local_file_path}: {e}")
+        else:
+            import requests
+            try:
+                img_url = tile.tile_image_url
+                if img_url.startswith("/"):
+                    # Fallback construct absolute url if it's somehow relative but not matched above
+                    img_url = f"http://127.0.0.1:8001{img_url}"
+                resp = requests.get(img_url, timeout=10)
+                if resp.status_code == 200:
+                    tile_img_bytes = resp.content
+            except Exception as e:
+                logger.warning(f"Could not fetch tile image for QR label: {e}")
 
     if format.lower() == "png":
         png_bytes = generate_qr_label_png(

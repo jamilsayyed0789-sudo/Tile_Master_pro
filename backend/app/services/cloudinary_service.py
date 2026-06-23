@@ -12,6 +12,10 @@ _configured = False
 
 def ensure_configured():
     global _configured
+    disable_cloudinary = os.getenv("DISABLE_CLOUDINARY", "").lower() in ("true", "1", "yes")
+    if disable_cloudinary:
+        _configured = False
+        return
     if not _configured and CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         import cloudinary
         cloudinary.config(
@@ -27,7 +31,7 @@ def upload_image(image_bytes: bytes, public_id: str, folder: str = "tile_catalog
     try:
         ensure_configured()
         if not _configured:
-            logger.warning("Cloudinary not configured. Falling back to local storage.")
+            logger.warning("Cloudinary not configured or disabled. Falling back to local storage.")
             
             # Setup local directory
             local_dir = os.path.join(os.getcwd(), "uploads", folder)
@@ -39,7 +43,7 @@ def upload_image(image_bytes: bytes, public_id: str, folder: str = "tile_catalog
                 f.write(image_bytes)
             
             # Return URL path that the frontend can use
-            return f"http://127.0.0.1:8000/uploads/{folder}/{public_id}.jpg"
+            return f"/uploads/{folder}/{public_id}.jpg"
 
         import cloudinary.uploader
         result = cloudinary.uploader.upload(
@@ -59,7 +63,7 @@ def delete_image(image_url: str) -> bool:
         return False
     try:
         ensure_configured()
-        if not _configured or "127.0.0.1" in image_url or "localhost" in image_url:
+        if not _configured or "127.0.0.1" in image_url or "localhost" in image_url or image_url.startswith("/"):
             # Local fallback deletion
             import urllib.parse
             path = urllib.parse.urlparse(image_url).path

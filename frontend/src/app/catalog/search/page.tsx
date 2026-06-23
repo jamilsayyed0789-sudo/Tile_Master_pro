@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/utils/auth";
-import { setPendingTexture } from "@/utils/textureBridge";
+import { setPendingTexture, buildTileUrl } from "@/utils/textureBridge";
 
 function ConfirmDialog({
   open,
@@ -313,7 +313,7 @@ function Apply3DPanel({
         {/* Tile preview strip */}
         <div className="flex items-center gap-3 px-4 py-2 bg-neutral-900/60 border-b border-white/5">
           {tile.image_url ? (
-            <img src={tile.image_url} alt={tile.tile_name}
+            <img src={buildTileUrl(tile.image_url)} alt={tile.tile_name}
               className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/10" />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center flex-shrink-0">
@@ -579,7 +579,7 @@ export default function CatalogSearchPage() {
                   {/* Image */}
                   <div className="aspect-[4/3] bg-neutral-950 rounded-t-2xl overflow-hidden flex items-center justify-center">
                     {tile.image_url ? (
-                      <img src={tile.image_url} alt={tile.tile_name}
+                      <img src={buildTileUrl(tile.image_url)} alt={tile.tile_name}
                         className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <ImageIcon className="w-12 h-12 text-neutral-800" />
