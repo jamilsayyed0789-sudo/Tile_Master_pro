@@ -22,14 +22,17 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     # Initialize PaddleOCR once when the app starts (singleton to save RAM)
     try:
-        from paddleocr import PaddleOCR
+        # Suppress noisy PaddlePaddle/ppocr logs before importing
         import logging as _logging
+        for _noisy in ("ppocr", "paddle", "PIL", "paddleocr"):
+            _logging.getLogger(_noisy).setLevel(_logging.WARNING)
+
+        from paddleocr import PaddleOCR
         _logging.getLogger(__name__).info("Initializing PaddleOCR engine...")
-        # Lightweight English mobile model — fast, low RAM, good accuracy for printed text
+        # Lightweight English model — fast inference, low RAM footprint
         ocr_engine = PaddleOCR(
             use_angle_cls=False,
             lang='en',
-            show_log=False,
         )
         _logging.getLogger(__name__).info("PaddleOCR engine initialized successfully.")
     except Exception as e:
