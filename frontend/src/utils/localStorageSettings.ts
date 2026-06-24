@@ -1,7 +1,9 @@
 // ─── Local Storage Settings Utility ──────────────────────────────────────────
 // Communicates with the backend settings API to read/write the local tile folder path.
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+// Strip trailing slash to prevent double-slashes in URLs (which cause CORS-breaking redirects)
+const API_BASE = rawApiUrl.endsWith("/") ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
 export interface StorageStatus {
   configured: boolean;
