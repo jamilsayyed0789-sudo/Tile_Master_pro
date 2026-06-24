@@ -177,6 +177,36 @@ function AlertDialog({
   );
 }
 
+import { findLocalTileImage } from "@/utils/localStorageSettings";
+
+function LocalTileImage({ tile, className }: { tile: any; className: string }) {
+  const [localUrl, setLocalUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadLocal() {
+      try {
+        const url = await findLocalTileImage(tile.tile_name, tile.tile_number);
+        if (active && url) {
+          setLocalUrl(url);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    loadLocal();
+    return () => { active = false; };
+  }, [tile.tile_name, tile.tile_number]);
+
+  return (
+    <img 
+      src={localUrl || buildTileUrl(tile.image_url)} 
+      alt={tile.tile_name}
+      className={className} 
+    />
+  );
+}
+
 interface Tile {
   id?: number;
   tile_name: string;
@@ -313,8 +343,10 @@ function Apply3DPanel({
         {/* Tile preview strip */}
         <div className="flex items-center gap-3 px-4 py-2 bg-neutral-900/60 border-b border-white/5">
           {tile.image_url ? (
-            <img src={buildTileUrl(tile.image_url)} alt={tile.tile_name}
-              className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/10" />
+            <LocalTileImage 
+              tile={tile} 
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-white/10" 
+            />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center flex-shrink-0">
               <ImageIcon className="w-4 h-4 text-neutral-600" />
@@ -649,8 +681,10 @@ export default function TileLibraryPage() {
                   {/* Image */}
                   <div className="aspect-[4/3] bg-neutral-950 rounded-t-2xl overflow-hidden flex items-center justify-center">
                     {tile.image_url ? (
-                      <img src={buildTileUrl(tile.image_url)} alt={tile.tile_name}
-                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
+                      <LocalTileImage 
+                        tile={tile} 
+                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
+                      />
                     ) : (
                       <ImageIcon className="w-12 h-12 text-neutral-800" />
                     )}

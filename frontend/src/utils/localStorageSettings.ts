@@ -238,3 +238,45 @@ export async function saveBase64ToDirectoryHandle(
   await writable.write(blob);
   await writable.close();
 }
+
+/** 
+ * Recursively search the browser-output-directory for a tile image matching the name/number.
+ * Returns a Blob URL if found, or null if not found or no permission.
+ */
+export async function findLocalTileImage(tileName: string | null, tileNumber: string | null): Promise<string | null> {
+  try {
+    const dirHandle = await getStoredHandle("browser-output-directory");
+    if (!dirHandle) return null;
+    
+    // Check permission without prompting (don't annoy the user if they didn't explicitly click something)
+    const options = { mode: "read" as const };
+    const perm = await dirHandle.queryPermission(options);
+    if (perm !== "granted") {
+      // If not granted, we could try to request, but it requires a user gesture.
+      // Let's just return null if we don't already have permission.
+      return null;
+    }
+
+    const baseName = buildFilename(tileName || "", tileNumber || "", undefined, undefined).replace(".jpg", "");
+
+    async function searchDir(dir: any, depth: number): Promise<string | null> {
+      if (depth > 2) return null; // Only search YYYY/MM folders
+      for await (const entry of dir.values()) {
+        if (entry.kind === 'file') {
+          if (entry.name.startsWith(baseName) && entry.name.endsWith(".jpg")) {
+             const file = await entry.getFile();
+             return URL.createObjectURL(file);
+          }
+        } else if (entry.kind === 'directory') {
+           const found = await searchDir(entry, depth + 1);
+           if (found) return found;
+        }
+      }
+      return null;
+    }
+    return await searchDir(dirHandle, 0);
+  } catch (e) {
+    console.error("Error searching local tile image:", e);
+    return null;
+  }
+}
