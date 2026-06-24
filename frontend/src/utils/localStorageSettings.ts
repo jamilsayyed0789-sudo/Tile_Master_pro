@@ -257,13 +257,21 @@ export async function findLocalTileImage(tileName: string | null, tileNumber: st
       return null;
     }
 
-    const baseName = buildFilename(tileName || "", tileNumber || "", undefined, undefined).replace(".jpg", "");
+    const searchKey = (tileNumber && tileNumber.toLowerCase() !== "unknown" && !tileNumber.startsWith("P")) 
+      ? tileNumber 
+      : (tileName || "");
+      
+    if (!searchKey.trim()) return null;
 
     async function searchDir(dir: any, depth: number): Promise<string | null> {
       if (depth > 2) return null; // Only search YYYY/MM folders
       for await (const entry of dir.values()) {
-        if (entry.kind === 'file') {
-          if (entry.name.startsWith(baseName) && entry.name.endsWith(".jpg")) {
+        if (entry.kind === 'file' && entry.name.endsWith(".jpg")) {
+          // Split the filename into components (e.g. GOLDEN__2032_1.jpg -> ["GOLDEN", "", "2032", "1", "jpg"])
+          const parts = entry.name.split(/[_\.]/);
+          // If the search key is exactly one of the components, it's a match!
+          // We also do a fallback includes() just in case the key has spaces/hyphens that didn't split well
+          if (parts.includes(searchKey) || entry.name.includes(searchKey)) {
              const file = await entry.getFile();
              return URL.createObjectURL(file);
           }
