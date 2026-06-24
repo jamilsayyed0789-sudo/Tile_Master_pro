@@ -39,9 +39,20 @@ export function clearPendingTexture(slot: string) {
 
 export function buildTileUrl(path: string): string {
   if (!path) return '';
+  // Already an absolute URL or data URI — return as-is
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+
+  // If NEXT_PUBLIC_API_URL is explicitly configured, use it
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  if (configured) {
+    return `${configured}${path.startsWith('/') ? path : '/' + path}`;
+  }
+
+  // In the browser, use the current page origin so relative /api/... paths
+  // always hit the same server (works on both production and localhost)
   const base = typeof window !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL || `${window.location.protocol}//127.0.0.1:8001`)
-    : (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001');
+    ? window.location.origin   // e.g. https://tile-master-pro.up.railway.app
+    : 'http://127.0.0.1:8001'; // SSR fallback only
+
   return `${base}${path.startsWith('/') ? path : '/' + path}`;
 }
