@@ -172,6 +172,7 @@ export default function Navbar() {
                 {navItems.map((item) => {
                   const isActive = pathname === item.path;
                   const Icon = item.icon;
+                  const isQR = item.name === "QR Codes";
                   return (
                     <Link
                       key={item.name}
@@ -184,6 +185,25 @@ export default function Navbar() {
                     >
                       <Icon className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />
                       {item.name}
+                      {isQR && (
+                        <div className="absolute -top-2 -right-3 pointer-events-none perspective-1000 z-50">
+                          <motion.div
+                            animate={{ 
+                              rotateY: [0, 15, -15, 0],
+                              y: [-1, 1, -1],
+                            }}
+                            transition={{ 
+                              duration: 3, 
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                            className="inline-flex items-center justify-center rounded-full px-1.5 py-[2px] text-[8px] font-extrabold bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-[0_0_8px_rgba(6,182,212,0.6)] border border-cyan-300/50 uppercase tracking-wider"
+                            style={{ transformStyle: "preserve-3d" }}
+                          >
+                            Soon
+                          </motion.div>
+                        </div>
+                      )}
                     </Link>
                   );
                 })}
@@ -299,6 +319,7 @@ export default function Navbar() {
               {navItems.map((item) => {
                 const isActive = pathname === item.path;
                 const Icon = item.icon;
+                const isQR = item.name === "QR Codes";
                 return (
                   <Link
                     key={item.name}
@@ -314,6 +335,23 @@ export default function Navbar() {
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     {item.name}
+                    {isQR && (
+                      <motion.div
+                        animate={{ 
+                          rotateY: [0, 15, -15, 0],
+                          scale: [1, 1.05, 1],
+                        }}
+                        transition={{ 
+                          duration: 3, 
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="ml-auto inline-flex items-center justify-center rounded-full px-2 py-[3px] text-[9px] font-extrabold bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-[0_0_8px_rgba(6,182,212,0.6)] border border-cyan-300/50 uppercase tracking-wider perspective-1000"
+                        style={{ transformStyle: "preserve-3d" }}
+                      >
+                        Soon
+                      </motion.div>
+                    )}
                   </Link>
                 );
               })}
