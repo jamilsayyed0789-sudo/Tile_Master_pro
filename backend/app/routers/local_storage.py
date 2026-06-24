@@ -190,8 +190,17 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     with open(abs_path, "wb") as f:
         f.write(img_bytes)
 
-    # URL the frontend can use to display the image
-    image_serve_url = f"/api/local/image?path={relative_path}"
+    # Build the image URL stored in the DB.
+    # If PUBLIC_URL is set (e.g. on Railway), store a full absolute URL so the
+    # frontend can load it directly without any proxy configuration.
+    # Falls back to a relative path for local development.
+    backend_public_url = os.getenv("PUBLIC_URL", os.getenv("BACKEND_PUBLIC_URL", "")).rstrip("/")
+    if backend_public_url:
+        image_serve_url = f"{backend_public_url}/api/local/image?path={relative_path}"
+        logger.info(f"[SAVE TILE] Storing absolute image URL: {image_serve_url}")
+    else:
+        image_serve_url = f"/api/local/image?path={relative_path}"
+        logger.info(f"[SAVE TILE] Storing relative image URL (no PUBLIC_URL set): {image_serve_url}")
 
     # DB fields: store only what the user selected
     db_name   = payload.tile_name   if use_name   else None
