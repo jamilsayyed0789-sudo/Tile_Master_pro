@@ -135,22 +135,21 @@ export default function PdfExtractClient() {
       console.error("[hybridSaveTile] Browser directory save failed:", err);
     }
 
-    const st = storageStatus ?? await getStorageStatus();
-    if (st.configured && st.writable) {
-      const result = await saveTileToLocalStorage({
-        tile_name: tileData.tileName,
-        tile_number: tileData.tileNumber,
-        tile_size: tileData.tileSize,
-        finish: tileData.finish,
-        color: tileData.color,
-        page_number: pageNum,
-        image_data_url: tileData.imageDataUrl,
-        has_name: finalHasName,
-        has_number: finalHasNumber,
-      });
-      if (!result.ok) {
-        console.warn("Backend local save failed:", result.message);
-      }
+    // Always attempt to save to the backend database, even if storage status isn't "configured".
+    // The backend will safely fallback to its default /uploads folder, ensuring the database record is created.
+    const result = await saveTileToLocalStorage({
+      tile_name: tileData.tileName,
+      tile_number: tileData.tileNumber,
+      tile_size: tileData.tileSize,
+      finish: tileData.finish,
+      color: tileData.color,
+      page_number: pageNum,
+      image_data_url: tileData.imageDataUrl,
+      has_name: finalHasName,
+      has_number: finalHasNumber,
+    });
+    if (!result.ok) {
+      console.warn("Backend local save failed:", result.message);
     }
     // Always save to IndexedDB as well so the local 'Tile Library' tab and ZIP export keep working
     try {
