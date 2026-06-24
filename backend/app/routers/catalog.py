@@ -533,6 +533,110 @@ def update_tile(
     }
 
 
+
+# ── Safe image deletion helper ────────────────────────────────────────────────
+
+def _safe_delete_image(relative_path: Optional[str], tile_id: int) -> bool:
+    """
+    Safely delete an image file from the /app/uploads volume directory.
+    Returns True if the file was deleted, False otherwise.
+    Prevents any path traversal outside the uploads folder.
+    """
+    if not relative_path:
+        logger.info(f"[DELETE TILE {tile_id}] No image path stored — skipping file deletion.")
+        return False
+
+    try:
+        from app.routers.local_storage import _get_storage_path
+        from pathlib import Path
+
+        storage_root = Path(_get_storage_path()).resolve()
+        target = (storage_root / relative_path).resolve()
+
+        # ── Security check: ensure the resolved path is inside the storage root ──
+        if not str(target).startswith(str(storage_root)):
+            logger.error(
+                f"[DELETE TILE {tile_id}] Path traversal attempt blocked! "
+                f"Target '{target}' is outside '{storage_root}'."
+            )
+            return False
+
+        if not target.is_file():
+            logger.warning(
+                f"[DELETE TILE {tile_id}] Image file not found on disk: {target}. "
+                "DB record will still be deleted."
+            )
+            return False
+
+        target.unlink()
+        logger.info(f"[DELETE TILE {tile_id}] Image file deleted from Railway volume: {target}")
+        return True
+
+    except Exception as e:
+        logger.error(f"[DELETE TILE {tile_id}] Error deleting image file: {e}")
+        return False
+
+
+# ── Delete tile by ID (preferred — precise, no ambiguity) ────────────────────
+
+@catalog_router.delete("/tiles/by-id/{tile_id}")
+def delete_tile_by_id(
+    tile_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a single tile by its database ID.
+    1. Finds the tile record.
+    2. Safely removes its image file from the Railway /app/uploads volume.
+    3. Deletes the database record.
+    4. Returns a detailed JSON success/error response.
+    """
+    logger.info(f"[DELETE TILE {tile_id}] Starting delete request.")
+
+    # ── 1. Find tile in DB ────────────────────────────────────────────────────
+    tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id).first()
+    if not tile:
+        logger.warning(f"[DELETE TILE {tile_id}] Tile not found in DB.")
+        raise HTTPException(status_code=404, detail=f"Tile with ID {tile_id} not found.")
+
+    tile_number = tile.tile_number
+    relative_path = tile.relative_image_path
+
+    # ── 2. Delete image file from Railway volume ───────────────────────────────
+    image_deleted = _safe_delete_image(relative_path, tile_id)
+
+    # ── 3. Delete DB record ───────────────────────────────────────────────────
+    db_deleted = False
+    try:
+        db.delete(tile)
+        db.commit()
+        db_deleted = True
+        logger.info(f"[DELETE TILE {tile_id}] DB record deleted successfully.")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"[DELETE TILE {tile_id}] DB deletion failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Image file was {'deleted' if image_deleted else 'not found'} "
+                   f"but DB record deletion failed: {str(e)}"
+        )
+
+    # ── 4. Return detailed response ───────────────────────────────────────────
+    return {
+        "success": True,
+        "tile_id": tile_id,
+        "tile_number": tile_number,
+        "image_file_deleted": image_deleted,
+        "db_record_deleted": db_deleted,
+        "message": (
+            f"Tile '{tile_number}' deleted successfully. "
+            f"Image file {'removed from Railway volume.' if image_deleted else 'was not found on disk (already missing).'}"
+        ),
+    }
+
+
+# ── Legacy delete by tile_number (kept for backward compatibility) ─────────────
+
 @catalog_router.delete("/tiles/{tile_number}")
 def delete_tile(
     tile_number: str,
@@ -540,37 +644,27 @@ def delete_tile(
     db: Session = Depends(get_db),
 ):
     try:
-        from app.routers.local_storage import _get_storage_path
-        import os
-        
-        # Delete all tiles matching this number
+        # Delete all tiles matching this number using the new safe helper
         tiles = db.query(TileCatalog).filter(TileCatalog.tile_number == tile_number).all()
         if not tiles:
             raise HTTPException(status_code=404, detail="Tile not found")
-            
+
         deleted_count = 0
         for tile in tiles:
-            if tile.relative_image_path:
-                storage_path = _get_storage_path()
-                abs_path = os.path.join(storage_path, tile.relative_image_path)
-                if os.path.exists(abs_path):
-                    try:
-                        os.remove(abs_path)
-                    except Exception:
-                        pass
-            elif tile.image_url and "cloudinary.com" in tile.image_url:
+            _safe_delete_image(tile.relative_image_path, tile.id)
+
+            if tile.image_url and "cloudinary.com" in tile.image_url:
                 def delete_cloudinary_image(url):
                     try:
                         from app.services.cloudinary_service import delete_image
                         delete_image(url)
                     except Exception as e:
                         logger.error(f"Failed to delete {url} from Cloudinary: {e}")
-                
                 background_tasks.add_task(delete_cloudinary_image, tile.image_url)
-                
+
             db.delete(tile)
             deleted_count += 1
-            
+
         db.commit()
         return {"message": f"Deleted {deleted_count} tile(s) with number {tile_number}"}
     except HTTPException:

@@ -507,26 +507,32 @@ export default function TileLibraryPage() {
     setAppliedSlots(prev => new Set([...prev, slot]));
   };
 
-  const performDelete = async (tileNumber: string) => {
-    setDeletingId(tileNumber);
+  const performDelete = async (tile: Tile) => {
+    const tileId = tile.id;
+    if (!tileId) {
+      setAlertInfo({ title: "Delete Failed", message: "Tile has no ID — cannot delete." });
+      return;
+    }
+    setDeletingId(tile.tile_number);
     try {
       const token = getToken();
-      const res = await fetch(`/api/catalog/tiles/${encodeURIComponent(tileNumber)}`, {
+      const res = await fetch(`/api/catalog/tiles/by-id/${tileId}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
-        setTiles(prev => prev.filter(t => t.tile_number !== tileNumber));
+        const data = await res.json();
+        setTiles(prev => prev.filter(t => t.id !== tileId));
         setConfirmDeleteTile(null);
+        console.log(
+          `[DELETE] ${data.message} | image_deleted=${data.image_file_deleted} | db_deleted=${data.db_record_deleted}`
+        );
       } else {
-        let errorText = await res.text();
         let errorMsg = "Failed to delete tile";
         try {
-          const json = JSON.parse(errorText);
+          const json = await res.json();
           if (json.detail) errorMsg = json.detail;
-        } catch (e) {
-          errorMsg = errorText || errorMsg;
-        }
+        } catch (_) {}
         setConfirmDeleteTile(null);
         setAlertInfo({ title: "Delete Failed", message: errorMsg });
       }
@@ -781,7 +787,7 @@ export default function TileLibraryPage() {
         cancelText="Keep It"
         variant="danger"
         loading={deletingId === confirmDeleteTile?.tile_number}
-        onConfirm={() => confirmDeleteTile && performDelete(confirmDeleteTile.tile_number)}
+        onConfirm={() => confirmDeleteTile && performDelete(confirmDeleteTile)}
         onCancel={() => setConfirmDeleteTile(null)}
       />
 
