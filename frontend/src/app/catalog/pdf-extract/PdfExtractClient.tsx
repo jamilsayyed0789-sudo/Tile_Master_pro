@@ -673,8 +673,8 @@ export default function PdfExtractClient() {
             const result = ocrResults[j] || {};
             try {
               await hybridSaveTile({
-                tileName: result.tileName || item.tileName || `Untitled Page ${item.pageNumber}`,
-                tileNumber: result.tileNumber || item.tileNumber || `P${item.pageNumber}`,
+                tileName: result.tileName || item.tileName || "",
+                tileNumber: result.tileNumber || item.tileNumber || "",
                 tileSize: globalTileSize || result.tileSize || item.tileSize || "N/A",
                 finish: item.finish || "N/A",
                 color: item.color || "N/A",
@@ -780,8 +780,8 @@ export default function PdfExtractClient() {
           }
         }
         
-        const tileName = extracted.tileName || `Untitled Page ${currentPageIdx + 1}${suffix}`;
-        const tileNumber = extracted.tileNumber || `P${currentPageIdx + 1}${suffix}`;
+        const tileName = extracted.tileName || "";
+        const tileNumber = extracted.tileNumber || "";
         const hasName = !!extracted.tileName;
         const hasNumber = !!extracted.tileNumber;
         

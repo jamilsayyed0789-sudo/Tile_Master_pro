@@ -261,10 +261,9 @@ def extract_text_hybrid(hybrid_requests: List[HybridTextRequest]):
                 if combined_num:
                     res["tileNumber"] = combined_num
 
-            # Per user request: Use the Tile Number as the Tile Name to prevent duplicate names IF name is still empty/invalid
-            if res.get("tileNumber") and (not res.get("tileName") or res.get("tileName").strip().lower() in ("", "unknown", "untitled")):
-                res["tileName"] = res["tileNumber"]
-
+            # Do NOT cross-pollinate name and number. If user selects only number, keep name empty.
+            # If they select both, keep them separate.
+            
             results.append(res)
             
         print(f"[HYBRID OCR RESULT] results: {results}")
