@@ -91,148 +91,145 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
     Save a tile image to the local folder and store its metadata in the database.
     The image must be provided as a base64 data URL (data:image/jpeg;base64,...).
     """
-    storage_path = _get_storage_path()
-    print(f"[SAVE TILE] payload: name={payload.tile_name}, number={payload.tile_number}, has_name={payload.has_name}, has_number={payload.has_number}")
-
-    # Decode base64 image
-    data_url = payload.image_data_url
-    if "," in data_url:
-        header, encoded = data_url.split(",", 1)
-    else:
-        encoded = data_url
-
     try:
-        img_bytes = base64.b64decode(encoded)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid base64 image data")
+        storage_path = _get_storage_path()
+        print(f"[SAVE TILE] payload: name={payload.tile_name}, number={payload.tile_number}, has_name={payload.has_name}, has_number={payload.has_number}")
 
-    # Guard: reject suspiciously tiny images (< 3.5 KB decoded).
-    # Name/number OCR crop boxes produce tiny JPEG blobs (~4–8 KB) that should
-    # NEVER be saved to disk as tile images — they are only used for OCR text
-    # extraction. Real tile images are always significantly larger.
-    # 3,500 bytes keeps us safely above pure-text JPEG crops (~2–4 KB raw).
-    MIN_TILE_BYTES = 3500
-    if len(img_bytes) < MIN_TILE_BYTES:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Image too small to be a tile ({len(img_bytes)} bytes). Name/number crop images should not be saved directly."
-        )
+        # Decode base64 image
+        data_url = payload.image_data_url
+        if "," in data_url:
+            header, encoded = data_url.split(",", 1)
+        else:
+            encoded = data_url
 
-    # Strictly respect what the user chose to crop:
-    # has_name=True  → user drew a "Tile Name" crop box  → include name
-    # has_number=True → user drew a "Tile Number" crop box → include number
-    # If neither flag passed, fall back to heuristic validity
-    import re
+        try:
+            img_bytes = base64.b64decode(encoded)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid base64 image data")
 
-    def _clean(s: str) -> str:
-        s = s.strip()
-        s = re.sub(r'\s+', '_', s)
-        s = "".join(c for c in s if c.isalnum() or c in "-_")
-        return s
+        # Guard: reject suspiciously tiny images (< 3.5 KB decoded).
+        MIN_TILE_BYTES = 3500
+        if len(img_bytes) < MIN_TILE_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Image too small to be a tile ({len(img_bytes)} bytes). Name/number crop images should not be saved directly."
+            )
 
-    def _is_placeholder_name(s: str) -> bool:
-        """Returns True if the name is a generated placeholder, not a real tile name."""
-        if not s:
-            return True
-        sl = s.strip().lower()
-        return (
-            sl in ("", "unknown", "untitled", "n/a") or
-            sl.startswith("untitled page") or
-            sl.startswith("tile page") or
-            sl.startswith("untitled tile")
-        )
+        # Strictly respect what the user chose to crop
+        import re
 
-    def _is_placeholder_number(s: str) -> bool:
-        """Returns True if the number is a generated placeholder, not a real tile number."""
-        if not s:
-            return True
-        sl = s.strip().lower()
-        import re as _re
-        return (
-            sl in ("", "unknown", "n/a") or
-            bool(_re.match(r'^p\d+(-\d+)?$', sl))   # P3, P5, P5-1 etc.
-        )
+        def _clean(s: str) -> str:
+            s = s.strip()
+            s = re.sub(r'\s+', '_', s)
+            s = "".join(c for c in s if c.isalnum() or c in "-_")
+            return s
 
-    use_name   = payload.has_name   if payload.has_name   is not None else not _is_placeholder_name(payload.tile_name)
-    use_number = payload.has_number if payload.has_number is not None else not _is_placeholder_number(payload.tile_number)
+        def _is_placeholder_name(s: str) -> bool:
+            """Returns True if the name is a generated placeholder, not a real tile name."""
+            if not s:
+                return True
+            sl = s.strip().lower()
+            return (
+                sl in ("", "unknown", "untitled", "n/a") or
+                sl.startswith("untitled page") or
+                sl.startswith("tile page") or
+                sl.startswith("untitled tile")
+            )
 
-    clean_name   = _clean(payload.tile_name   or "") if use_name   else ""
-    clean_number = _clean(payload.tile_number or "") if use_number else ""
+        def _is_placeholder_number(s: str) -> bool:
+            """Returns True if the number is a generated placeholder, not a real tile number."""
+            if not s:
+                return True
+            sl = s.strip().lower()
+            import re as _re
+            return (
+                sl in ("", "unknown", "n/a") or
+                bool(_re.match(r'^p\d+(-\d+)?$', sl))   # P3, P5, P5-1 etc.
+            )
 
-    # Build filename based on user selection
-    if clean_name and clean_number:
-        filename_base = f"{clean_name}_{clean_number}"
-    elif clean_number:
-        filename_base = clean_number
-    elif clean_name:
-        filename_base = clean_name
-    else:
-        filename_base = payload.tile_number or payload.tile_name or "tile"
+        use_name   = payload.has_name   if payload.has_name   is not None else not _is_placeholder_name(payload.tile_name)
+        use_number = payload.has_number if payload.has_number is not None else not _is_placeholder_number(payload.tile_number)
 
-    # Build file path and save to disk
-    relative_path, filename = _build_relative_path(filename_base)
-    now = datetime.utcnow()
-    year = now.strftime("%Y")
-    month = now.strftime("%m")
-    folder = os.path.join(storage_path, year, month)
-    os.makedirs(folder, exist_ok=True)
-    abs_path = os.path.join(folder, filename)
+        clean_name   = _clean(payload.tile_name   or "") if use_name   else ""
+        clean_number = _clean(payload.tile_number or "") if use_number else ""
 
-    # If file already exists (duplicate), add short UUID suffix
-    if os.path.exists(abs_path):
-        base_name_f, ext = os.path.splitext(filename)
-        uid = str(uuid.uuid4()).replace("-", "")[:6]
-        filename = f"{base_name_f}_{uid}{ext}"
-        relative_path = f"{year}/{month}/{filename}"
+        # Build filename based on user selection
+        if clean_name and clean_number:
+            filename_base = f"{clean_name}_{clean_number}"
+        elif clean_number:
+            filename_base = clean_number
+        elif clean_name:
+            filename_base = clean_name
+        else:
+            filename_base = payload.tile_number or payload.tile_name or "tile"
+
+        # Build file path and save to disk
+        relative_path, filename = _build_relative_path(filename_base)
+        now = datetime.utcnow()
+        year = now.strftime("%Y")
+        month = now.strftime("%m")
+        folder = os.path.join(storage_path, year, month)
+        os.makedirs(folder, exist_ok=True)
         abs_path = os.path.join(folder, filename)
 
-    # Write image bytes to disk
-    with open(abs_path, "wb") as f:
-        f.write(img_bytes)
+        # If file already exists (duplicate), add short UUID suffix
+        if os.path.exists(abs_path):
+            base_name_f, ext = os.path.splitext(filename)
+            uid = str(uuid.uuid4()).replace("-", "")[:6]
+            filename = f"{base_name_f}_{uid}{ext}"
+            relative_path = f"{year}/{month}/{filename}"
+            abs_path = os.path.join(folder, filename)
 
-    # Build the image URL stored in the DB.
-    # If PUBLIC_URL is set (e.g. on Railway), store a full absolute URL so the
-    # frontend can load it directly without any proxy configuration.
-    # Falls back to a relative path for local development.
-    backend_public_url = os.getenv("PUBLIC_URL", os.getenv("BACKEND_PUBLIC_URL", "")).rstrip("/")
-    if backend_public_url:
-        image_serve_url = f"{backend_public_url}/api/local/image?path={relative_path}"
-        logger.info(f"[SAVE TILE] Storing absolute image URL: {image_serve_url}")
-    else:
-        image_serve_url = f"/api/local/image?path={relative_path}"
-        logger.info(f"[SAVE TILE] Storing relative image URL (no PUBLIC_URL set): {image_serve_url}")
+        # Write image bytes to disk
+        with open(abs_path, "wb") as f:
+            f.write(img_bytes)
 
-    # DB fields: store only what the user selected
-    db_name   = payload.tile_name   if use_name   else None
-    db_number = payload.tile_number if use_number else None
+        # Build the image URL stored in the DB.
+        backend_public_url = os.getenv("PUBLIC_URL", os.getenv("BACKEND_PUBLIC_URL", "")).rstrip("/")
+        if backend_public_url:
+            image_serve_url = f"{backend_public_url}/api/local/image?path={relative_path}"
+            logger.info(f"[SAVE TILE] Storing absolute image URL: {image_serve_url}")
+        else:
+            image_serve_url = f"/api/local/image?path={relative_path}"
+            logger.info(f"[SAVE TILE] Storing relative image URL (no PUBLIC_URL set): {image_serve_url}")
 
-    # Fallback display name if both are empty
-    if not db_name and not db_number:
-        db_name = f"Tile Page {payload.page_number or 1}"
+        # DB fields: store only what the user selected
+        db_name   = payload.tile_name   if use_name   else None
+        db_number = payload.tile_number if use_number else None
 
-    # Save metadata to database
-    tile = TileCatalog(
-        tile_name=db_name,
-        tile_number=db_number,
-        tile_size=payload.tile_size,
-        image_url=image_serve_url,
-        catalog_name=payload.catalog_name,
-        page_number=payload.page_number,
-        relative_image_path=relative_path,
-    )
-    db.add(tile)
-    db.commit()
-    db.refresh(tile)
+        # Fallback display name if both are empty
+        if not db_name and not db_number:
+            db_name = f"Tile Page {payload.page_number or 1}"
 
-    return {
-        "id": tile.id,
-        "tile_name": tile.tile_name,
-        "tile_number": tile.tile_number,
-        "tile_size": tile.tile_size,
-        "image_url": tile.image_url,
-        "relative_image_path": tile.relative_image_path,
-        "saved_to": abs_path,
-    }
+        # Save metadata to database
+        tile = TileCatalog(
+            tile_name=db_name,
+            tile_number=db_number,
+            tile_size=payload.tile_size,
+            image_url=image_serve_url,
+            catalog_name=payload.catalog_name,
+            page_number=payload.page_number,
+            relative_image_path=relative_path,
+        )
+        db.add(tile)
+        db.commit()
+        db.refresh(tile)
+
+        return {
+            "id": tile.id,
+            "tile_name": tile.tile_name,
+            "tile_number": tile.tile_number,
+            "tile_size": tile.tile_size,
+            "image_url": tile.image_url,
+            "relative_image_path": tile.relative_image_path,
+            "saved_to": abs_path,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        logger.error(f"Error saving tile: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=400, detail=f"Internal Error Saving Tile: {str(e)}")
 
 
 @local_storage_router.get("/image")
