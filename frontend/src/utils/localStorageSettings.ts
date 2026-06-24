@@ -207,7 +207,33 @@ export async function saveBase64ToDirectoryHandle(
   const yearHandle = await dirHandle.getDirectoryHandle(year, { create: true });
   const monthHandle = await yearHandle.getDirectoryHandle(month, { create: true });
   
-  const fileHandle = await monthHandle.getFileHandle(filename, { create: true });
+  let finalFilename = filename;
+  let fileHandle;
+  let counter = 1;
+  
+  // Extract base name and extension
+  const match = filename.match(/^(.*)\.([^\.]+)$/);
+  const baseName = match ? match[1] : filename;
+  const ext = match ? `.${match[2]}` : "";
+
+  while (true) {
+    try {
+      // Try to get the file handle *without* creating it to check if it exists
+      await monthHandle.getFileHandle(finalFilename, { create: false });
+      // If it succeeds, the file exists. We need a new name.
+      finalFilename = `${baseName}_${counter}${ext}`;
+      counter++;
+    } catch (e: any) {
+      // If it throws NotFoundError, the file doesn't exist, which is what we want!
+      if (e.name === "NotFoundError") {
+        break;
+      }
+      // If it throws something else (e.g. permission error), we should stop
+      throw e;
+    }
+  }
+
+  fileHandle = await monthHandle.getFileHandle(finalFilename, { create: true });
   const writable = await fileHandle.createWritable();
   await writable.write(blob);
   await writable.close();
