@@ -499,8 +499,10 @@ export default function TileLibraryPage() {
 
   const handleApply = (tile: Tile, slot: string) => {
     if (!tile.image_url) return;
+    // Always store the fully-resolved absolute URL so 3D pages can load it directly
+    const absoluteUrl = buildTileUrl(tile.image_url);
     setPendingTexture(slot, {
-      url: tile.image_url,
+      url: absoluteUrl,
       name: tile.tile_name,
       tileCode: tile.tile_number,
     });
