@@ -1,7 +1,11 @@
 // ─── Local Storage Settings Utility ──────────────────────────────────────────
 // Communicates with the backend settings API to read/write the local tile folder path.
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+// API calls always use relative URLs ("") so they route through Vercel's Next.js
+// server-side proxy (next.config.ts rewrites). This avoids cross-origin issues
+// when posting large base64 image payloads from the browser directly to Railway.
+// NEXT_PUBLIC_API_URL is only used by textureBridge.buildTileUrl for displaying images.
+const API_BASE = "";
 
 export interface StorageStatus {
   configured: boolean;
