@@ -94,9 +94,9 @@ export default function PdfExtractClient() {
     // Guard: skip saving if the image data URL is suspiciously tiny.
     // Name/number crop boxes produce tiny images (~4–8 KB) that should
     // never be saved as tile images — they exist only for OCR text extraction.
-    // Real tile images are always larger. Threshold set at 5000 base64 chars
-    // (~3.75 KB decoded) — well below any real JPEG tile photo.
-    const MIN_TILE_BASE64_LEN = 5000; // safely above pure-text crop sizes
+    // Real tile images are usually larger, but highly compressed solid color tiles can be ~3-4KB.
+    // We lowered the threshold to 500 chars to avoid false positives blocking valid solid-color tiles.
+    const MIN_TILE_BASE64_LEN = 500;
     const b64Part = tileData.imageDataUrl.includes(",")
       ? tileData.imageDataUrl.split(",")[1]
       : tileData.imageDataUrl;
