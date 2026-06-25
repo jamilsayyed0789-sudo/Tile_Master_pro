@@ -188,10 +188,10 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
         backend_public_url = os.getenv("PUBLIC_URL", os.getenv("BACKEND_PUBLIC_URL", "")).rstrip("/")
         if backend_public_url:
             image_serve_url = f"{backend_public_url}/api/local/image?path={relative_path}"
-            logger.info(f"[SAVE TILE] Storing absolute image URL: {image_serve_url}")
+            print(f"[SAVE TILE] Storing absolute image URL: {image_serve_url}")
         else:
             image_serve_url = f"/api/local/image?path={relative_path}"
-            logger.info(f"[SAVE TILE] Storing relative image URL (no PUBLIC_URL set): {image_serve_url}")
+            print(f"[SAVE TILE] Storing relative image URL (no PUBLIC_URL set): {image_serve_url}")
 
         # DB fields: store only what the user selected
         db_name   = payload.tile_name   if use_name   else None
@@ -228,7 +228,7 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         import traceback
-        logger.error(f"Error saving tile: {str(e)}\n{traceback.format_exc()}")
+        print(f"Error saving tile: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=400, detail=f"Internal Error Saving Tile: {str(e)}")
 
 
