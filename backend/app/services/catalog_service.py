@@ -21,9 +21,10 @@ PAGE_WORKERS = 4
 TEXT_DENSITY_THRESHOLD = 50  # chars per page
 
 TILE_NUMBER_REGEXES = [
-    re.compile(r'(?<!\d)\d{3,8}(?!\d)'),                  # 3 to 8 digits
-    re.compile(r'\b[A-Za-z]{1,8}[-_./]?\d{1,8}\b'),       # Letters then digits (e.g. P3, P-04)
-    re.compile(r'\b[A-Za-z]{1,8}\s+\d{1,8}\b'),           # Letters space digits (e.g. P 3)
+    re.compile(r'\b[A-Za-z]{1,20}[-_./]?\d{1,8}[A-Za-z]{0,5}\b'),       # Letters then digits (e.g. P3, P-04, Calacatta6012, 1234A)
+    re.compile(r'\b[A-Za-z]{1,20}\s+\d{1,8}[A-Za-z]{0,5}\b'),           # Letters space digits (e.g. P 3, Calacatta 6012)
+    re.compile(r'\b\d{1,8}[-_./]?[A-Za-z]{1,20}\b'),                    # Digits then letters (e.g. 1234A)
+    re.compile(r'(?<!\d)\d{3,8}(?!\d)'),                                # 3 to 8 digits
 ]
 
 def detect_nearest_tile_number(img_bbox, text_blocks):

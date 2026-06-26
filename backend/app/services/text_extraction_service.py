@@ -28,7 +28,7 @@ class TextExtractionService:
         self.ignore_words = ['email', 'website', 'address', 'ph:', 'tel:', 'mob:', 'com', 'www', 'info@', 'page', 'mm', 'cm', 'box']
         
         # Enhanced patterns for intelligent extraction
-        self.strict_number_pattern = re.compile(r'^(?:#|No\.|Ref|Code)?\s*([A-Za-z]{0,5}[-_.]?\s?\d{3,8})$', re.IGNORECASE)
+        self.strict_number_pattern = re.compile(r'^(?:#|No\.|Ref|Code)?\s*([A-Za-z]{0,20}[-_.]?\s?\d{1,8}[A-Za-z]{0,5})$', re.IGNORECASE)
         self.dimensions_pattern = re.compile(r'\d+\s?[xX×]\s?\d+|\d+\s?mm|\d+\s?cm', re.IGNORECASE)
         self.finish_pattern = re.compile(r'\b(Glossy|Matt?|Satin|Polished|Rustic|Lappato|Sugar|High\s*Gloss)\b', re.IGNORECASE)
 
