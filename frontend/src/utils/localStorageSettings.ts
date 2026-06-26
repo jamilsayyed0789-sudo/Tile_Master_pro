@@ -245,37 +245,50 @@ export async function saveBase64ToDirectoryHandle(
  * Recursively search the browser-output-directory for a tile image matching the name/number.
  * Returns a Blob URL if found, or null if not found or no permission.
  */
-export async function findLocalTileImage(tileName: string | null, tileNumber: string | null): Promise<string | null> {
+export async function findLocalTileImage(
+  tileName: string | null, 
+  tileNumber: string | null,
+  relativeImagePath?: string | null
+): Promise<string | null> {
   try {
     const dirHandle = await getStoredHandle("browser-output-directory");
     if (!dirHandle) return null;
     
-    // Check permission without prompting (don't annoy the user if they didn't explicitly click something)
+    // Check permission without prompting
     const options = { mode: "read" as const };
     const perm = await dirHandle.queryPermission(options);
     if (perm !== "granted") {
-      // If not granted, we could try to request, but it requires a user gesture.
-      // Let's just return null if we don't already have permission.
       return null;
+    }
+
+    let exactFilename = "";
+    if (relativeImagePath) {
+      const parts = relativeImagePath.split(/[/\\]/);
+      exactFilename = parts[parts.length - 1];
     }
 
     const searchKey = (tileNumber && tileNumber.toLowerCase() !== "unknown" && !tileNumber.startsWith("P")) 
       ? tileNumber 
       : (tileName || "");
       
-    if (!searchKey.trim()) return null;
+    if (!exactFilename && !searchKey.trim()) return null;
 
     async function searchDir(dir: any, depth: number): Promise<string | null> {
-      if (depth > 2) return null; // Only search YYYY/MM folders
+      if (depth > 2) return null;
       for await (const entry of dir.values()) {
         if (entry.kind === 'file' && entry.name.endsWith(".jpg")) {
-          // Split the filename into components (e.g. GOLDEN__2032_1.jpg -> ["GOLDEN", "", "2032", "1", "jpg"])
-          const parts = entry.name.split(/[_\.]/);
-          // If the search key is exactly one of the components, it's a match!
-          // We also do a fallback includes() just in case the key has spaces/hyphens that didn't split well
-          if (parts.includes(searchKey) || entry.name.includes(searchKey)) {
+          // If we have an exact filename, it must match exactly
+          if (exactFilename && entry.name === exactFilename) {
              const file = await entry.getFile();
              return URL.createObjectURL(file);
+          }
+          // Fallback to name/number matching if exact filename is not available
+          if (!exactFilename && searchKey) {
+            const parts = entry.name.split(/[_\.]/);
+            if (parts.includes(searchKey) || entry.name.includes(searchKey)) {
+               const file = await entry.getFile();
+               return URL.createObjectURL(file);
+            }
           }
         } else if (entry.kind === 'directory') {
            const found = await searchDir(entry, depth + 1);

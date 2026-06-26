@@ -186,7 +186,7 @@ function LocalTileImage({ tile, className }: { tile: any; className: string }) {
     let active = true;
     async function loadLocal() {
       try {
-        const url = await findLocalTileImage(tile.tile_name, tile.tile_number);
+        const url = await findLocalTileImage(tile.tile_name, tile.tile_number, tile.relative_image_path);
         if (active && url) {
           setLocalUrl(url);
         }
