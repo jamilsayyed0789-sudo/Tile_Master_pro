@@ -21,7 +21,12 @@ interface Settings {
   min_height: number;
 }
 
-const SIZE_PRESETS = ["300x450", "300x600", "600x600", "600x1200", "800x1600", "1200x1800"];
+const SIZE_PRESETS = [
+  "300x300", "300x450", "300x600", "300x900", "300x1200",
+  "400x400", "450x450", "600x600", "600x1200",
+  "800x800", "800x1200", "800x1600", "800x2400", "800x3000",
+  "1000x1000", "1200x1200", "1200x1800", "1200x2400", "1600x3200"
+];
 
 const TILE_SIZE_OPTIONS = [
   { value: "", label: "Auto Detect (from PDF)" },

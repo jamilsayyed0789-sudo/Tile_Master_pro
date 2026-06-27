@@ -9,6 +9,7 @@ import {
   emissiveMat,
   fabricMat,
   mirrorMat,
+  flutedGlassMat,
 } from "./materials";
 import React from "react";
 import * as THREE from "three";
@@ -79,7 +80,7 @@ function Vanity({ x, z, rotY }: { x: number; z: number; rotY: number }) {
 
 function ProceduralShowerEnclosure() {
   const frame = chromeMat();
-  const glass = glassMat(0.22);
+  const glass = flutedGlassMat(0.45);
   const drain = chromeMat();
   const w = 1.6;
   const d = 1.6;
@@ -359,7 +360,7 @@ function LuxuryShowerEnclosure({
   showerDepth?: number;
   showerHeight?: number;
 }) {
-  const glass = glassMat(0.22);
+  const glass = flutedGlassMat(0.45);
   const matteBlack = paintMat("#111111", 0.6);
   const stainless = chromeMat();
   const benchMat = marbleMat("marble-cream");
@@ -372,18 +373,57 @@ function LuxuryShowerEnclosure({
   return (
     <group>
       {/* Frameless Glass Partitions */}
-      {/* Front Glass */}
+      {/* Side Glass */}
       <mesh position={[w, sh / 2, d / 2]} material={glass} castShadow>
         <boxGeometry args={[0.04, sh, d]} />
       </mesh>
+      {/* Front Glass (Full width) */}
+      <mesh position={[w / 2, sh / 2, d]} material={glass} castShadow>
+        <boxGeometry args={[w, sh, 0.04]} />
+      </mesh>
+
+      {/* Door Handle on Front Glass */}
+      <group position={[w * 0.2, sh / 2, d]}>
+        {/* Outer Handle */}
+        <mesh position={[0, 0, 0.04]} material={stainless}>
+          <cylinderGeometry args={[0.015, 0.015, 0.5, 8]} />
+        </mesh>
+        <mesh position={[0, 0.2, 0.02]} rotation={[Math.PI / 2, 0, 0]} material={stainless}>
+          <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
+        </mesh>
+        <mesh position={[0, -0.2, 0.02]} rotation={[Math.PI / 2, 0, 0]} material={stainless}>
+          <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
+        </mesh>
+        {/* Inner Handle */}
+        <mesh position={[0, 0, -0.04]} material={stainless}>
+          <cylinderGeometry args={[0.015, 0.015, 0.5, 8]} />
+        </mesh>
+        <mesh position={[0, 0.2, -0.02]} rotation={[Math.PI / 2, 0, 0]} material={stainless}>
+          <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
+        </mesh>
+        <mesh position={[0, -0.2, -0.02]} rotation={[Math.PI / 2, 0, 0]} material={stainless}>
+          <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
+        </mesh>
+      </group>
 
       {/* Matte Black Hardware (Channels) */}
       <mesh position={[w, sh / 2, 0.02]} material={matteBlack}>
         <boxGeometry args={[0.06, sh, 0.06]} />
       </mesh>
-      {/* Top stabilizing bar */}
+      <mesh position={[w, 0.02, d / 2]} material={matteBlack}>
+        <boxGeometry args={[0.06, 0.04, d]} />
+      </mesh>
+      {/* Front Glass Hardware (Full width) */}
+      <mesh position={[w / 2, 0.02, d]} material={matteBlack}>
+        <boxGeometry args={[w, 0.04, 0.06]} />
+      </mesh>
+      {/* Top stabilizing bar for Side */}
       <mesh position={[w, sh - 0.05, d / 2]} material={matteBlack}>
         <boxGeometry args={[0.04, 0.04, d]} />
+      </mesh>
+      {/* Top stabilizing bar for Front (Full width) */}
+      <mesh position={[w / 2, sh - 0.05, d]} material={matteBlack}>
+        <boxGeometry args={[w, 0.04, 0.04]} />
       </mesh>
 
       {/* Floating Marble Bench */}

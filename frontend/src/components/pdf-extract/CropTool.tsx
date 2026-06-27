@@ -307,15 +307,15 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
       >
         <motion.div
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
-          className="bg-neutral-900 rounded-2xl border border-neutral-800 w-full max-w-5xl overflow-hidden shadow-2xl"
+          className="bg-neutral-900 rounded-2xl border border-neutral-800 w-[95vw] max-w-[1600px] max-h-[95vh] flex flex-col overflow-hidden shadow-2xl"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800">
+          <div className="flex shrink-0 flex-wrap items-center justify-between px-5 py-3 border-b border-neutral-800 gap-2">
             <div className="flex items-center gap-2">
               <Crop className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-bold text-white">Multi-Crop Tile Image</span>
@@ -362,7 +362,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
           </div>
 
           {/* Image area + live preview side by side */}
-          <div className="flex flex-col lg:flex-row">
+          <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto">
             {/* Main crop area */}
             <div
               ref={containerRef}
@@ -483,9 +483,17 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
 
             {/* Live preview */}
             {imageLoaded && (
-              <div className="w-full lg:w-56 border-t lg:border-t-0 lg:border-l border-neutral-800 p-4 flex flex-col items-center justify-center bg-neutral-950/50">
+              <div className="w-full lg:w-[500px] border-t lg:border-t-0 lg:border-l border-neutral-800 p-4 flex flex-col items-center justify-center bg-neutral-950/50">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-3">Preview (Box {activeCropIndex + 1})</span>
-                <div className="w-full aspect-square rounded-lg overflow-hidden border border-neutral-700 bg-neutral-900 shadow-inner">
+                <div 
+                  className="w-full aspect-square rounded-lg overflow-hidden border border-neutral-700 shadow-inner"
+                  style={{
+                    backgroundColor: '#e5e5e5',
+                    backgroundImage: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0)',
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 10px 10px'
+                  }}
+                >
                   <img
                     src={cropToCanvas(imageRef.current!, activeCrop, rotation)}
                     alt="Crop preview"
@@ -504,7 +512,7 @@ export default function CropTool({ imageUrl, onSave, onApplyToAll, selectedCount
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-5 py-3 border-t border-neutral-800">
+          <div className="flex shrink-0 items-center justify-between px-5 py-3 border-t border-neutral-800">
             <span className="text-xs text-neutral-500">
               {crops.length} crop regions defined
             </span>

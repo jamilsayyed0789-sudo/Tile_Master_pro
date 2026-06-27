@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UploadCloud, FileText, X, AlertTriangle } from "lucide-react";
+import { UploadCloud, FileText, X, AlertTriangle, ChevronDown } from "lucide-react";
 
 interface Props {
   onFileLoaded: (file: File, dataUrl: string, tileSize: string) => void;
@@ -18,6 +18,7 @@ export default function FileUpload({ onFileLoaded }: Props) {
   const [loading, setLoading] = useState(false);
   const [fileInfo, setFileInfo] = useState<{ name: string; size: string; file: File; dataUrl: string } | null>(null);
   const [tileSize, setTileSize] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const processFile = useCallback(
     async (file: File) => {
@@ -128,24 +129,41 @@ export default function FileUpload({ onFileLoaded }: Props) {
               <p className="text-sm font-semibold text-white">{fileInfo.name}</p>
               <p className="text-xs text-neutral-500 mt-1">{fileInfo.size}</p>
               
-              <div className="mt-4 w-full max-w-xs text-left" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-4 w-full max-w-xs text-left relative" onClick={(e) => e.stopPropagation()}>
                 <label className="block text-xs font-semibold text-neutral-400 mb-1">Select Tile Size (mm) <span className="text-red-400">*</span></label>
-                <select
-                  value={tileSize}
-                  onChange={(e) => { setTileSize(e.target.value); setError(""); }}
-                  className="w-full bg-neutral-800 border border-neutral-700 text-sm text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 transition"
+                
+                <div 
+                  className="w-full bg-neutral-800 border border-neutral-700 text-sm text-white rounded-lg px-3 py-2 cursor-pointer flex justify-between items-center focus:outline-none focus:border-blue-500 transition"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
-                  <option value="">-- Select Size --</option>
-                  <option value="600x600 mm">600x600 mm</option>
-                  <option value="600x1200 mm">600x1200 mm</option>
-                  <option value="800x800 mm">800x800 mm</option>
-                  <option value="800x1600 mm">800x1600 mm</option>
-                  <option value="200x1200 mm">200x1200 mm</option>
-                  <option value="300x600 mm">300x600 mm</option>
-                  <option value="1200x1200 mm">1200x1200 mm</option>
-                  <option value="1200x2400 mm">1200x2400 mm</option>
-                  <option value="Other">Other</option>
-                </select>
+                  <span className={tileSize ? "text-white" : "text-neutral-500"}>
+                    {tileSize || "-- Select Size --"}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-neutral-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+
+                {dropdownOpen && (
+                  <div className="absolute z-50 mt-1 w-full bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                    {["300x300 mm", "300x450 mm", "300x600 mm", "300x900 mm", "300x1200 mm",
+                      "400x400 mm", "450x450 mm", "600x600 mm", "600x1200 mm",
+                      "800x800 mm", "800x1200 mm", "800x1600 mm", "800x2400 mm", "800x3000 mm",
+                      "1000x1000 mm", "1200x1200 mm", "1200x1800 mm", "1200x2400 mm", "1600x3200 mm",
+                      "Other"
+                    ].map(size => (
+                      <div 
+                        key={size}
+                        className="px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white cursor-pointer transition"
+                        onClick={() => {
+                          setTileSize(size);
+                          setError("");
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        {size}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="mt-5 flex gap-3 w-full max-w-xs justify-center">

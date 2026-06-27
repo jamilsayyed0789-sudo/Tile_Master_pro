@@ -2,82 +2,66 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-// import { createClient } from "@/utils/supabase/client";
+import { createClient } from "@/utils/supabase/client";
+import { Loader2 } from "lucide-react";
 
-/* === AUTH/TRIAL DISABLED FOR DEMO — re-enable later === */
+export default function AuthGuard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const supabase = createClient();
+  const [isPending, setIsPending] = useState(true);
 
-// const publicRoutes = ["/auth", "/pricing", "/"];
+  useEffect(() => {
+    const checkAuthAndTrial = async () => {
+      // Do not block public pages or the pricing page from rendering
+      const isPublicOrAllowed = 
+        pathname === "/" || 
+        pathname.startsWith("/auth") || 
+        pathname.startsWith("/pricing") ||
+        pathname.startsWith("/api");
 
-// const protectedRoutes = [
-//   "/dashboard",
-//   "/tile-search",
-//   "/catalog-upload",
-//   "/catalog/search",
-//   "/catalog/upload",
-//   "/saved-calculations",
-//   "/floor-calculator",
-//   "/bathroom-calculator",
-//   "/bathroom-3d",
-//   "/kitchen-3d",
-//   "/room-previewer",
-//   "/wall-elevation",
-//   "/designer",
-// ];
+      const { data: { session } } = await supabase.auth.getSession();
 
-export default function AuthGuard({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // const router = useRouter();
-  // const pathname = usePathname();
-  // const supabase = createClient();
-  // const [session, setSession] = useState<any>(null);
-  // const [isPending, setIsPending] = useState(true);
+      if (!session) {
+        setIsPending(false);
+        return;
+      }
 
-  // useEffect(() => {
-  //   supabase.auth.getSession().then(({ data: { session } }) => {
-  //     setSession(session);
-  //     setIsPending(false);
-  //   });
-  // }, []);
-  // const [checked, setChecked] = useState(false);
+      // Check the 10-minute trial logic based on user creation time
+      if (session.user?.created_at) {
+        const createdAt = new Date(session.user.created_at).getTime();
+        const now = Date.now();
+        const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
 
-  // useEffect(() => {
-  //   if (isPending) return;
+        if (now - createdAt > THREE_DAYS) {
+          // Trial expired
+          if (!isPublicOrAllowed) {
+            window.location.href = "/pricing?expired=true";
+            return; // Stop execution, redirecting...
+          }
+        }
+      }
 
-  //   const isPublic = publicRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"));
+      setIsPending(false);
+    };
 
-  //   if (!session && !isPublic) {
-  //     router.push("/auth");
-  //     return;
-  //   }
+    checkAuthAndTrial();
 
-  //   if (session && protectedRoutes.some((r) => pathname.startsWith(r))) {
-  //     const token = session?.access_token || null;
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuthAndTrial();
+    });
 
-  //     if (token) {
-  //       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-  //       fetch(`${apiUrl}/auth/subscription`, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       })
-  //         .then((r) => {
-  //           if (r.status === 403) {
-  //             router.push("/pricing?reason=expired");
-  //           } else {
-  //             setChecked(true);
-  //           }
-  //         })
-  //         .catch(() => {
-  //           setChecked(true);
-  //         });
-  //     } else {
-  //       setChecked(true);
-  //     }
-  //   } else {
-  //     setChecked(true);
-  //   }
-  // }, [session, isPending, pathname, router]);
+    return () => subscription.unsubscribe();
+  }, [pathname, router, supabase]);
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

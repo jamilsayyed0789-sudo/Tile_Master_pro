@@ -147,6 +147,37 @@ export function glassMat(opacity = 0.22) {
   );
 }
 
+export function flutedGlassMat(opacity = 0.3) {
+  return cached(`fluted-glass-v2-${opacity}`, () => {
+    const c = document.createElement("canvas");
+    c.width = 256; c.height = 256;
+    const ctx = c.getContext("2d")!;
+    for (let x = 0; x < 256; x++) {
+      const v = Math.sin((x / 256) * Math.PI * 60); // 30 ribs
+      const intensity = Math.floor(((v + 1) / 2) * 255);
+      ctx.fillStyle = `rgb(${intensity},${intensity},${intensity})`;
+      ctx.fillRect(x, 0, 1, 256);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(10, 1);
+    tex.needsUpdate = true;
+
+    return new THREE.MeshPhysicalMaterial({
+      color: "#f8fdff",
+      transparent: true,
+      opacity: opacity,
+      roughness: 0.15,
+      metalness: 0.2,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      bumpMap: tex,
+      bumpScale: 0.02,
+      envMapIntensity: 1.5,
+    });
+  });
+}
+
 export function mirrorMat() {
   return cached("mirror-v2", () =>
     new THREE.MeshPhysicalMaterial({
@@ -183,4 +214,65 @@ export function paintMat(color: string, roughness = 0.5) {
       envMapIntensity: 0.8,
     })
   );
+}
+
+export function texturedPaintMat(color: string) {
+  return cached(`textured-paint-${color}`, () => {
+    // Generate a strong stucco/plaster bump map
+    const c = document.createElement("canvas");
+    c.width = 1024; c.height = 1024;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 40000; i++) {
+      const v = Math.random();
+      ctx.fillStyle = `rgba(${v>0.5?255:0},${v>0.5?255:0},${v>0.5?255:0},${Math.random()*0.15})`;
+      ctx.beginPath();
+      ctx.arc(Math.random()*1024, Math.random()*1024, Math.random()*4, 0, Math.PI*2);
+      ctx.fill();
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 4);
+    tex.needsUpdate = true;
+
+    return new THREE.MeshPhysicalMaterial({
+      color,
+      bumpMap: tex,
+      bumpScale: 0.02,
+      roughness: 0.9,
+      metalness: 0.0,
+      clearcoat: 0.0,
+      envMapIntensity: 0.4,
+    });
+  });
+}
+
+export function flutedPanelMat(color: string) {
+  return cached(`fluted-panel-${color}`, () => {
+    // Generate a strong vertical striped bump map for fluted texture
+    const c = document.createElement("canvas");
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext("2d")!;
+    for (let x = 0; x < 512; x++) {
+      // create a ribbed gradient
+      const v = Math.sin((x / 512) * Math.PI * 40); // 20 ribs
+      const intensity = Math.floor(((v + 1) / 2) * 255);
+      ctx.fillStyle = `rgb(${intensity},${intensity},${intensity})`;
+      ctx.fillRect(x, 0, 1, 512);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 1);
+    tex.needsUpdate = true;
+
+    return new THREE.MeshPhysicalMaterial({
+      color,
+      bumpMap: tex,
+      bumpScale: 0.15, // strong 3d effect
+      roughness: 0.6,
+      metalness: 0.1,
+      clearcoat: 0.1,
+    });
+  });
 }

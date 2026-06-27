@@ -76,7 +76,7 @@ export default function SceneLighting({
         shadow-camera-bottom={-roomL * 1.5}
         shadow-camera-near={0.5}
         shadow-camera-far={100}
-        shadow-bias={-0.0001}
+        shadow-bias={-0.001}
         shadow-radius={6}
       />
       
@@ -93,10 +93,10 @@ export default function SceneLighting({
       
       {/* Contact Shadows for grounding objects naturally */}
       <ContactShadows
-        position={[cx, 0.005, cz]}
-        opacity={0.9}
+        position={[cx, 0.02, cz]}
+        opacity={0.8}
         scale={Math.max(roomW, roomL) * 2.5}
-        blur={2.0}
+        blur={2.5}
         far={10}
         resolution={1024}
         color="#0a0a0a"

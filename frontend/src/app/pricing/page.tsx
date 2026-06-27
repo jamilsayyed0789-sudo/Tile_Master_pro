@@ -52,7 +52,7 @@ function PricingContent() {
   const [remainingSlots, setRemainingSlots] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const showExpiredBanner = searchParams.get("reason") === "expired";
+  const showExpiredBanner = searchParams.get("expired") === "true" || searchParams.get("reason") === "expired";
   const [session, setSession] = useState<any>(null);
   const supabase = createClient();
 
@@ -241,16 +241,23 @@ function PricingContent() {
             <div className="p-2 rounded-xl bg-blue-500/20 border border-blue-500/30 flex-shrink-0">
               <Clock className="w-5 h-5 text-blue-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <h3 className="text-slate-50 font-bold text-sm mb-1">
                 Your free trial has ended
               </h3>
               <p className="text-slate-400 text-xs leading-relaxed">
-                Your 3-day free trial has expired. Please choose a plan below
-                to continue using TileMaster Pro and unlock all 3D tools,
-                calculators, and premium features.
+                If you want to continue serving please make payment.
               </p>
             </div>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/auth";
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all ml-auto shrink-0 cursor-pointer"
+            >
+              Log Out
+            </button>
           </motion.div>
         )}
 

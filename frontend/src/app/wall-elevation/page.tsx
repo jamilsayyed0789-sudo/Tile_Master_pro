@@ -19,9 +19,10 @@ const TILE_SIZES = [
 ];
 
 /* ─── Wall Plane ──────────────────────────────────────────────────── */
-function WallElevation({ wallW, wallH, tex, tileW, tileH }: {
+function WallElevation({ wallW, wallH, tex, tileW, tileH, showDoor, showWindow }: {
   wallW: number; wallH: number; tex: THREE.Texture | null;
   tileW?: number; tileH?: number;
+  showDoor: boolean; showWindow: boolean;
 }) {
   const texture = useMemo(() => {
     if (!tex) return null;
@@ -45,14 +46,74 @@ function WallElevation({ wallW, wallH, tex, tileW, tileH }: {
       {/* Wall plane */}
       <mesh position={[0, 0, -0.25]}>
         <boxGeometry args={[wallW, wallH, 0.5]} />
+        {/* Right, Left, Top, Bottom sides */}
+        <meshStandardMaterial attach="material-0" color="#2a2a2a" roughness={0.8} />
+        <meshStandardMaterial attach="material-1" color="#2a2a2a" roughness={0.8} />
+        <meshStandardMaterial attach="material-2" color="#2a2a2a" roughness={0.8} />
+        <meshStandardMaterial attach="material-3" color="#2a2a2a" roughness={0.8} />
+        {/* Front face gets the tile texture */}
         <meshStandardMaterial
-          key={texture ? texture.uuid : "plain"}
+          attach="material-4"
+          key={texture ? texture.uuid : "plain-front"}
           map={texture}
           color={texture ? undefined : "#e9ebed"}
           roughness={0.5}
           metalness={0.1}
         />
+        {/* Back face */}
+        <meshStandardMaterial attach="material-5" color="#2a2a2a" roughness={0.8} />
       </mesh>
+
+      {/* 3D Door */}
+      {showDoor && (
+        <group position={[-wallW / 4, -wallH / 2 + 3.5, 0.01]}>
+          {/* Door Frame (dark anthracite) */}
+          <mesh>
+            <boxGeometry args={[3.2, 7.2, 0.15]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.6} />
+          </mesh>
+          {/* Door Panel */}
+          <mesh position={[0, 0, 0.02]}>
+            <boxGeometry args={[3.0, 7.0, 0.1]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.7} />
+          </mesh>
+          {/* Glass Window on Door */}
+          <mesh position={[0, 1.5, 0.08]}>
+            <planeGeometry args={[1.5, 3.0]} />
+            <meshStandardMaterial color="#38bdf8" transparent opacity={0.4} roughness={0.1} metalness={0.9} />
+          </mesh>
+          {/* Metallic Door Handle */}
+          <mesh position={[1.2, 0, 0.15]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
+            <meshStandardMaterial color="#e2e8f0" metalness={0.9} roughness={0.1} />
+          </mesh>
+        </group>
+      )}
+
+      {/* 3D Window */}
+      {showWindow && (
+        <group position={[wallW / 4, 1.0, 0.01]}>
+          {/* Outer Frame */}
+          <mesh>
+            <boxGeometry args={[4.2, 4.2, 0.15]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.6} />
+          </mesh>
+          {/* Glass Pane */}
+          <mesh position={[0, 0, 0.02]}>
+            <planeGeometry args={[4.0, 4.0]} />
+            <meshStandardMaterial color="#38bdf8" transparent opacity={0.5} roughness={0.1} metalness={0.9} />
+          </mesh>
+          {/* Window Dividers / Grids */}
+          <mesh position={[0, 0, 0.03]}>
+            <boxGeometry args={[4.0, 0.08, 0.05]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.5} />
+          </mesh>
+          <mesh position={[0, 0, 0.03]}>
+            <boxGeometry args={[0.08, 4.0, 0.05]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.5} />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 }
@@ -103,6 +164,10 @@ export default function WallElevationPage() {
   const setWallWidth = useWallElevationStore((s) => s.setWallWidth);
   const wallHeight = useWallElevationStore((s) => s.wallHeight);
   const setWallHeight = useWallElevationStore((s) => s.setWallHeight);
+  const showDoor = useWallElevationStore((s) => s.showDoor);
+  const setShowDoor = useWallElevationStore((s) => s.setShowDoor);
+  const showWindow = useWallElevationStore((s) => s.showWindow);
+  const setShowWindow = useWallElevationStore((s) => s.setShowWindow);
 
   // Tile
   const tileSize = useWallElevationStore((s) => s.tileSize);
@@ -240,6 +305,18 @@ export default function WallElevationPage() {
             </div>
           </div>
 
+          {/* Obstructions / Features */}
+          <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
+            <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+              <Rotate3d className="w-4 h-4 text-purple-400" />
+              <h3 className="font-bold text-white text-sm">Obstructions / Features</h3>
+            </div>
+            <div className="space-y-3">
+              <Toggle label="Show 3D Door" checked={showDoor} onChange={setShowDoor} />
+              <Toggle label="Show 3D Window" checked={showWindow} onChange={setShowWindow} />
+            </div>
+          </div>
+
           {/* Tile Image */}
           <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
             <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
@@ -293,6 +370,8 @@ export default function WallElevationPage() {
                 tex={tileTex}
                 tileW={tileW}
                 tileH={tileH}
+                showDoor={showDoor}
+                showWindow={showWindow}
               />
 
               <OrbitControls

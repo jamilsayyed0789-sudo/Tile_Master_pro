@@ -496,7 +496,7 @@ export default function LivingRoomFurnishings({ roomW, roomL, roomH }: Props) {
 
   return (
     <group>
-      <Baseboards roomW={roomW} roomL={roomL} />
+
 
       <PremiumModel 
         url="/models/hall/carpet.glb?v=1.0.0" 

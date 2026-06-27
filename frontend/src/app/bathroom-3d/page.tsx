@@ -561,8 +561,10 @@ export default function Bathroom3DPage() {
             </div>
             <div className="space-y-3 text-sm">
               <div>
-                <div className="flex justify-between text-xs"><span className="text-neutral-400">Perimeter</span><span className="text-blue-400">{runningFeet} ft</span></div>
-                <input type="range" min="10" max="60" value={runningFeet} onChange={e => setRunningFeet(+e.target.value)} className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-1" />
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-neutral-400">Perimeter</span>
+                  <span className="text-blue-400">{(roomLength + roomWidth) * 2} ft</span>
+                </div>
               </div>
               <div>
                 <div className="flex justify-between text-xs"><span className="text-neutral-400">Wall Height</span><span className="text-blue-400">{wallHeight} ft</span></div>
@@ -840,15 +842,7 @@ export default function Bathroom3DPage() {
             )}
           </div>
 
-          {/* Price Details */}
-          <div className="glass-card rounded-3xl border border-white/5 p-5 shadow-xl">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                Price/Box (₹)
-              </span>
-              <input type="number" value={pricePerBox} onChange={e => setPricePerBox(Math.max(0, +e.target.value))} className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-1.5 text-white font-mono text-xs w-24 text-right focus:outline-none focus:border-blue-500/50" />
-            </div>
-          </div>
+
 
         </div>
 
@@ -912,7 +906,7 @@ export default function Bathroom3DPage() {
               </div>
             }>
               <div ref={canvasRef} className="w-full h-full">
-              <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [3, 6.4, 16], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
+              <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [3, 6.4, 20], fov: 25, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
                 <Suspense fallback={null}>
                 <SceneLighting sceneKind="bathroom" roomW={roomLength} roomL={roomWidth} sunPosition={[roomLength + 4, 10, roomWidth + 2]} />
                 <Room
@@ -947,7 +941,8 @@ export default function Bathroom3DPage() {
                   makeDefault
                   enableDamping dampingFactor={0.1}
                   minDistance={3} maxDistance={30}
-                  maxPolarAngle={Math.PI / 2.1}
+                  minPolarAngle={Math.PI / 4}
+                  maxPolarAngle={Math.PI / 2.05}
                   autoRotate={autoRotate} autoRotateSpeed={0.8}
                   target={[roomLength / 2, wallHeight / 3, roomWidth / 2]}
                 />

@@ -59,6 +59,7 @@ export default function Navbar() {
   const router = useRouter();
   const supabase = createClient();
   const [session, setSession] = useState<any>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -99,6 +100,17 @@ export default function Navbar() {
   // Mouse move logic for desktop edge-hover
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      // If a modal backdrop is active in the DOM, keep the Navbar hidden to avoid blocking header buttons
+      const isModalOpen = 
+        document.querySelector('.fixed.z-\\[200\\]') || 
+        document.querySelector('.fixed.z-50') || 
+        document.body.style.overflow === 'hidden';
+      
+      if (isModalOpen) {
+        setIsHidden(true);
+        return;
+      }
+
       if (e.clientY < 80) {
         setIsHidden(false);
       } else if (e.clientY > 150 && !isOpen && !threeDDropdownOpen && window.scrollY > 20) {
@@ -124,17 +136,17 @@ export default function Navbar() {
 
   useEffect(() => {
     setThreeDDropdownOpen(false);
-    // Hide navbar after navigating to save space
-    if (pathname !== "/") {
+    // Hide navbar after navigating to save space (except on Home and Pricing)
+    if (pathname !== "/" && pathname !== "/pricing") {
       setIsHidden(true);
     }
   }, [pathname]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsOpen(false);
-    router.push("/auth");
-    router.refresh();
+    supabase.auth.signOut().finally(() => {
+      setIsOpen(false);
+      window.location.href = "/auth";
+    });
   };
 
   return (
@@ -177,6 +189,13 @@ export default function Navbar() {
                     <Link
                       key={item.name}
                       href={item.path}
+                      onClick={(e) => {
+                        if (isQR) {
+                          e.preventDefault();
+                          setToastMessage("Dealer QR Codes feature is coming soon!");
+                          setTimeout(() => setToastMessage(null), 3000);
+                        }
+                      }}
                       className={`relative px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap group ${
                         isActive
                           ? "text-blue-400 bg-slate-800/50 border border-slate-700/50"
@@ -186,7 +205,7 @@ export default function Navbar() {
                       <Icon className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />
                       {item.name}
                       {isQR && (
-                        <div className="absolute -top-2 -right-3 pointer-events-none perspective-1000 z-50">
+                        <div className="absolute -top-1 -right-1 pointer-events-none perspective-1000 z-50">
                           <motion.div
                             animate={{ 
                               rotateY: [0, 15, -15, 0],
@@ -324,7 +343,14 @@ export default function Navbar() {
                   <Link
                     key={item.name}
                     href={item.path}
-                    onClick={() => setIsOpen(false)}
+                    onClick={(e) => {
+                      setIsOpen(false);
+                      if (isQR) {
+                        e.preventDefault();
+                        setToastMessage("Dealer QR Codes feature is coming soon!");
+                        setTimeout(() => setToastMessage(null), 3000);
+                      }
+                    }}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-slate-800 border border-slate-700 text-blue-400"
@@ -404,6 +430,22 @@ export default function Navbar() {
                </Link>
               )}
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Alert */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed bottom-6 right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/20 text-white shadow-[0_12px_40px_rgba(37,99,235,0.35)] text-sm font-bold z-[999]"
+          >
+            <Sparkles className="w-4 h-4 text-cyan-300 animate-pulse" />
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

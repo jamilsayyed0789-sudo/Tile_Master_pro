@@ -150,18 +150,22 @@ interface WallElevationState {
   setWallHeight: (v: number) => void;
   tileSize: string | null;
   setTileSize: (v: string | null) => void;
+  showDoor: boolean;
+  setShowDoor: (v: boolean) => void;
+  showWindow: boolean;
+  setShowWindow: (v: boolean) => void;
   reset: () => void;
 }
 
 const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomWidth' | 'setIs3DMode' | 'setIsTheaterMode' | 'setGroutWidth' | 'setGroutColor' | 'setSelectedPattern' | 'setSkirtingColor' | 'setSkirtingHeight' | 'setSkirtingUseTexture' | 'setSizeUnit' | 'setTileWidthInput' | 'setTileLengthInput' | 'setBookmatchEnabled' | 'setUploadedFileName' | 'setSelectedStyleId' | 'setWastagePercent' | 'setTilesPerBoxInput' | 'setPricePerBox' | 'setClientName' | 'setShopName' | 'setLaborCost' | 'setWallColor' | 'reset'> = {
-  roomLength: 14,
-  roomWidth: 12,
+  roomLength: 18,
+  roomWidth: 16,
   is3DMode: true,
   isTheaterMode: false,
   groutWidth: 3,
   groutColor: '#c5c2bc',
   selectedPattern: 'grid',
-  skirtingColor: '#f5f5f0',
+  skirtingColor: '#ffffff',
   skirtingHeight: 0.4,
   skirtingUseTexture: false,
   sizeUnit: 'inches',
@@ -180,10 +184,10 @@ const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomW
 };
 
 const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight' | 'setRoomLength' | 'setRoomWidth' | 'setTileSize' | 'setGroutWidth' | 'setGroutColor' | 'setWastagePercent' | 'setPricePerBox' | 'setShowerSplitMode' | 'setIsTheaterMode' | 'setStripEnabled' | 'setStripColor' | 'setStripWidthMm' | 'setStripInterval' | 'setBookmatchEnabled' | 'setShower1OffsetY' | 'setShower2OffsetY' | 'setSlotOrder' | 'setSlotRows' | 'setShowerWidth' | 'setShowerDepth' | 'setShowerHeight' | 'setToiletScale' | 'setToiletXOffset' | 'setToiletZOffset' | 'setToiletRotY' | 'reset'> = {
-  runningFeet: 36,
+  runningFeet: 52, // 2 * (15 + 11)
   wallHeight: 9,
-  roomLength: 10,
-  roomWidth: 8,
+  roomLength: 15,
+  roomWidth: 11,
   tileSize: '12x18',
   groutWidth: 3,
   groutColor: '#cccccc',
@@ -227,10 +231,12 @@ const defaultKitchen3D: Omit<Kitchen3DState, 'setRoomWidth' | 'setRoomLength' | 
   stripInterval: 2,
 };
 
-const defaultWallElevation: Omit<WallElevationState, 'setWallWidth' | 'setWallHeight' | 'setTileSize' | 'reset'> = {
+const defaultWallElevation: Omit<WallElevationState, 'setWallWidth' | 'setWallHeight' | 'setTileSize' | 'setShowDoor' | 'setShowWindow' | 'reset'> = {
   wallWidth: 10,
   wallHeight: 9,
   tileSize: '12x18',
+  showDoor: false,
+  showWindow: false,
 };
 
 export const useRoomPreviewerStore = create<RoomPreviewerState>()(
@@ -344,6 +350,8 @@ export const useWallElevationStore = create<WallElevationState>()(
       setWallWidth: (v) => set({ wallWidth: v }),
       setWallHeight: (v) => set({ wallHeight: v }),
       setTileSize: (v) => set({ tileSize: v }),
+      setShowDoor: (v) => set({ showDoor: v }),
+      setShowWindow: (v) => set({ showWindow: v }),
       reset: () => set(defaultWallElevation),
     }),
     {

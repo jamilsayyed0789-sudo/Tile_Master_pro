@@ -88,6 +88,7 @@ export function getMarbleTexture(key = "marble-cream", repeat: [number, number] 
     "marble-white": { base: "#f5f3f0", vein: "#5a5a5a" },
     "marble-black": { base: "#1a1a1a", vein: "#3a3a3a" },
     "marble-emperador": { base: "#3a2418", vein: "#a08060" },
+    "epoxy-marble": { base: "#ffffff", vein: "#111111" },
   };
   const p = palettes[key] || palettes["marble-cream"];
   ctx.fillStyle = p.base;
@@ -96,8 +97,8 @@ export function getMarbleTexture(key = "marble-cream", repeat: [number, number] 
     const vr = parseInt(p.vein.slice(1, 3), 16);
     const vg = parseInt(p.vein.slice(3, 5), 16);
     const vb = parseInt(p.vein.slice(5, 7), 16);
-    ctx.strokeStyle = `rgba(${vr},${vg},${vb},${0.18 + Math.random() * 0.28})`;
-    ctx.lineWidth = 0.6 + Math.random() * 2.5;
+    ctx.strokeStyle = `rgba(${vr},${vg},${vb},${key === "epoxy-marble" ? 0.6 : 0.18 + Math.random() * 0.28})`;
+    ctx.lineWidth = key === "epoxy-marble" ? 2.0 + Math.random() * 4.0 : 0.6 + Math.random() * 2.5;
     ctx.beginPath();
     let x = Math.random() * w;
     let y = Math.random() * h;

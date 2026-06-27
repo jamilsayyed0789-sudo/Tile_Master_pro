@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Save, X, Sparkles } from "lucide-react";
 import type { Tile } from "@/types/tile";
@@ -20,6 +20,19 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
   const [finish, setFinish] = useState(detectedInfo?.finish || "");
   const [color, setColor] = useState(detectedInfo?.color || "");
   const [usingDetected, setUsingDetected] = useState(!!detectedInfo?.tileName);
+  const [sizeSearch, setSizeSearch] = useState("");
+
+  const tileSizeOptions = useMemo(() => {
+    const allSizes = [
+      "300x300", "300x450", "300x600", "300x900", "300x1200",
+      "400x400", "450x450", "600x600", "600x1200",
+      "800x800", "800x1200", "800x1600", "800x2400", "800x3000",
+      "1000x1000", "1200x1200", "1200x1800", "1200x2400", "1600x3200",
+    ];
+    if (!sizeSearch.trim()) return allSizes;
+    const search = sizeSearch.toLowerCase();
+    return allSizes.filter((s) => s.includes(search));
+  }, [sizeSearch]);
 
   useEffect(() => {
     if (detectedInfo) {
@@ -43,6 +56,84 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
     });
   };
 
+  const fields = [
+    { label: "Tile Name", value: tileName, set: setTileName, placeholder: "e.g. Statuario Marble" },
+    { label: "Tile Number", value: tileNumber, set: setTileNumber, placeholder: "e.g. SM-2401" },
+    { label: "Tile Size", value: tileSize, set: setTileSize, placeholder: "Select or type tile size", isDropdown: true, options: tileSizeOptions, search: sizeSearch, setSearch: setSizeSearch },
+    { label: "Finish", value: finish, set: setFinish, placeholder: "e.g. Glossy, Matt, Satin" },
+    { label: "Color", value: color, set: setColor, placeholder: "e.g. White, Grey, Beige" },
+  ];
+
+  const renderField = (field: { label: string; value: string; set: (v: string) => void; placeholder: string; isDropdown?: boolean; options?: string[]; search?: string; setSearch?: (v: string) => void }) => {
+    if (field.isDropdown && field.options) {
+      return (
+        <div key={field.label} className="relative w-full">
+          <input
+            type="text"
+            value={field.value}
+            onChange={(e) => { field.set(e.target.value); setUsingDetected(false); }}
+            placeholder={field.placeholder}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition placeholder:text-neutral-600"
+          />
+          {field.value && (
+            <button
+              onClick={() => field.set("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-white transition"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {field.options.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-neutral-900 border border-neutral-700 rounded-xl shadow-lg max-h-48 overflow-auto">
+              <div className="p-2 border-b border-neutral-800 sticky top-0 bg-neutral-900">
+                <input
+                  type="text"
+                  value={field.search}
+                  onChange={(e) => field.setSearch && field.setSearch(e.target.value)}
+                  placeholder="Search sizes..."
+                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500/50 transition placeholder:text-neutral-600"
+                />
+              </div>
+              {field.options.map((option) => (
+                <div
+                  key={option}
+                  onClick={() => {
+                    field.set(option);
+                    setUsingDetected(false);
+                    field.setSearch && field.setSearch("");
+                  }}
+                  className="px-3 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white cursor-pointer transition"
+                >
+                  {option}
+                </div>
+              ))}
+              {field.options.length === 0 && (
+                <div className="px-3 py-2 text-xs text-neutral-500 italic">
+                  No sizes found
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div key={field.label}>
+          <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+            {field.label}
+          </label>
+          <input
+            type="text"
+            value={field.value}
+            onChange={(e) => { field.set(e.target.value); setUsingDetected(false); }}
+            placeholder={field.placeholder}
+            className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition placeholder:text-neutral-600"
+          />
+        </div>
+      );
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -56,7 +147,6 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
           animate={{ scale: 1, y: 0 }}
           className="bg-neutral-900 rounded-2xl border border-neutral-800 w-full max-w-2xl overflow-hidden shadow-2xl"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800">
             <span className="text-sm font-bold text-white">Tile Information</span>
             <button onClick={onClose} className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition">
@@ -65,7 +155,6 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
           </div>
 
           <div className="p-5 grid grid-cols-1 md:grid-cols-5 gap-5">
-            {/* Image preview */}
             <div className="md:col-span-2">
               <div className="rounded-xl overflow-hidden border border-neutral-800 bg-neutral-950">
                 <img src={imageDataUrl} alt="Cropped tile" className="w-full object-contain" />
@@ -85,32 +174,11 @@ export default function TileInfoEditor({ imageDataUrl, detectedInfo, onSave, onA
               )}
             </div>
 
-            {/* Form */}
             <div className="md:col-span-3 space-y-4">
-              {([
-                { label: "Tile Name", value: tileName, set: setTileName, placeholder: "e.g. Statuario Marble" },
-                { label: "Tile Number", value: tileNumber, set: setTileNumber, placeholder: "e.g. SM-2401" },
-                { label: "Tile Size", value: tileSize, set: setTileSize, placeholder: "e.g. 600x600 mm" },
-                { label: "Finish", value: finish, set: setFinish, placeholder: "e.g. Glossy, Matt, Satin" },
-                { label: "Color", value: color, set: setColor, placeholder: "e.g. White, Grey, Beige" },
-              ] as const).map((field) => (
-                <div key={field.label}>
-                  <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
-                    {field.label}
-                  </label>
-                  <input
-                    type="text"
-                    value={field.value}
-                    onChange={(e) => { field.set(e.target.value); setUsingDetected(false); }}
-                    placeholder={field.placeholder}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition placeholder:text-neutral-600"
-                  />
-                </div>
-              ))}
+              {fields.map((field) => renderField(field))}
             </div>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-neutral-800">
             <button
               onClick={onClose}
