@@ -263,29 +263,30 @@ function Room({
         tex={floorTex} color="#e8e5e0"
         args={[roomW, roomL]} position={[roomW / 2, 0, roomL / 2]}
         rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled}
+        groutWidthMm={groutWidthMm} groutColor={groutColor}
         isFloor
       />
 
       {/* Back Wall */}
       {isShower ? (
         <>
-          <Surface tex={showerTex1 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.25, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower1OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
-          <Surface tex={showerTex2 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.75, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower2OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+          <Surface tex={showerTex1 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.25, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower1OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} groutWidthMm={groutWidthMm} groutColor={groutColor} />
+          <Surface tex={showerTex2 || darkTex} color="#f0f0f0" args={[roomW / 2, roomH]} position={[roomW * 0.75, roomH / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} offsetY={shower2OffsetY} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} groutWidthMm={groutWidthMm} groutColor={groutColor} />
         </>
       ) : (
         bands.map((band, idx) => (
-          <Surface key={`back-${idx}`} tex={band.tex} color={band.color} args={[roomW, band.height]} position={[roomW / 2, band.yStart + band.height / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+          <Surface key={`back-${idx}`} tex={band.tex} color={band.color} args={[roomW, band.height]} position={[roomW / 2, band.yStart + band.height / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} offsetY={band.yStart / tileH} groutWidthMm={groutWidthMm} groutColor={groutColor} />
         ))
       )}
 
       {/* Left Wall */}
       {bands.map((band, idx) => (
-        <Surface key={`left-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[0, band.yStart + band.height / 2, roomL / 2]} rotation={[0, Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+        <Surface key={`left-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[0, band.yStart + band.height / 2, roomL / 2]} rotation={[0, Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} offsetY={band.yStart / tileH} groutWidthMm={groutWidthMm} groutColor={groutColor} />
       ))}
 
       {/* Right Wall */}
       {bands.map((band, idx) => (
-        <Surface key={`right-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[roomW, band.yStart + band.height / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} />
+        <Surface key={`right-${idx}`} tex={band.tex} color={band.color} args={[roomL, band.height]} position={[roomW, band.yStart + band.height / 2, roomL / 2]} rotation={[0, -Math.PI / 2, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled} stripColor={stripColor} stripWidthMm={stripWidthMm} stripInterval={stripInterval} offsetY={band.yStart / tileH} groutWidthMm={groutWidthMm} groutColor={groutColor} />
       ))}
 
       {/* Glass Front & Ceiling */}
