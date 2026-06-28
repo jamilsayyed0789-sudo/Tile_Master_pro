@@ -90,30 +90,33 @@ function Surface({
 
   const groutOverlay = useMemo(() => {
     if (!groutWidthMm || !tileW || !tileH) return null;
-    const base = 1024;
+    const base = 2500;
     const maxDim = Math.max(tileW, tileH);
     const wPx = Math.round((tileW / maxDim) * base);
     const hPx = Math.round((tileH / maxDim) * base);
-    // groutWidthMm in mm; tileW/tileH in feet (1ft = 304.8mm)
-    // Multiplied by 3 for visual clarity in 3D scale, min 8px
-    const groutPxW = Math.max(8, Math.round(groutWidthMm * 3 / (tileW * 304.8) * wPx));
-    const groutPxH = Math.max(8, Math.round(groutWidthMm * 3 / (tileH * 304.8) * hPx));
+    
+    // Half-margin to draw on edges, so when repeated they combine to full width
+    const hm = Math.max(2, Math.round(wPx * groutWidthMm / (2 * tileW * 304.8)));
+    
     const c = document.createElement("canvas");
-    c.width = wPx;
-    c.height = hPx;
+    c.width = wPx + 2 * hm;
+    c.height = hPx + 2 * hm;
     const ctx = c.getContext("2d")!;
-    ctx.clearRect(0, 0, wPx, hPx);
+    ctx.clearRect(0, 0, c.width, c.height);
+    
     ctx.fillStyle = groutColor || "#aaaaaa";
-    ctx.fillRect(0, 0, wPx, groutPxH);
-    ctx.fillRect(0, hPx - groutPxH, wPx, groutPxH);
-    ctx.fillRect(0, 0, groutPxW, hPx);
-    ctx.fillRect(wPx - groutPxW, 0, groutPxW, hPx);
+    ctx.globalAlpha = 1.0;
+    ctx.fillRect(0, 0, c.width, hm);
+    ctx.fillRect(0, c.height - hm, c.width, hm);
+    ctx.fillRect(0, 0, hm, c.height);
+    ctx.fillRect(c.width - hm, 0, hm, c.height);
+    
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.minFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
     t.magFilter = THREE.LinearFilter;
-    t.anisotropy = 4;
-    t.generateMipmaps = false;
+    t.anisotropy = 16;
+    t.generateMipmaps = true;
     t.repeat.set(args[0] / tileW, args[1] / tileH);
     if (offsetY) t.offset.y = offsetY;
     t.needsUpdate = true;
