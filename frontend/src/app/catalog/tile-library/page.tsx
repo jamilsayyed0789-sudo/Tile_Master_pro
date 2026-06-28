@@ -215,6 +215,7 @@ interface Tile {
   image_url: string | null;
   catalog_name?: string | null;
   page_number?: number | null;
+  relative_image_path?: string | null;
 }
 
 const SCENES = [
