@@ -57,7 +57,15 @@ export function buildTileUrl(path: string): string {
 
   // Upgrade http to https if we are on an https site (and not localhost)
   if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    if (resultUrl.startsWith('http://') && !resultUrl.includes('localhost') && !resultUrl.includes('127.0.0.1')) {
+    if (resultUrl.startsWith('http://localhost') || resultUrl.startsWith('http://127.0.0.1')) {
+      // If a localhost URL leaked into a production secure site, rewrite it to the production origin
+      try {
+        const urlObj = new URL(resultUrl);
+        resultUrl = `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
+      } catch (e) {
+        // ignore
+      }
+    } else if (resultUrl.startsWith('http://')) {
       resultUrl = resultUrl.replace('http://', 'https://');
     }
   }
