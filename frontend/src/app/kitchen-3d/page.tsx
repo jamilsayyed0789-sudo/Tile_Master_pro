@@ -6,6 +6,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, BakeShadows, AdaptiveDpr } from "@react-three/drei";
 import * as THREE from "three";
 import { useKitchen3DStore } from "@/store3d";
+import { useVolatileStore } from "@/volatileStore";
 import { Upload, ImageIcon, CookingPot, LayoutGrid, Paintbrush, Rotate3d, Maximize2, Minimize2, Search, Ruler, Eye, EyeOff } from "lucide-react";
 import SceneLighting from "@/components/scene3d/SceneLighting";
 import KitchenFurnishings from "@/components/scene3d/KitchenFurnishings";
@@ -67,6 +68,49 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
   };
   const stripTex = useMemo(() => getStripTex(kTileW, kTileH, stripInterval || 1), [stripColor, stripWidthMm, stripInterval, kTileW, kTileH]);
 
+  const getGroutTex = (tileW: number, tileH: number, groutWidthMm: number, groutColor: string) => {
+    if (!groutWidthMm) return null;
+    const base = 2048;
+    const maxDim = Math.max(tileW, tileH);
+    const wPx = Math.round((tileW / maxDim) * base);
+    const hPx = Math.round((tileH / maxDim) * base);
+    const c = document.createElement("canvas");
+    c.width = wPx;
+    c.height = hPx;
+    const ctx = c.getContext("2d")!;
+    ctx.clearRect(0, 0, wPx, hPx);
+    const hm = Math.max(1, Math.round(wPx * (groutWidthMm / 2) / (tileW * 304.8)));
+    const vm = Math.max(1, Math.round(hPx * (groutWidthMm / 2) / (tileH * 304.8)));
+    ctx.fillStyle = groutColor;
+    ctx.fillRect(0, 0, wPx, vm);
+    ctx.fillRect(0, hPx - vm, wPx, vm);
+    ctx.fillRect(0, 0, hm, hPx);
+    ctx.fillRect(wPx - hm, 0, hm, hPx);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = 16;
+    tex.generateMipmaps = true;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  };
+
+  const wallGroutBase = useMemo(() => getGroutTex(kTileW, kTileH, 0.7, "#e5e7eb"), [kTileW, kTileH]);
+  const floorGroutBase = useMemo(() => getGroutTex(fTileW, fTileH, 0.7, "#e5e7eb"), [fTileW, fTileH]);
+
+  const getGroutOverlay = (w: number, h: number, isFloor: boolean = false) => {
+    const base = isFloor ? floorGroutBase : wallGroutBase;
+    if (!base) return null;
+    const t = base.clone();
+    t.repeat.set(w / (isFloor ? fTileW : kTileW), h / (isFloor ? fTileH : kTileH));
+    if (!isFloor) {
+      t.center.set(0.5, 0.5);
+      t.rotation = tileRotation * (Math.PI / 180);
+    }
+    t.needsUpdate = true;
+    return t;
+  };
+
   const getHighlighterTex = (width: number) => {
     if (!highlighterTex) return null;
     const img = highlighterTex.image as HTMLImageElement;
@@ -96,11 +140,12 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
   };
 
   const makeStripOverlay = (w: number, h: number) => {
-    if (!stripTex) return null;
-    const t = stripTex.clone();
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    if (!stripTex || !stripWidthMm) return null;
     const interval = stripInterval || 1;
+    const t = stripTex.clone();
     t.repeat.set(w / kTileW, h / (kTileH * interval));
+    t.center.set(0.5, 0.5);
+    t.rotation = tileRotation * (Math.PI / 180);
     t.needsUpdate = true;
     return t;
   };
@@ -137,6 +182,12 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
                   <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(roomW, lowerH)}
+                {wallGroutBase && (
+                  <mesh position={[0, 0, 0.002]}>
+                    <planeGeometry args={[roomW, lowerH]} />
+                    <meshBasicMaterial map={getGroutOverlay(roomW, lowerH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                  </mesh>
+                )}
               </group>
             )}
             <group position={[roomW / 2, hlY + hlHeight / 2, 0.002]}>
@@ -144,6 +195,12 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
                 <planeGeometry args={[roomW, hlHeight]} />
                 <meshPhysicalMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} {...TILE_WALL_PBR} />
               </mesh>
+              {wallGroutBase && (
+                <mesh position={[0, 0, 0.002]}>
+                  <planeGeometry args={[roomW, hlHeight]} />
+                  <meshBasicMaterial map={getGroutOverlay(roomW, hlHeight, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                </mesh>
+              )}
             </group>
             {upperH > 0 && (
               <group position={[roomW / 2, hlY + hlHeight + upperH / 2, 0]}>
@@ -152,16 +209,28 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
                   <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(roomW, upperH)}
+                {wallGroutBase && (
+                  <mesh position={[0, 0, 0.002]}>
+                    <planeGeometry args={[roomW, upperH]} />
+                    <meshBasicMaterial map={getGroutOverlay(roomW, upperH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                  </mesh>
+                )}
               </group>
             )}
           </>
         ) : (
-          <group position={[roomW / 2, counterH + bsHeight / 2, 0]}>
+            <group position={[roomW / 2, counterH + bsHeight / 2, 0]}>
             <mesh receiveShadow>
               <planeGeometry args={[roomW, bsHeight]} />
               <meshPhysicalMaterial map={tex} color={tex ? undefined : "#f5f0e8"} {...TILE_WALL_PBR} />
             </mesh>
             {stripOverlay(roomW, bsHeight)}
+            {wallGroutBase && (
+              <mesh position={[0, 0, 0.002]}>
+                <planeGeometry args={[roomW, bsHeight]} />
+                <meshBasicMaterial map={getGroutOverlay(roomW, roomH - counterH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+              </mesh>
+            )}
           </group>
         )}
       </group>
@@ -200,12 +269,26 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
                   <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(lDepth, lowerH, 0.001)}
+                {wallGroutBase && (
+                  <mesh position={[0, 0, 0.002]}>
+                    <planeGeometry args={[lDepth, lowerH]} />
+                    <meshBasicMaterial map={getGroutOverlay(lDepth, lowerH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                  </mesh>
+                )}
               </group>
             )}
-            <mesh position={[0, hlY + hlHeight / 2, lDepth / 2 + 0.022]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-              <planeGeometry args={[lDepth, hlHeight]} />
-              <meshPhysicalMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} {...TILE_WALL_PBR} />
-            </mesh>
+            <group position={[0, hlY + hlHeight / 2, lDepth / 2 + 0.022]} rotation={[0, Math.PI / 2, 0]}>
+              <mesh receiveShadow>
+                <planeGeometry args={[lDepth, hlHeight]} />
+                <meshPhysicalMaterial map={hlTex} color={hlTex ? undefined : "#d4a017"} {...TILE_WALL_PBR} />
+              </mesh>
+              {wallGroutBase && (
+                <mesh position={[0, 0, 0.002]}>
+                  <planeGeometry args={[lDepth, hlHeight]} />
+                  <meshBasicMaterial map={getGroutOverlay(lDepth, hlHeight, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                </mesh>
+              )}
+            </group>
             {upperH > 0 && (
               <group position={[0, hlY + hlHeight + upperH / 2, lDepth / 2 + 0.02]} rotation={[0, Math.PI / 2, 0]}>
                 <mesh receiveShadow>
@@ -213,6 +296,12 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
                   <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
                 </mesh>
                 {stripOverlay(lDepth, upperH, 0.001)}
+                {wallGroutBase && (
+                  <mesh position={[0, 0, 0.002]}>
+                    <planeGeometry args={[lDepth, upperH]} />
+                    <meshBasicMaterial map={getGroutOverlay(lDepth, upperH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+                  </mesh>
+                )}
               </group>
             )}
           </>
@@ -223,6 +312,12 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
               <meshPhysicalMaterial map={tex} color={tex ? undefined : "#e8e0d0"} {...TILE_WALL_PBR} />
             </mesh>
             {stripOverlay(lDepth, bsHeight, 0.001)}
+            {wallGroutBase && (
+              <mesh position={[0, 0, 0.002]}>
+                <planeGeometry args={[lDepth, bsHeight]} />
+                <meshBasicMaterial map={getGroutOverlay(lDepth, roomH - counterH, false) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+              </mesh>
+            )}
           </group>
         )}
       </group>
@@ -304,10 +399,18 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
     ft.colorSpace = THREE.SRGBColorSpace;
     ft.needsUpdate = true;
     return (
-      <mesh position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[roomW, roomL]} />
-        <meshPhysicalMaterial map={ft} color="#ffffff" {...TILE_FLOOR_PBR} />
-      </mesh>
+      <group position={[roomW / 2, 0, roomL / 2]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh receiveShadow>
+          <planeGeometry args={[roomW, roomL]} />
+          <meshPhysicalMaterial map={ft} color="#ffffff" {...TILE_FLOOR_PBR} />
+        </mesh>
+        {floorGroutBase && (
+          <mesh position={[0, 0, 0.002]}>
+            <planeGeometry args={[roomW, roomL]} />
+            <meshBasicMaterial map={getGroutOverlay(roomW, roomL, true) || undefined} transparent depthWrite={false} side={THREE.FrontSide} />
+          </mesh>
+        )}
+      </group>
     );
   };
 
@@ -448,7 +551,8 @@ export default function Kitchen3DPage() {
   const [highlighterTex, setHighlighterTex] = useState<THREE.Texture | null>(null);
   const highlighterRows = useKitchen3DStore((s) => s.highlighterRows);
   const setHighlighterRows = useKitchen3DStore((s) => s.setHighlighterRows);
-  const [floorImg, setFloorImg] = useState<string | null>(null);
+  const floorImg = useVolatileStore(s => s.globalTileImage);
+  const setFloorImg = useVolatileStore(s => s.setGlobalTileImage);
   const [floorTex, setFloorTex] = useState<THREE.Texture | null>(null);
   const floorTileSize = useKitchen3DStore((s) => s.floorTileSize);
   const setFloorTileSize = useKitchen3DStore((s) => s.setFloorTileSize);
@@ -655,7 +759,10 @@ export default function Kitchen3DPage() {
                   <span className="text-xs text-neutral-500">Upload floor tile</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setFloorImg(URL.createObjectURL(file));
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      setFloorImg(url);
+                    }
                   }} />
                 </label>
 

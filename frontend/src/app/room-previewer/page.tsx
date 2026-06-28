@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, AdaptiveDpr, AdaptiveEvents, BakeShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { useRoomPreviewerStore } from "@/store3d";
+import { useVolatileStore } from "@/volatileStore";
 import { 
   Upload, 
   Trash2, 
@@ -296,7 +297,8 @@ export default function RoomPreviewer() {
 
   // Custom Image Texture (blob URLs - not persisted, reset on refresh/navigation)
   const [originalCustomImage, setOriginalCustomImage] = useState<string | null>(null);
-  const [customTileImage, setCustomTileImage] = useState<string | null>(null);
+  const customTileImage = useVolatileStore(s => s.globalTileImage);
+  const setCustomTileImage = useVolatileStore(s => s.setGlobalTileImage);
   const bookmatchEnabled = useRoomPreviewerStore((s) => s.bookmatchEnabled);
   const setBookmatchEnabled = useRoomPreviewerStore((s) => s.setBookmatchEnabled);
   const uploadedFileName = useRoomPreviewerStore((s) => s.uploadedFileName);
@@ -342,11 +344,8 @@ export default function RoomPreviewer() {
       if (originalCustomImage) {
         URL.revokeObjectURL(originalCustomImage);
       }
-      if (customTileImage) {
-        URL.revokeObjectURL(customTileImage);
-      }
     };
-  }, [originalCustomImage, customTileImage]);
+  }, [originalCustomImage]); // Only revoke originalCustomImage, leave customTileImage for other tabs
 
   // Calculations states - persisted
   const wastagePercent = useRoomPreviewerStore((s) => s.wastagePercent);
@@ -522,7 +521,7 @@ export default function RoomPreviewer() {
     setUploadedFileName(file.name);
     const url = URL.createObjectURL(file);
     if (originalCustomImage) URL.revokeObjectURL(originalCustomImage);
-    if (customTileImage) URL.revokeObjectURL(customTileImage);
+    if (originalCustomImage) URL.revokeObjectURL(originalCustomImage);
     setOriginalCustomImage(url);
     setCustomTileImage(url);
   };
@@ -535,8 +534,8 @@ export default function RoomPreviewer() {
     if (originalCustomImage) {
       URL.revokeObjectURL(originalCustomImage);
     }
-    if (customTileImage) {
-      URL.revokeObjectURL(customTileImage);
+    if (originalCustomImage) {
+      URL.revokeObjectURL(originalCustomImage);
     }
     setOriginalCustomImage(null);
     setCustomTileImage(null);
@@ -1246,6 +1245,41 @@ export default function RoomPreviewer() {
               </div>
 
               <div className="flex items-center gap-3">
+                {is3DMode && (
+                  <>
+                    {/* View Preset Buttons */}
+                    <div className="hidden xl:flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-neutral-800">
+                      {(['front', 'corner', 'top', 'entrance', '360', 'reset'] as const).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => setCameraPreset(p)}
+                          className={`px-2 py-1 text-[9px] font-bold rounded-md transition capitalize ${
+                            cameraPreset === p
+                              ? 'bg-blue-500/20 text-blue-400'
+                              : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Auto-rotate Toggle */}
+                    <button
+                      onClick={() => setAutoRotate(!autoRotate)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition ${
+                        autoRotate
+                          ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                          : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white'
+                      }`}
+                      title={autoRotate ? 'Auto-rotate On' : 'Auto-rotate Off'}
+                    >
+                      <Rotate3d className={`w-3 h-3 ${autoRotate ? 'animate-spin' : ''}`} />
+                      <span>360°</span>
+                    </button>
+                  </>
+                )}
+
                 {/* Interior Toggle Button */}
                 {is3DMode && (
                   <button

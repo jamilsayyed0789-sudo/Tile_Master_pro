@@ -4,8 +4,6 @@ import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import { ContactShadows, Environment } from "@react-three/drei";
 import * as THREE from "three";
-import { EffectComposer, Bloom, ToneMapping, SMAA } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
 
 type SceneKind = "living" | "bathroom" | "kitchen";
 
@@ -102,10 +100,6 @@ export default function SceneLighting({
         color="#0a0a0a"
       />
 
-      {/* High-end Post Processing */}
-      <EffectComposer multisampling={2}>
-        <ToneMapping />
-      </EffectComposer>
     </>
   );
 }

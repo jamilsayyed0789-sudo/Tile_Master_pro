@@ -20,7 +20,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         pathname.startsWith("/pricing") ||
         pathname.startsWith("/api");
 
-      const { data: { session } } = await supabase.auth.getSession();
+      let session = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+      } catch (err) {
+        console.warn("Auth check failed, defaulting to unauthenticated:", err);
+      }
 
       if (!session) {
         setIsPending(false);

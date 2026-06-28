@@ -189,7 +189,7 @@ const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight
   roomLength: 15,
   roomWidth: 11,
   tileSize: '12x18',
-  groutWidth: 4,
+  groutWidth: 1,
   groutColor: '#888888',
   wastagePercent: 10,
   pricePerBox: 650,
