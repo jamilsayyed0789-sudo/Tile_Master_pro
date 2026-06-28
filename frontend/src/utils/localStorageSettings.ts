@@ -303,5 +303,37 @@ export async function findLocalTileImage(
     return null;
   }
 }
-e x p o r t   a s y n c   f u n c t i o n   d e l e t e L o c a l T i l e I m a g e ( r e l a t i v e I m a g e P a t h ? :   s t r i n g   |   n u l l ) :   P r o m i s e < b o o l e a n >   {   t r y   {   c o n s t   d i r H a n d l e   =   a w a i t   g e t S t o r e d H a n d l e ( ' b r o w s e r - o u t p u t - d i r e c t o r y ' ) ;   i f   ( ! d i r H a n d l e )   r e t u r n   f a l s e ;   c o n s t   o p t i o n s   =   {   m o d e :   ' r e a d w r i t e '   a s   c o n s t   } ;   c o n s t   p e r m   =   a w a i t   d i r H a n d l e . q u e r y P e r m i s s i o n ( o p t i o n s ) ;   i f   ( p e r m   ! = =   ' g r a n t e d ' )   {   r e t u r n   f a l s e ;   }   i f   ( ! r e l a t i v e I m a g e P a t h )   r e t u r n   f a l s e ;   c o n s t   p a r t s   =   r e l a t i v e I m a g e P a t h . s p l i t ( / [ / \ \ ] / ) ;   i f   ( p a r t s . l e n g t h   = = =   0 )   r e t u r n   f a l s e ;   c o n s t   f i l e n a m e   =   p a r t s . p o p ( ) ! ;   l e t   c u r r e n t H a n d l e   =   d i r H a n d l e ;   f o r   ( c o n s t   p a r t   o f   p a r t s )   {   i f   ( p a r t )   {   t r y   {   c u r r e n t H a n d l e   =   a w a i t   c u r r e n t H a n d l e . g e t D i r e c t o r y H a n d l e ( p a r t ,   {   c r e a t e :   f a l s e   } ) ;   }   c a t c h   ( e )   {   r e t u r n   f a l s e ;   }   }   }   t r y   {   a w a i t   c u r r e n t H a n d l e . r e m o v e E n t r y ( f i l e n a m e ) ;   r e t u r n   t r u e ;   }   c a t c h   ( e )   {   r e t u r n   f a l s e ;   }   }   c a t c h   ( e )   {   r e t u r n   f a l s e ;   }   }  
- 
+
+export async function deleteLocalTileImage(relativeImagePath?: string | null): Promise<boolean> {
+  try {
+    const dirHandle = await getStoredHandle('browser-output-directory');
+    if (!dirHandle) return false;
+    const options = { mode: 'readwrite' as const };
+    const perm = await dirHandle.queryPermission(options);
+    if (perm !== 'granted') {
+      return false;
+    }
+    if (!relativeImagePath) return false;
+    const parts = relativeImagePath.split(/[\\/]/);
+    if (parts.length === 0) return false;
+    const filename = parts.pop()!;
+    let currentHandle = dirHandle;
+    for (const part of parts) {
+      if (part) {
+        try {
+          currentHandle = await currentHandle.getDirectoryHandle(part, { create: false });
+        } catch (e) {
+          return false;
+        }
+      }
+    }
+    try {
+      await currentHandle.removeEntry(filename);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+}
