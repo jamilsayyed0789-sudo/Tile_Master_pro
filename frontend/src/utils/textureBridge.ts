@@ -42,7 +42,19 @@ export function buildTileUrl(path: string): string {
   
   let resultUrl = path;
 
-  // If it's not already an absolute URL, build it
+  // If the path contains our API endpoint, always return a relative URL.
+  // This ensures Next.js proxy handles the request, avoiding WebGL CORS issues
+  // in 3D rooms when TextureLoader attempts to fetch the image.
+  if (resultUrl.includes('/api/local/image')) {
+    try {
+      const urlObj = new URL(resultUrl, 'http://dummy.com');
+      return `/api/local/image${urlObj.search}`;
+    } catch (e) {
+      return resultUrl;
+    }
+  }
+
+  // Fallback for non-local paths (e.g. external URLs)
   if (!path.startsWith('http://') && !path.startsWith('https://') && !path.startsWith('data:')) {
     const configured = process.env.NEXT_PUBLIC_API_URL;
     if (configured) {
@@ -52,21 +64,6 @@ export function buildTileUrl(path: string): string {
         ? window.location.origin
         : 'http://127.0.0.1:8001';
       resultUrl = `${base}${path.startsWith('/') ? path : '/' + path}`;
-    }
-  }
-
-  // Upgrade http to https if we are on an https site (and not localhost)
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    if (resultUrl.startsWith('http://localhost') || resultUrl.startsWith('http://127.0.0.1')) {
-      // If a localhost URL leaked into a production secure site, rewrite it to the production origin
-      try {
-        const urlObj = new URL(resultUrl);
-        resultUrl = `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
-      } catch (e) {
-        // ignore
-      }
-    } else if (resultUrl.startsWith('http://')) {
-      resultUrl = resultUrl.replace('http://', 'https://');
     }
   }
 
