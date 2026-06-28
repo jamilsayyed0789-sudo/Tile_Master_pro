@@ -468,6 +468,10 @@ export default function TileLibraryPage() {
   const [isDeletingAll, setIsDeletingAll]       = useState(false);
   const [alertInfo, setAlertInfo]               = useState<{ title: string; message: string } | null>(null);
 
+  const [isSelectMode, setIsSelectMode]         = useState(false);
+  const [selectedTileIds, setSelectedTileIds]   = useState<Set<number>>(new Set());
+  const [isDeletingBatch, setIsDeletingBatch]   = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 500);
     return () => clearTimeout(timer);
@@ -584,6 +588,41 @@ export default function TileLibraryPage() {
     }
   };
 
+  const performBatchDelete = async () => {
+    if (selectedTileIds.size === 0) return;
+    setIsDeletingBatch(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/catalog/tiles/batch-delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ tile_ids: Array.from(selectedTileIds) })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTiles(prev => prev.filter(t => t.id && !selectedTileIds.has(t.id)));
+        setSelectedTileIds(new Set());
+        setIsSelectMode(false);
+        setAlertInfo({ title: "Success", message: data.message });
+      } else {
+        let errorMsg = "Failed to delete selected tiles";
+        try {
+          const json = await res.json();
+          if (json.detail) errorMsg = json.detail;
+        } catch (_) {}
+        setAlertInfo({ title: "Delete Failed", message: errorMsg });
+      }
+    } catch (err) {
+      console.error(err);
+      setAlertInfo({ title: "Network Error", message: "Error deleting tiles. Please check your connection." });
+    } finally {
+      setIsDeletingBatch(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-6 relative">
       <div className="fixed top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
@@ -613,13 +652,40 @@ export default function TileLibraryPage() {
             </div>
             
             {tiles.length > 0 && (
-              <button
-                onClick={() => setConfirmDeleteAll(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all whitespace-nowrap font-bold text-sm"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete All
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setIsSelectMode(!isSelectMode);
+                    setSelectedTileIds(new Set());
+                  }}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all whitespace-nowrap font-bold text-sm ${
+                    isSelectMode
+                      ? "bg-indigo-500 text-white border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                      : "bg-neutral-800 text-neutral-300 border-white/10 hover:bg-neutral-700"
+                  }`}
+                >
+                  {isSelectMode ? "Cancel Selection" : "Select Mode"}
+                </button>
+
+                {isSelectMode ? (
+                  <button
+                    onClick={performBatchDelete}
+                    disabled={selectedTileIds.size === 0 || isDeletingBatch}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all whitespace-nowrap font-bold text-sm disabled:opacity-50"
+                  >
+                    {isDeletingBatch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Delete Selected ({selectedTileIds.size})
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteAll(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all whitespace-nowrap font-bold text-sm"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete All
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -684,8 +750,36 @@ export default function TileLibraryPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.2 }}
-                  className="group relative bg-neutral-900/50 backdrop-blur-md border border-white/5 rounded-2xl overflow-visible hover:border-indigo-500/30 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)] transition-all duration-300"
+                  onClick={() => {
+                    if (isSelectMode && tile.id) {
+                      const newSet = new Set(selectedTileIds);
+                      if (newSet.has(tile.id)) {
+                        newSet.delete(tile.id);
+                      } else {
+                        newSet.add(tile.id);
+                      }
+                      setSelectedTileIds(newSet);
+                    }
+                  }}
+                  className={`group relative bg-neutral-900/50 backdrop-blur-md border rounded-2xl overflow-visible transition-all duration-300 ${
+                    isSelectMode ? "cursor-pointer" : ""
+                  } ${
+                    isSelectMode && tile.id && selectedTileIds.has(tile.id)
+                      ? "border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)] bg-indigo-500/10"
+                      : "border-white/5 hover:border-indigo-500/30 hover:shadow-[0_0_30px_rgba(99,102,241,0.1)]"
+                  }`}
                 >
+                  {isSelectMode && tile.id && (
+                    <div className="absolute top-3 left-3 z-20">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        selectedTileIds.has(tile.id)
+                          ? "bg-indigo-500 border-indigo-500"
+                          : "border-white/30 bg-black/50"
+                      }`}>
+                        {selectedTileIds.has(tile.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                    </div>
+                  )}
                   {/* Image */}
                   <div className="aspect-[4/3] bg-neutral-950 rounded-t-2xl overflow-hidden flex items-center justify-center">
                     {tile.image_url ? (
@@ -709,18 +803,20 @@ export default function TileLibraryPage() {
                       ) : (
                         <h3 className="font-semibold text-base text-neutral-500 italic truncate flex-1">No label</h3>
                       )}
-                      <button
-                        onClick={() => handleDelete(tile)}
-                        disabled={deletingId === tile.tile_number}
-                        className="text-neutral-500 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-red-500/10 disabled:opacity-50"
-                        title="Delete Tile"
-                      >
-                        {deletingId === tile.tile_number ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-red-400" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </button>
+                      {!isSelectMode && (
+                        <button
+                          onClick={() => handleDelete(tile)}
+                          disabled={deletingId === tile.tile_number}
+                          className="text-neutral-500 hover:text-red-400 transition-colors p-1 rounded-md hover:bg-red-500/10 disabled:opacity-50"
+                          title="Delete Tile"
+                        >
+                          {deletingId === tile.tile_number ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-red-400" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5 mt-2">
                       {/* Show # number row only when BOTH real name AND real number exist */}

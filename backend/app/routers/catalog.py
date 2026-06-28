@@ -634,6 +634,50 @@ def delete_tile_by_id(
         ),
     }
 
+class BatchDeleteRequest(BaseModel):
+    tile_ids: List[int]
+
+@catalog_router.post("/tiles/batch-delete")
+def delete_tiles_batch(
+    request: BatchDeleteRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete multiple tiles by their database IDs.
+    """
+    if not request.tile_ids:
+        raise HTTPException(status_code=400, detail="No tile IDs provided")
+
+    deleted_count = 0
+    errors = []
+
+    for tile_id in request.tile_ids:
+        tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id).first()
+        if not tile:
+            errors.append(f"Tile {tile_id} not found")
+            continue
+
+        _safe_delete_image(tile.relative_image_path, tile_id)
+
+        try:
+            db.delete(tile)
+            deleted_count += 1
+        except Exception as e:
+            errors.append(f"Failed to delete DB record for {tile_id}: {e}")
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database commit failed: {e}")
+
+    return {
+        "success": True,
+        "deleted_count": deleted_count,
+        "errors": errors,
+        "message": f"Successfully deleted {deleted_count} tiles. {len(errors)} errors.",
+    }
+
 
 # ── Legacy delete by tile_number (kept for backward compatibility) ─────────────
 
