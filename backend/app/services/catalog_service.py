@@ -21,6 +21,7 @@ PAGE_WORKERS = 4
 TEXT_DENSITY_THRESHOLD = 50  # chars per page
 
 TILE_NUMBER_REGEXES = [
+    re.compile(r'\b\d{1,10}[-_./\s]+[A-Za-z]{1,20}[-_./\s]+\d{1,10}\b'), # Digits-Letters-Digits (e.g. 10775-HL-1)
     re.compile(r'\b[A-Za-z]{1,20}[-_./]?\d{1,8}[A-Za-z]{0,5}\b'),       # Letters then digits (e.g. P3, P-04, Calacatta6012, 1234A)
     re.compile(r'\b[A-Za-z]{1,20}\s+\d{1,8}[A-Za-z]{0,5}\b'),           # Letters space digits (e.g. P 3, Calacatta 6012)
     re.compile(r'\b\d{1,8}[-_./]?[A-Za-z]{1,20}\b'),                    # Digits then letters (e.g. 1234A)
@@ -517,7 +518,7 @@ def _save_to_local_storage(img_bytes: bytes, tile_number: str) -> Optional[tuple
         return None
 
 
-def _tile_score(img: dict, page_area: float, min_width: int = 100, min_height: int = 100) -> float:
+def _tile_score(img: dict, page_area: float, min_width: int = 30, min_height: int = 30) -> float:
     # Reject small logo, icon, or text images
     if img["width"] < min_width or img["height"] < min_height:
         return 0.0
@@ -649,8 +650,8 @@ def extract_tiles_from_pdf(
     tile_size_override: Optional[str] = None,
     page_start: Optional[int] = None,
     page_end: Optional[int] = None,
-    min_width: int = 100,
-    min_height: int = 100,
+    min_width: int = 30,
+    min_height: int = 30,
     tiles_per_page: Optional[int] = None,
 ) -> List[dict]:
     import fitz
@@ -1145,7 +1146,7 @@ def _detect_image_regions_opencv(page_image_bytes: bytes) -> List[dict]:
             area = cw * ch
             if area < 0.005 * page_area or area > 0.6 * page_area:
                 continue
-            if cw < 200 or ch < 200:
+            if cw < 50 or ch < 50:
                 continue
             aspect = cw / max(ch, 1)
             if aspect < 0.1 or aspect > 10:
