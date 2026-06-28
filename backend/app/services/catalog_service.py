@@ -493,7 +493,7 @@ def _save_to_local_storage(img_bytes: bytes, tile_number: str) -> Optional[tuple
         # Guard: reject suspiciously tiny images (< 3.5 KB).
         # Real tile images are always significantly larger, whereas small logo,
         # text, or crop images are tiny.
-        MIN_TILE_BYTES = 3500
+        MIN_TILE_BYTES = 500
         if len(img_bytes) < MIN_TILE_BYTES:
             logger.info(f"Skipping local save for {tile_number} — image is too small ({len(img_bytes)} bytes)")
             return None

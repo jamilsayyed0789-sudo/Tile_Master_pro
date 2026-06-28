@@ -108,7 +108,7 @@ def save_tile_locally(payload: LocalTileSave, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Invalid base64 image data")
 
         # Guard: reject suspiciously tiny images (< 3.5 KB decoded).
-        MIN_TILE_BYTES = 3500
+        MIN_TILE_BYTES = 500
         if len(img_bytes) < MIN_TILE_BYTES:
             raise HTTPException(
                 status_code=400,
