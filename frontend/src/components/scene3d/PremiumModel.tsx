@@ -176,8 +176,8 @@ function ModelLoader({
 
   if (center) {
     return (
-      <Center bottom {...cleanedProps}>
-        <primitive object={clonedScene} scale={finalScale} />
+      <Center bottom {...cleanedProps} dispose={null}>
+        <primitive object={clonedScene} scale={finalScale} dispose={null} />
       </Center>
     );
   }
@@ -186,13 +186,13 @@ function ModelLoader({
     const s = typeof finalScale === 'number' ? finalScale : 1;
     const scaledOffset: [number, number, number] = [offset[0] * s, offset[1] * s, offset[2] * s];
     return (
-      <group {...cleanedProps}>
-        <primitive object={clonedScene} position={scaledOffset} scale={finalScale} />
+      <group {...cleanedProps} dispose={null}>
+        <primitive object={clonedScene} position={scaledOffset} scale={finalScale} dispose={null} />
       </group>
     );
   }
 
-  return <primitive object={clonedScene} {...cleanedProps} scale={finalScale} />;
+  return <primitive object={clonedScene} {...cleanedProps} scale={finalScale} dispose={null} />;
 }
 
 const existCache = new Map<string, boolean>();
