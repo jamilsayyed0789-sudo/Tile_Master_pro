@@ -6,6 +6,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, BakeShadows, AdaptiveDpr } from "@react-three/drei";
 import * as THREE from "three";
 import { useBathroom3DStore } from "@/store3d";
+import { useVolatileStore } from "@/volatileStore";
 import { TILE_FLOOR_PBR, TILE_WALL_PBR } from "@/components/scene3d/tilePbr";
 import {
   Ruler, Layers, Check, Rotate3d, Grid, Upload, ImageIcon, GripVertical, ArrowUpDown, Maximize2, Minimize2, Search, Eye, EyeOff
@@ -96,7 +97,7 @@ function Surface({
     const hPx = Math.round((tileH / maxDim) * base);
     
     // Half-margin to draw on edges, so when repeated they combine to full width
-    const hm = Math.max(2, Math.round(wPx * groutWidthMm / (2 * tileW * 304.8)));
+    const hm = Math.max(1, Math.round(wPx * groutWidthMm / (2 * tileW * 304.8)));
     
     const c = document.createElement("canvas");
     c.width = wPx + 2 * hm;
@@ -262,7 +263,7 @@ function Room({
       <Surface
         tex={floorTex} color="#e8e5e0"
         args={[roomW, roomL]} position={[roomW / 2, 0, roomL / 2]}
-        rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={bookmatchEnabled}
+        rotation={[-Math.PI / 2, 0, 0]} tileW={tileW} tileH={tileH} bookmatchEnabled={false}
         groutWidthMm={groutWidthMm} groutColor={groutColor}
         isFloor
       />
@@ -359,7 +360,8 @@ export default function Bathroom3DPage() {
   const [darkImg,        setDarkImg]        = useState<string | null>(null);
   const [lightImg,       setLightImg]       = useState<string | null>(null);
   const [highlighterImg, setHighlighterImg] = useState<string | null>(null);
-  const [floorImg,       setFloorImg]       = useState<string | null>(null);
+  const floorImg = useVolatileStore(s => s.globalTileImage);
+  const setFloorImg = useVolatileStore(s => s.setGlobalTileImage);
   const [showerImg1,     setShowerImg1]     = useState<string | null>(null);
   const [showerImg2,     setShowerImg2]     = useState<string | null>(null);
   const shower1OffsetY = useBathroom3DStore((s) => s.shower1OffsetY);
@@ -864,6 +866,37 @@ export default function Bathroom3DPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
+                {/* View Preset Buttons */}
+                <div className="hidden md:flex items-center gap-1 bg-neutral-900 rounded-lg p-1 border border-neutral-800">
+                  {(['front', 'corner', 'top', 'entrance', '360', 'reset'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setCameraPreset(p)}
+                      className={`px-2 py-1 text-[9px] font-bold rounded-md transition capitalize ${
+                        cameraPreset === p
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Auto-rotate Toggle */}
+                <button
+                  onClick={() => setAutoRotate(!autoRotate)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold rounded-lg border transition ${
+                    autoRotate
+                      ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                      : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white'
+                  }`}
+                  title={autoRotate ? 'Auto-rotate On' : 'Auto-rotate Off'}
+                >
+                  <Rotate3d className={`w-3 h-3 ${autoRotate ? 'animate-spin' : ''}`} />
+                  <span>360°</span>
+                </button>
+
                 <button
                   onClick={() => setShowInterior(!showInterior)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
