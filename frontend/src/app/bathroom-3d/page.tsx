@@ -95,9 +95,9 @@ function Surface({
     const wPx = Math.round((tileW / maxDim) * base);
     const hPx = Math.round((tileH / maxDim) * base);
     // groutWidthMm in mm; tileW/tileH in feet (1ft = 304.8mm)
-    // Multiplied by 2 for visual clarity in 3D scale
-    const groutPxW = Math.max(5, Math.round(groutWidthMm * 2 / (tileW * 304.8) * wPx));
-    const groutPxH = Math.max(5, Math.round(groutWidthMm * 2 / (tileH * 304.8) * hPx));
+    // Multiplied by 3 for visual clarity in 3D scale, min 8px
+    const groutPxW = Math.max(8, Math.round(groutWidthMm * 3 / (tileW * 304.8) * wPx));
+    const groutPxH = Math.max(8, Math.round(groutWidthMm * 3 / (tileH * 304.8) * hPx));
     const c = document.createElement("canvas");
     c.width = wPx;
     c.height = hPx;
@@ -110,14 +110,15 @@ function Surface({
     ctx.fillRect(wPx - groutPxW, 0, groutPxW, hPx);
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.minFilter = THREE.LinearFilter;
     t.magFilter = THREE.LinearFilter;
-    t.anisotropy = 16;
-    t.generateMipmaps = true;
+    t.anisotropy = 4;
+    t.generateMipmaps = false;
     t.repeat.set(args[0] / tileW, args[1] / tileH);
+    if (offsetY) t.offset.y = offsetY;
     t.needsUpdate = true;
     return t;
-  }, [groutWidthMm, groutColor, tileW, tileH, args[0], args[1]]);
+  }, [groutWidthMm, groutColor, tileW, tileH, args[0], args[1], offsetY]);
 
   const texture = useMemo(() => {
     if (!tex) return null;
