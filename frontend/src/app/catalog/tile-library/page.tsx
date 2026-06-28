@@ -177,7 +177,7 @@ function AlertDialog({
   );
 }
 
-import { findLocalTileImage } from "@/utils/localStorageSettings";
+import { findLocalTileImage, deleteLocalTileImage } from "@/utils/localStorageSettings";
 
 function LocalTileImage({ tile, className }: { tile: any; className: string }) {
   const [localUrl, setLocalUrl] = useState<string | null>(null);
@@ -529,6 +529,9 @@ export default function TileLibraryPage() {
       if (res.ok) {
         const data = await res.json();
         setTiles(prev => prev.filter(t => t.id !== tileId));
+        if (tile.relative_image_path) {
+          try { await deleteLocalTileImage(tile.relative_image_path); } catch (e) {}
+        }
         setConfirmDeleteTile(null);
         console.log(
           `[DELETE] ${data.message} | image_deleted=${data.image_file_deleted} | db_deleted=${data.db_record_deleted}`
@@ -565,6 +568,11 @@ export default function TileLibraryPage() {
       });
       if (res.ok) {
         setTiles([]);
+        for (const t of tiles) {
+          if (t.relative_image_path) {
+            try { await deleteLocalTileImage(t.relative_image_path); } catch (e) {}
+          }
+        }
         setConfirmDeleteAll(false);
         setAlertInfo({ title: "Success", message: "All tiles have been deleted." });
       } else {
@@ -603,6 +611,12 @@ export default function TileLibraryPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        const tilesToDelete = tiles.filter(t => t.id && selectedTileIds.has(t.id));
+        for (const t of tilesToDelete) {
+          if (t.relative_image_path) {
+            try { await deleteLocalTileImage(t.relative_image_path); } catch (e) {}
+          }
+        }
         setTiles(prev => prev.filter(t => t.id && !selectedTileIds.has(t.id)));
         setSelectedTileIds(new Set());
         setIsSelectMode(false);
