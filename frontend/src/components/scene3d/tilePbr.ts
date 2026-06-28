@@ -10,11 +10,10 @@ export const TILE_FLOOR_PBR = {
 } as const;
 
 export const TILE_WALL_PBR = {
-  roughness: 0.18, 
-  metalness: 0.02,
-  envMapIntensity: 0.5,
-  clearcoat: 0.3,
-  clearcoatRoughness: 0.1,
+  roughness: 0.08, 
+  metalness: 0.0,
+  envMapIntensity: 0.8,
+  clearcoat: 0.0,
 } as const;
 
 export const TILE_MATTE_PBR = {

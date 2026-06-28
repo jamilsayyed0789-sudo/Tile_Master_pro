@@ -95,8 +95,9 @@ function Surface({
     const wPx = Math.round((tileW / maxDim) * base);
     const hPx = Math.round((tileH / maxDim) * base);
     // groutWidthMm in mm; tileW/tileH in feet (1ft = 304.8mm)
-    const groutPxW = Math.max(2, Math.round(groutWidthMm / (tileW * 304.8) * wPx));
-    const groutPxH = Math.max(2, Math.round(groutWidthMm / (tileH * 304.8) * hPx));
+    // Multiplied by 2 for visual clarity in 3D scale
+    const groutPxW = Math.max(5, Math.round(groutWidthMm * 2 / (tileW * 304.8) * wPx));
+    const groutPxH = Math.max(5, Math.round(groutWidthMm * 2 / (tileH * 304.8) * hPx));
     const c = document.createElement("canvas");
     c.width = wPx;
     c.height = hPx;
