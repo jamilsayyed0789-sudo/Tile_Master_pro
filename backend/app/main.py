@@ -11,6 +11,7 @@ from app.routers.qr_code import qr_router
 from app.routers.settings import settings_router
 from app.routers.local_storage import local_storage_router
 from app.routers.payment import payment_router
+from app.routers.ai_bathroom import ai_bathroom_router
 
 # Global OCR engine placeholder (will be set on app startup)
 ocr_engine = None
@@ -70,6 +71,7 @@ app.include_router(qr_router)
 app.include_router(settings_router)
 app.include_router(local_storage_router)
 app.include_router(payment_router)
+app.include_router(ai_bathroom_router)
 
 os.makedirs(os.path.join(os.getcwd(), "uploads"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

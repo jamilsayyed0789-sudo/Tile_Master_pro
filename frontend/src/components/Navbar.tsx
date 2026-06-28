@@ -35,6 +35,7 @@ const threeDItems = [
   { name: "3D Bathroom", path: "/bathroom-3d", icon: ShowerHead },
   { name: "3D Kitchen", path: "/kitchen-3d", icon: CookingPot },
   { name: "3D Wall Elevation", path: "/wall-elevation", icon: Columns },
+  { name: "AI Bathroom", path: "/ai-bathroom", icon: Sparkles },
 ];
 
 const navItems = [
