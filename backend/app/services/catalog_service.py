@@ -820,19 +820,30 @@ def extract_tiles_from_pdf(
                             TileCatalog.tile_number == final_tile_number,
                             TileCatalog.catalog_name == catalog_name,
                         ).first()
+                        
+                        if existing:
+                            # Append a suffix so we don't drop duplicate tile faces/crops
+                            base_number = final_tile_number
+                            suffix_counter = 2
+                            while existing:
+                                final_tile_number = f"{base_number}-{suffix_counter}"
+                                existing = db.query(TileCatalog).filter(
+                                    TileCatalog.tile_number == final_tile_number,
+                                    TileCatalog.catalog_name == catalog_name,
+                                ).first()
+                                suffix_counter += 1
 
-                    if not existing:
-                        db_tile = TileCatalog(
-                            tile_name=final_tile_name or f"Tile Page {page_num+1}",
-                            tile_number=final_tile_number,
-                            tile_size=tile_size,
-                            image_url=image_url,
-                            catalog_name=catalog_name,
-                            page_number=page_num + 1,
-                            relative_image_path=relative_path,
-                        )
-                        db.add(db_tile)
-                        db.commit()
+                    db_tile = TileCatalog(
+                        tile_name=final_tile_name or f"Tile Page {page_num+1}",
+                        tile_number=final_tile_number,
+                        tile_size=tile_size,
+                        image_url=image_url,
+                        catalog_name=catalog_name,
+                        page_number=page_num + 1,
+                        relative_image_path=relative_path,
+                    )
+                    db.add(db_tile)
+                    db.commit()
 
                     raw_tiles.append({
                         "tile_name": final_tile_name or f"Tile Page {page_num+1}",
@@ -1356,18 +1367,29 @@ def extract_tiles_from_scanned_pdf(
                             TileCatalog.catalog_name == catalog_name,
                         ).first()
 
-                    if not existing:
-                        db_tile = TileCatalog(
-                            tile_name=final_tile_name or f"Tile Page {page_num+1}",
-                            tile_number=final_tile_number,
-                            tile_size=tile_size,
-                            image_url=image_url,
-                            catalog_name=catalog_name,
-                            page_number=page_num + 1,
-                            relative_image_path=relative_path,
-                        )
-                        db.add(db_tile)
-                        db.commit()
+                        if existing:
+                            # Append a suffix so we don't drop duplicate tile faces/crops
+                            base_number = final_tile_number
+                            suffix_counter = 2
+                            while existing:
+                                final_tile_number = f"{base_number}-{suffix_counter}"
+                                existing = db.query(TileCatalog).filter(
+                                    TileCatalog.tile_number == final_tile_number,
+                                    TileCatalog.catalog_name == catalog_name,
+                                ).first()
+                                suffix_counter += 1
+
+                    db_tile = TileCatalog(
+                        tile_name=final_tile_name or f"Tile Page {page_num+1}",
+                        tile_number=final_tile_number,
+                        tile_size=tile_size,
+                        image_url=image_url,
+                        catalog_name=catalog_name,
+                        page_number=page_num + 1,
+                        relative_image_path=relative_path,
+                    )
+                    db.add(db_tile)
+                    db.commit()
 
                     raw_tiles.append({
                         "tile_name": final_tile_name or f"Tile Page {page_num+1}",
