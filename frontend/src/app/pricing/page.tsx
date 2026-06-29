@@ -43,6 +43,54 @@ const plans = [
   },
 ];
 
+const TrialCountdown = ({ createdAt }: { createdAt: string }) => {
+  const [timeLeftStr, setTimeLeftStr] = useState<string>("00:00:00");
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const createdDate = new Date(createdAt).getTime();
+      const expiryDate = createdDate + (3 * 24 * 60 * 60 * 1000);
+      const now = Date.now();
+      const difference = expiryDate - now;
+
+      if (difference <= 0) {
+        setTimeLeftStr("00:00:00");
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      const format = (num: number) => num.toString().padStart(2, "0");
+      
+      if (days > 0) {
+        setTimeLeftStr(`${days}d ${format(hours)}:${format(minutes)}:${format(seconds)}`);
+      } else {
+        setTimeLeftStr(`${format(hours)}:${format(minutes)}:${format(seconds)}`);
+      }
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.3 }}
+      className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm shadow-sm cursor-default"
+    >
+      <Timer className="w-4 h-4" />
+      <span className="font-semibold text-slate-50">3-Day Free Trial</span>
+      <span className="text-slate-400">— expires in: <span className="font-mono text-blue-400">{timeLeftStr}</span></span>
+    </motion.div>
+  );
+};
+
 function PricingContent() {
   const [selected, setSelected] = useState<"monthly" | "lifetime" | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
@@ -308,17 +356,8 @@ function PricingContent() {
             </motion.div>
           )}
 
-          {session && !currentPlan && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm shadow-sm"
-            >
-              <Clock className="w-4 h-4" />
-              <span className="font-semibold text-slate-50">3-Day Free Trial</span>
-              <span className="text-slate-400">— start exploring now</span>
-            </motion.div>
+          {session && !currentPlan && session?.user?.created_at && (
+            <TrialCountdown createdAt={session.user.created_at} />
           )}
         </motion.div>
 

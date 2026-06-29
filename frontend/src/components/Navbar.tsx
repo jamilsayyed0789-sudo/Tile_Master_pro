@@ -26,6 +26,7 @@ import {
   QrCode,
   FileText,
   LayoutGrid,
+  Timer,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
@@ -292,15 +293,17 @@ export default function Navbar() {
               </nav>
 
               {/* Right side actions */}
-              <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+              <div className="hidden md:flex items-center gap-3 flex-shrink-0">
                 {isLoggedIn ? (
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-2 rounded-lg text-[12px] font-medium text-slate-400 hover:text-slate-50 hover:bg-slate-800 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <LogOut className="w-3 h-3" />
-                    Logout
-                  </button>
+                  <>
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2 rounded-xl text-[12px] font-semibold text-slate-300 bg-slate-800/80 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] border border-slate-700 hover:border-red-500 transition-all duration-300 flex items-center gap-2 cursor-pointer group"
+                    >
+                      <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                      Logout
+                    </button>
+                  </>
                 ) : (
                   <Link
                     href="/auth"
@@ -413,13 +416,15 @@ export default function Navbar() {
               </div>
 
               {isLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer mt-4"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
+                <>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-bold bg-slate-800/80 text-slate-300 hover:bg-red-500 hover:text-white border border-slate-700 hover:border-red-500 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] group mt-4"
+                  >
+                    <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                    Logout
+                  </button>
+                </>
               ) : (
                <Link
                  href="/auth"
