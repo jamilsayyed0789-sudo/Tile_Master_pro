@@ -12,6 +12,8 @@ interface Visualizer3DProps {
   wallTileUrl: string | null;
   floorTileUrl: string | null;
   accentTileUrl: string | null;
+  tileW?: number;
+  tileH?: number;
 }
 
 
