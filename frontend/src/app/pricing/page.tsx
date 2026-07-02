@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 const plans = [
   {
     name: "Monthly",
-    price: "1,599",
+    price: "999",
     period: "/month",
     planKey: "monthly" as const,
     description: "Perfect for professionals needing ongoing access.",
@@ -23,24 +23,7 @@ const plans = [
     ],
     cta: "Choose Monthly",
     icon: Zap,
-  },
-  {
-    name: "Lifetime",
-    price: "16,999",
-    period: "one-time",
-    planKey: "lifetime" as const,
-    description: "Pay once, own forever. Best value for professionals.",
-    features: [
-      "Everything in Monthly",
-      "Lifetime access, no recurring bills",
-      "All future updates included",
-      "Priority email & chat support",
-      "Premium showroom mode",
-      "Early access to new features",
-    ],
-    cta: "Get Lifetime Access",
-    icon: Shield,
-  },
+  }
 ];
 
 const TrialCountdown = ({ createdAt }: { createdAt: string }) => {
@@ -92,12 +75,10 @@ const TrialCountdown = ({ createdAt }: { createdAt: string }) => {
 };
 
 function PricingContent() {
-  const [selected, setSelected] = useState<"monthly" | "lifetime" | null>(null);
+  const [selected, setSelected] = useState<"monthly" | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [remainingSlots, setRemainingSlots] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const showExpiredBanner = searchParams.get("expired") === "true" || searchParams.get("reason") === "expired";
@@ -121,40 +102,7 @@ function PricingContent() {
   const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
-  // Scarcity Countdown Logic
-  useEffect(() => {
-    const totalDuration = 24 * 60 * 60; // 24 hours
-    const storedStart = localStorage.getItem("scarcity_start_time");
-    let startTime = storedStart ? parseInt(storedStart, 10) : null;
-
-    if (!startTime) {
-      startTime = Date.now();
-      localStorage.setItem("scarcity_start_time", startTime.toString());
-    }
-
-    const updateTimer = () => {
-      const elapsed = Math.floor((Date.now() - startTime!) / 1000);
-      const remaining = Math.max(0, totalDuration - elapsed);
-      setTimeLeft(remaining);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch remaining lifetime slots
-  useEffect(() => {
-    fetch(`${API_BASE}/payment/lifetime-slots`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (typeof data.remaining === "number") {
-          setRemainingSlots(data.remaining);
-        }
-      })
-      .catch(() => {});
-  }, [API_BASE]);
-
+  // Scarcity and lifetime slots removed
   useEffect(() => {
     if (!session) return;
 
@@ -185,7 +133,7 @@ function PricingContent() {
       .catch(() => {});
   }, [session]);
 
-  const handlePurchase = async (plan: "monthly" | "lifetime") => {
+  const handlePurchase = async (plan: "monthly") => {
     if (!session) {
       router.push("/auth");
       return;
@@ -314,18 +262,6 @@ function PricingContent() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-        {timeLeft !== null && (
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="mb-8 inline-flex items-center gap-3 px-6 py-3 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold shadow-[0_0_20px_rgba(59,130,246,0.15)] animate-pulse"
-          >
-            <Timer className="w-5 h-5" />
-            Lifetime Deal expires in: {Math.floor(timeLeft / 3600).toString().padStart(2, '0')}:
-            {Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0')}:
-            {(timeLeft % 60).toString().padStart(2, '0')}
-          </motion.div>
-        )}
 
         <h1 className="text-5xl lg:text-7xl font-black mb-6 tracking-tight text-white drop-shadow-xl">
             Simple, Transparent Pricing
@@ -361,19 +297,10 @@ function PricingContent() {
           )}
         </motion.div>
 
-        <div className={`grid gap-8 max-w-4xl mx-auto items-stretch ${remainingSlots !== null && remainingSlots <= 0 ? "grid-cols-1 max-w-md" : "md:grid-cols-2"}`}>
-          {plans
-            .filter((plan) => {
-              if (plan.planKey === "lifetime" && remainingSlots !== null && remainingSlots <= 0) {
-                return false;
-              }
-              return true;
-            })
-            .map((plan, idx) => {
+        <div className="grid gap-8 max-w-md mx-auto items-stretch">
+          {plans.map((plan, idx) => {
               const Icon = plan.icon;
-              const isSelected =
-                (plan.planKey === "monthly" && selected === "monthly") ||
-                (plan.planKey === "lifetime" && selected === "lifetime");
+              const isSelected = selected === "monthly";
 
               return (
                 <motion.div
@@ -396,12 +323,6 @@ function PricingContent() {
                           {plan.name}
                         </h2>
                       </div>
-
-                      {plan.planKey === "lifetime" && remainingSlots !== null && (
-                        <span className="bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-red-500/20 animate-pulse">
-                          {remainingSlots} slots left!
-                        </span>
-                      )}
                     </div>
 
                     <div className="mb-6">
@@ -416,12 +337,6 @@ function PricingContent() {
                     <p className="text-slate-400 text-sm mb-6 font-light">
                       {plan.description}
                     </p>
-
-                    {plan.planKey === "lifetime" && (
-                      <p className="text-blue-400 text-xs font-semibold mb-6 flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-xl w-fit">
-                        🚀 Launching offer for the first 10 customers only
-                      </p>
-                    )}
 
                     <ul className="space-y-3 mb-8">
                       {plan.features.map((feature) => (

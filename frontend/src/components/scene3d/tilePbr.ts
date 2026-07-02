@@ -2,18 +2,19 @@
 
 // Upgraded to use physical properties for hyper-realism
 export const TILE_FLOOR_PBR = {
-  roughness: 0.85,       // Matte — no shine
+  roughness: 0.8,       // Matte finish to completely prevent specular glare
   metalness: 0.0,
-  envMapIntensity: 0.0,  // No environment reflection
-  clearcoat: 0.0,        // No clearcoat gloss
-  clearcoatRoughness: 1.0,
+  envMapIntensity: 0.0,  // Disabled
+  clearcoat: 0.0,        // Disabled
+  clearcoatRoughness: 0.0,
 } as const;
 
 export const TILE_WALL_PBR = {
-  roughness: 0.85, 
+  roughness: 0.8, 
   metalness: 0.0,
   envMapIntensity: 0.0,
   clearcoat: 0.0,
+  clearcoatRoughness: 0.0,
 } as const;
 
 export const TILE_MATTE_PBR = {

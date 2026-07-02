@@ -75,7 +75,7 @@ def create_payment_subscription(
 
     try:
         # Assuming plan_id exists on Razorpay Dashboard. Hardcoded fallback if not.
-        plan_id = "plan_T4eZA8xBSR0a4S" # You must replace this with your actual Razorpay Plan ID
+        plan_id = "plan_T8cJjsqLdPOwcr" # You must replace this with your actual Razorpay Plan ID
         sub = create_subscription(plan_id, current_user.id)
         return {
             "subscription_id": sub["id"],
