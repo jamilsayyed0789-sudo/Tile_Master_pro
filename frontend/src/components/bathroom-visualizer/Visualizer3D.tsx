@@ -55,13 +55,13 @@ function SplitPlane({
   rotationOffset = 0,
   isFloorPlane = false
 }: SplitPlaneProps) {
-  const getTileUrl = (type: 'wall' | 'floor' | 'accent') => {
+  const getTileUrl = (type: 'wall' | 'floor' | 'accent' | 'horizontal_stripes') => {
     if (type === 'wall') return wallTileUrl;
     if (type === 'floor') return floorTileUrl;
     return accentTileUrl || wallTileUrl;
   };
 
-  const getIsFloor = (type: 'wall' | 'floor' | 'accent') => {
+  const getIsFloor = (type: 'wall' | 'floor' | 'accent' | 'horizontal_stripes') => {
     if (isFloorPlane) return true;
     return type === 'floor';
   };
