@@ -1344,7 +1344,7 @@ function LuxuryRoom({
             link.href = URL.createObjectURL(blob);
             link.click();
           },
-          (error) => {
+          (error: any) => {
             console.error('GLTF Export failed', error);
           },
           { binary: true } // Creates a standalone binary file
