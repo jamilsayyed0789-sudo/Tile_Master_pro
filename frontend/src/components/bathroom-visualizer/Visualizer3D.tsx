@@ -1330,6 +1330,7 @@ function LuxuryRoom({
 
     const handleExportGLB = () => {
       // Dynamically import GLTFExporter to prevent server-side rendering crashes
+      // @ts-ignore - Vercel strict mode cannot find types for this three jsm module
       import('three/examples/jsm/exporters/GLTFExporter').then(({ GLTFExporter }) => {
         const exporter = new GLTFExporter();
         
