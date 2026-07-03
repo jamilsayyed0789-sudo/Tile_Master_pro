@@ -33,7 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 
 const threeDItems = [
-  { name: "2D Bathroom Visualizer", path: "/bathroom-visualizer", icon: Image },
+  { name: "3D Bathroom Layout Visualizer", path: "/bathroom-visualizer", icon: Image },
   { name: "3D Room", path: "/room-previewer", icon: Rotate3d },
   { name: "3D Bathroom", path: "/bathroom-3d", icon: ShowerHead },
   { name: "3D Kitchen", path: "/kitchen-3d", icon: CookingPot },
