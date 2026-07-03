@@ -1,10 +1,10 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import TemplateGallery from '@/components/bathroom-visualizer/TemplateGallery';
 import TileSelector from '@/components/bathroom-visualizer/TileSelector';
 import VisualizerRenderer from '@/components/bathroom-visualizer/VisualizerRenderer';
 import { TemplateMetadata } from '@/types/visualizer';
-import { Download, RefreshCcw, Box } from 'lucide-react';
+import { Download, RefreshCcw, Box, Maximize2, Minimize2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import AuthGuard from '@/components/AuthGuard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -18,6 +18,37 @@ export default function BathroomVisualizerPage() {
   const [wallTileUrl, setWallTileUrl] = useState<string | null>(null);
   const [floorTileUrl, setFloorTileUrl] = useState<string | null>(null);
   const [accentTileUrl, setAccentTileUrl] = useState<string | null>(null);
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const visualizerRef = useRef<HTMLDivElement>(null);
+
+  const toggleShowroomView = async () => {
+    try {
+      if (!isTheaterMode) {
+        if (visualizerRef.current) {
+          await visualizerRef.current.requestFullscreen();
+        }
+        setIsTheaterMode(true);
+      } else {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        setIsTheaterMode(false);
+      }
+    } catch (err) {
+      console.error("Fullscreen err:", err);
+      setIsTheaterMode(!isTheaterMode);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsTheaterMode(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const layouts = [
     { id: 'striped_center_column', name: 'Striped Center Column', description: 'Center column with alternating horizontal stripes' },
@@ -107,8 +138,25 @@ export default function BathroomVisualizerPage() {
           </div>
 
           {/* CENTER: 3D Renderer */}
-          <div className="flex-1 bg-neutral-900 border border-white/10 rounded-2xl p-4 flex flex-col relative overflow-hidden">
-            <h2 className="text-xl font-bold text-white mb-4">3D Visualizer: {layouts.find(l => l.id === layoutId)?.name}</h2>
+          <div ref={visualizerRef} className="flex-1 bg-neutral-900 border border-white/10 rounded-2xl p-4 flex flex-col relative overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">3D Visualizer: {layouts.find(l => l.id === layoutId)?.name}</h2>
+              <button
+                onClick={toggleShowroomView}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
+                  isTheaterMode
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
+                    : 'bg-neutral-600 text-neutral-400 border-neutral-900 hover:text-white hover:border-neutral-850'
+                }`}
+                title={isTheaterMode ? "Exit Fullscreen Showroom Mode" : "Enter Showroom Mode (Full Width)"}
+              >
+                {isTheaterMode ? (
+                  <><Minimize2 className="w-3.5 h-3.5" /><span>Standard View</span></>
+                ) : (
+                  <><Maximize2 className="w-3.5 h-3.5" /><span>Showroom View</span></>
+                )}
+              </button>
+            </div>
             
             <div className="flex-1 relative bg-black/50 rounded-xl overflow-hidden shadow-inner">
               <ErrorBoundary>

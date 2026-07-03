@@ -574,6 +574,26 @@ export default function Kitchen3DPage() {
   const [showInterior, setShowInterior] = useState(true);
   const interactionTimer = useRef<any>(undefined);
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const visualizerRef = useRef<HTMLDivElement>(null);
+
+  const toggleShowroomView = async () => {
+    try {
+      if (!isTheaterMode) {
+        if (visualizerRef.current) {
+          await visualizerRef.current.requestFullscreen();
+        }
+        setIsTheaterMode(true);
+      } else {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        setIsTheaterMode(false);
+      }
+    } catch (err) {
+      console.error("Fullscreen err:", err);
+      setIsTheaterMode(!isTheaterMode);
+    }
+  };
 
   const hotspots: HotspotDef[] = useMemo(() => [
     { id: 'floor', position: [roomWidth / 2, 0.02, roomLength / 2], label: 'Floor' },
@@ -608,10 +628,15 @@ export default function Kitchen3DPage() {
   };
 
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      if (!document.fullscreenElement) {
+        setIsTheaterMode(false);
+      }
+    };
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
+  }, [setIsTheaterMode]);
 
   // Read pending texture from storage
   useEffect(() => {
@@ -927,7 +952,7 @@ export default function Kitchen3DPage() {
         </div>
 
         <div className={`transition-all duration-500 ${isTheaterMode ? 'lg:col-span-12' : 'lg:col-span-9'}`}>
-          <div className="glass-card rounded-[2rem] border border-white/5 p-4 shadow-2xl overflow-hidden flex flex-col" style={{ height: isTheaterMode ? '750px' : '600px' }}>
+          <div ref={visualizerRef} className="glass-card rounded-[2rem] border border-white/5 p-4 shadow-2xl overflow-hidden flex flex-col" style={{ height: isTheaterMode ? '750px' : '600px' }}>
             {/* Viewport Header Controls */}
             <div className="flex justify-between items-center pb-3 border-b border-white/5 shrink-0">
               <div className="flex items-center gap-2">
@@ -994,7 +1019,7 @@ export default function Kitchen3DPage() {
                   )}
                 </button>
                 <button
-                  onClick={() => setIsTheaterMode(!isTheaterMode)}
+                  onClick={toggleShowroomView}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     isTheaterMode
                       ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
