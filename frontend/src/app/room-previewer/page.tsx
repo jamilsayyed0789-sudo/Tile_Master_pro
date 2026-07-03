@@ -369,6 +369,35 @@ export default function RoomPreviewer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [visualizerSize, setVisualizerSize] = useState({ width: 480, height: 360 });
 
+  const toggleShowroomView = async () => {
+    try {
+      if (!isTheaterMode) {
+        if (visualizerRef.current) {
+          await visualizerRef.current.requestFullscreen();
+        }
+        setIsTheaterMode(true);
+      } else {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+        setIsTheaterMode(false);
+      }
+    } catch (err) {
+      console.error("Fullscreen err:", err);
+      setIsTheaterMode(!isTheaterMode);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsTheaterMode(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [setIsTheaterMode]);
+
   // Textures for Three.js 3D room (not persisted - derived from blob URLs)
   const [floorTex, setFloorTex] = useState<THREE.Texture | null>(null);
   const [skirtTex3d, setSkirtTex3d] = useState<THREE.Texture | null>(null);
@@ -1300,7 +1329,7 @@ export default function RoomPreviewer() {
                 )}
                 {/* Showroom / Theater Mode Button */}
                 <button
-                  onClick={() => setIsTheaterMode(!isTheaterMode)}
+                  onClick={toggleShowroomView}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 ${
                     isTheaterMode
                       ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20 shadow-md shadow-blue-500/5'
