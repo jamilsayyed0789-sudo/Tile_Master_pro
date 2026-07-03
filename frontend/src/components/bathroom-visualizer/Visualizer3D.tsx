@@ -1337,7 +1337,7 @@ function LuxuryRoom({
         // Export the scene structure as binary GLB
         exporter.parse(
           scene,
-          (gltf) => {
+          (gltf: any) => {
             const blob = new Blob([gltf as ArrayBuffer], { type: 'application/octet-stream' });
             const link = document.createElement('a');
             link.download = `bathroom-3D-model-${layoutId}.glb`;
