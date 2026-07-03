@@ -205,8 +205,8 @@ function Room3D({
   wallTileUrl,
   floorTileUrl,
   accentTileUrl,
-  tileW,
-  tileH
+  tileW = 2,
+  tileH = 2
 }: Visualizer3DProps) {
   const roomW = 10;
   const roomL = 12;
