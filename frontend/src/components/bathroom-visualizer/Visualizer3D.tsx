@@ -1031,7 +1031,7 @@ function HorizontalStripedPlane({
   return (
     <mesh position={position} rotation={new THREE.Euler(...rotation)} castShadow receiveShadow>
       <planeGeometry args={args} />
-      <meshStandardMaterial 
+      <meshPhysicalMaterial 
         map={activeTex}
         color={activeTex ? "#ffffff" : "#dddddd"}
         roughness={TILE_WALL_PBR.roughness}
@@ -1135,7 +1135,7 @@ function DiagonalStripedPlane({
   return (
     <mesh position={position} rotation={new THREE.Euler(...rotation)} castShadow receiveShadow>
       <planeGeometry args={args} />
-      <meshStandardMaterial 
+      <meshPhysicalMaterial 
         map={activeTex}
         color={activeTex ? "#ffffff" : "#dddddd"}
         roughness={TILE_WALL_PBR.roughness}
@@ -1193,7 +1193,7 @@ function TexturedPlane({
   return (
     <mesh position={position} rotation={finalRotation} castShadow receiveShadow>
       <planeGeometry args={args} />
-      <meshStandardMaterial 
+      <meshPhysicalMaterial 
         map={activeTex}
         color={url ? "#ffffff" : "#dddddd"}
         roughness={pbr.roughness}
