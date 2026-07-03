@@ -832,7 +832,7 @@ function useRepeatingTexture(url: string | null, repeatX: number, repeatY: numbe
     if (!ctx) return null;
 
     // Draw tile image
-    ctx.drawImage(tex.image, 0, 0, wPx, hPx);
+    ctx.drawImage(tex.image as CanvasImageSource, 0, 0, wPx, hPx);
 
     // Draw 2mm black epoxy grout border
     const groutPx = 2 * (scale / 304.8); // 2mm in pixels
@@ -887,7 +887,7 @@ function useHerringboneTexture(url: string | null, wallW: number, wallH: number,
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(Math.PI / 4);
-        ctx.drawImage(tex.image, -L / 2, -W / 2, L, W);
+        ctx.drawImage(tex.image as CanvasImageSource, -L / 2, -W / 2, L, W);
         ctx.strokeStyle = "#050505";
         ctx.lineWidth = groutPx;
         ctx.strokeRect(-L / 2, -W / 2, L, W);
@@ -897,7 +897,7 @@ function useHerringboneTexture(url: string | null, wallW: number, wallH: number,
         ctx.save();
         ctx.translate(x + stepX / 2, y + stepY / 2);
         ctx.rotate(-Math.PI / 4);
-        ctx.drawImage(tex.image, -L / 2, -W / 2, L, W);
+        ctx.drawImage(tex.image as CanvasImageSource, -L / 2, -W / 2, L, W);
         ctx.strokeStyle = "#050505";
         ctx.lineWidth = groutPx;
         ctx.strokeRect(-L / 2, -W / 2, L, W);
@@ -938,7 +938,7 @@ function useMosaicTexture(url: string | null, floorW: number, floorH: number) {
 
     for (let x = 0; x < canvas.width; x += size) {
       for (let y = 0; y < canvas.height; y += size) {
-        ctx.drawImage(tex.image, x, y, size, size);
+        ctx.drawImage(tex.image as CanvasImageSource, x, y, size, size);
         ctx.strokeStyle = "#050505";
         ctx.lineWidth = groutPx;
         ctx.strokeRect(x, y, size, size);
@@ -987,7 +987,7 @@ function useHorizontalStripesTexture(
     for (let y = canvas.height - stripePx; y >= -stripePx; y -= stripePx) {
       const tex = isAccent ? texAccent : texWall;
       for (let x = 0; x < canvas.width; x += W) {
-        ctx.drawImage(tex.image, x, y, W, stripePx);
+        ctx.drawImage(tex.image as CanvasImageSource, x, y, W, stripePx);
         
         const groutPx = 2 * (scale / 304.8);
         ctx.strokeStyle = "#050505";
