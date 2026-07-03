@@ -1094,7 +1094,7 @@ function useDiagonalStripesTexture(
       const staggerX = (rowIdx % 2 === 0) ? 0 : W / 2;
 
       for (let x = startX - staggerX; x < endX; x += W) {
-        ctx.drawImage(img, x, y, W, H);
+        ctx.drawImage(img as CanvasImageSource, x, y, W, H);
         ctx.strokeStyle = "#050505";
         ctx.lineWidth = groutPx;
         ctx.strokeRect(x, y, W, H);
