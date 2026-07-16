@@ -48,6 +48,15 @@ export function buildTileUrl(path: string): string {
   if (resultUrl.includes('/api/local/image')) {
     try {
       const urlObj = new URL(resultUrl, 'http://dummy.com');
+      
+      // Attempt to append token synchronously if available
+      if (typeof localStorage !== 'undefined') {
+        const token = localStorage.getItem('sync_auth_token');
+        if (token) {
+          urlObj.searchParams.set('token', token);
+        }
+      }
+      
       return `/api/local/image${urlObj.search}`;
     } catch (e) {
       return resultUrl;

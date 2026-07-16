@@ -14,7 +14,15 @@ export const getToken = async (): Promise<string | null> => {
   const { createClient } = await import("@/utils/supabase/client");
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
+  
+  const token = session?.access_token || null;
+  if (token) {
+    localStorage.setItem("sync_auth_token", token);
+  } else {
+    localStorage.removeItem("sync_auth_token");
+  }
+  
+  return token;
 };
 
 export const fetchWithAuth = async <T = any>(

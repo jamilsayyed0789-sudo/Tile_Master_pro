@@ -248,31 +248,60 @@ export function texturedPaintMat(color: string) {
   });
 }
 
-export function flutedPanelMat(color: string) {
-  return cached(`fluted-panel-${color}`, () => {
-    // Generate a strong vertical striped bump map for fluted texture
+export function backlitGroovedMarbleMat() {
+  return cached(`backlit-grooved-marble`, () => {
+    // Generate the criss-crossing grooved pattern
     const c = document.createElement("canvas");
-    c.width = 512; c.height = 512;
+    c.width = 1024; c.height = 1024;
     const ctx = c.getContext("2d")!;
-    for (let x = 0; x < 512; x++) {
-      // create a ribbed gradient
-      const v = Math.sin((x / 512) * Math.PI * 40); // 20 ribs
-      const intensity = Math.floor(((v + 1) / 2) * 255);
-      ctx.fillStyle = `rgb(${intensity},${intensity},${intensity})`;
-      ctx.fillRect(x, 0, 1, 512);
+    
+    // Fill background with black (no emission)
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, 1024, 1024);
+    
+    // Draw the glowing grooves (white)
+    ctx.fillStyle = "#ffffff";
+    
+    // Create an irregular grid pattern
+    const lineCount = 12;
+    for (let i = 0; i < lineCount; i++) {
+      // Horizontal lines
+      const y = (i / lineCount) * 1024 + (Math.random() * 40 - 20);
+      ctx.fillRect(0, y, 1024, 4); // 4px thick glow
+      
+      // Vertical lines
+      const x = (i / lineCount) * 1024 + (Math.random() * 40 - 20);
+      ctx.fillRect(x, 0, 4, 1024);
     }
+    
+    // Add some random staggered lines to match the reference's broken grid look
+    for (let i = 0; i < 20; i++) {
+      if (Math.random() > 0.5) {
+        // Short horizontal segment
+        const y = Math.random() * 1024;
+        const x = Math.random() * 1024;
+        ctx.fillRect(x, y, Math.random() * 300 + 100, 4);
+      } else {
+        // Short vertical segment
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        ctx.fillRect(x, y, 4, Math.random() * 300 + 100);
+      }
+    }
+
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(4, 1);
+    tex.repeat.set(4, 2);
     tex.needsUpdate = true;
 
     return new THREE.MeshPhysicalMaterial({
-      color,
-      bumpMap: tex,
-      bumpScale: 0.15, // strong 3d effect
-      roughness: 0.6,
-      metalness: 0.1,
-      clearcoat: 0.1,
+      color: "#EAE3D8", // Warm beige travertine base
+      roughness: 0.2, // Shiny like marble
+      metalness: 0.05,
+      clearcoat: 0.5,
+      emissive: "#ffdfa0", // Warm golden glow
+      emissiveMap: tex,
+      emissiveIntensity: 2.5, // Bright glow
     });
   });
 }

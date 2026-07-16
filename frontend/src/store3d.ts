@@ -159,7 +159,7 @@ interface WallElevationState {
 
 const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomWidth' | 'setIs3DMode' | 'setIsTheaterMode' | 'setGroutWidth' | 'setGroutColor' | 'setSelectedPattern' | 'setSkirtingColor' | 'setSkirtingHeight' | 'setSkirtingUseTexture' | 'setSizeUnit' | 'setTileWidthInput' | 'setTileLengthInput' | 'setBookmatchEnabled' | 'setUploadedFileName' | 'setSelectedStyleId' | 'setWastagePercent' | 'setTilesPerBoxInput' | 'setPricePerBox' | 'setClientName' | 'setShopName' | 'setLaborCost' | 'setWallColor' | 'reset'> = {
   roomLength: 18,
-  roomWidth: 16,
+  roomWidth: 14,
   is3DMode: true,
   isTheaterMode: false,
   groutWidth: 3,
@@ -173,14 +173,14 @@ const defaultRoomPreviewer: Omit<RoomPreviewerState, 'setRoomLength' | 'setRoomW
   tileLengthInput: '24',
   bookmatchEnabled: false,
   uploadedFileName: '',
-  selectedStyleId: 'italian-marble',
+  selectedStyleId: 'travertine',
   wastagePercent: 8,
   tilesPerBoxInput: '4',
   pricePerBox: 650,
   clientName: '',
   shopName: 'Marble Palace & Tiles',
   laborCost: 15,
-  wallColor: '#e5e7eb',
+  wallColor: '#E8E2D8',
 };
 
 const defaultBathroom3D: Omit<Bathroom3DState, 'setRunningFeet' | 'setWallHeight' | 'setRoomLength' | 'setRoomWidth' | 'setTileSize' | 'setGroutWidth' | 'setGroutColor' | 'setWastagePercent' | 'setPricePerBox' | 'setShowerSplitMode' | 'setIsTheaterMode' | 'setStripEnabled' | 'setStripColor' | 'setStripWidthMm' | 'setStripInterval' | 'setBookmatchEnabled' | 'setShower1OffsetY' | 'setShower2OffsetY' | 'setSlotOrder' | 'setSlotRows' | 'setShowerWidth' | 'setShowerDepth' | 'setShowerHeight' | 'setToiletScale' | 'setToiletXOffset' | 'setToiletZOffset' | 'setToiletRotY' | 'reset'> = {
@@ -269,7 +269,7 @@ export const useRoomPreviewerStore = create<RoomPreviewerState>()(
       reset: () => set(defaultRoomPreviewer),
     }),
     {
-      name: '3d-room-previewer',
+      name: '3d-room-previewer-v3',
       storage: createJSONStorage(() => sessionStorage),
     }
   )

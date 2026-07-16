@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db, SessionLocal
+from app.dependencies import get_current_user, TokenUser
 from app.models.catalog import TileCatalog
 from app.schemas.catalog import CatalogUploadResponse, TileCatalogResponse, TileSearchResult
 from app.services.catalog_service import (
@@ -86,7 +87,7 @@ def extract_ai_vision(payload: VisionRequest):
         # Return fallback empty data instead of crashing
         return {"tileName": "", "tileNumber": "", "tileSize": "", "finish": "", "color": ""}
 
-def process_catalog_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None):
+def process_catalog_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None, tenant_id: str = "demo-user"):
     import time
     start = time.time()
     try:
@@ -107,7 +108,7 @@ def process_catalog_background(pdf_bytes: bytes, catalog_name: str, settings: Op
         logger.error(f"Background processing of {catalog_name} failed: {e}", exc_info=True)
 
 
-def process_template_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None):
+def process_template_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None, tenant_id: str = "demo-user"):
     import time
     start = time.time()
     try:
@@ -122,12 +123,14 @@ def process_template_background(pdf_bytes: bytes, catalog_name: str, settings: O
         try:
             to_insert = []
             for td in tiles:
+                td["tenant_id"] = tenant_id
                 if not td.get("tile_number"):
                     to_insert.append(TileCatalog(**td))
                     continue
                 existing = db.query(TileCatalog).filter(
                     TileCatalog.tile_number == td["tile_number"],
                     TileCatalog.catalog_name == catalog_name,
+                    TileCatalog.tenant_id == tenant_id,
                 ).first()
                 if not existing:
                     to_insert.append(TileCatalog(**td))
@@ -144,7 +147,7 @@ def process_template_background(pdf_bytes: bytes, catalog_name: str, settings: O
         logger.error(f"Template processing of {catalog_name} failed: {e}", exc_info=True)
 
 
-def process_scanned_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None):
+def process_scanned_background(pdf_bytes: bytes, catalog_name: str, settings: Optional[dict] = None, tenant_id: str = "demo-user"):
     import time
     start = time.time()
     try:
@@ -277,6 +280,7 @@ async def upload_catalog(
     file: UploadFile = File(...),
     use_template: Optional[bool] = Form(False),
     settings_json: Optional[str] = Form(None),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
@@ -308,7 +312,7 @@ async def upload_catalog(
                 except json.JSONDecodeError:
                     raise HTTPException(status_code=400, detail="Invalid settings_json format")
             
-            t = threading.Thread(target=process_template_background, args=(pdf_bytes, catalog_name, settings), daemon=True)
+            t = threading.Thread(target=process_template_background, args=(pdf_bytes, catalog_name, settings, current_user.id), daemon=True)
             mode = "template"
         else:
             detected_type = _detect_pdf_type(pdf_bytes)
@@ -322,13 +326,13 @@ async def upload_catalog(
                     raise HTTPException(status_code=400, detail="Invalid settings_json format")
 
             if detected_type == "template":
-                t = threading.Thread(target=process_template_background, args=(pdf_bytes, catalog_name, settings), daemon=True)
+                t = threading.Thread(target=process_template_background, args=(pdf_bytes, catalog_name, settings, current_user.id), daemon=True)
                 mode = "template-auto"
             elif detected_type == "scanned":
-                t = threading.Thread(target=process_scanned_background, args=(pdf_bytes, catalog_name, settings), daemon=True)
+                t = threading.Thread(target=process_scanned_background, args=(pdf_bytes, catalog_name, settings, current_user.id), daemon=True)
                 mode = "scanned-ocr"
             else:
-                t = threading.Thread(target=process_catalog_background, args=(pdf_bytes, catalog_name, settings), daemon=True)
+                t = threading.Thread(target=process_catalog_background, args=(pdf_bytes, catalog_name, settings, current_user.id), daemon=True)
                 mode = "digital"
 
         t.start()
@@ -374,9 +378,11 @@ def search_tiles(
     q: str = Query(..., min_length=1, description="Search query for tile name or number"),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     query = (
         db.query(TileCatalog)
+        .filter(TileCatalog.tenant_id == current_user.id)
         .filter(
             TileCatalog.tile_name.ilike(f"%{q}%")
             | TileCatalog.tile_number.ilike(f"%{q}%")
@@ -403,8 +409,9 @@ def list_tiles(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
-    query = db.query(TileCatalog)
+    query = db.query(TileCatalog).filter(TileCatalog.tenant_id == current_user.id)
     if catalog:
         query = query.filter(TileCatalog.catalog_name.ilike(f"%{catalog}%"))
     # Newest first so freshly extracted tiles appear at the top
@@ -412,8 +419,8 @@ def list_tiles(
 
 
 @catalog_router.get("/catalogs")
-def list_catalogs(db: Session = Depends(get_db)):
-    results = db.query(TileCatalog.catalog_name).distinct().all()
+def list_catalogs(db: Session = Depends(get_db), current_user: TokenUser = Depends(get_current_user)):
+    results = db.query(TileCatalog.catalog_name).filter(TileCatalog.tenant_id == current_user.id).distinct().all()
     return {"catalogs": [r.catalog_name for r in results if r.catalog_name]}
 
 
@@ -422,15 +429,16 @@ def clear_catalog(
     background_tasks: BackgroundTasks,
     catalog: Optional[str] = Query(None, description="Delete only this catalog"),
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     try:
         from app.routers.local_storage import _get_storage_path
         import os
         
         if catalog:
-            tiles = db.query(TileCatalog).filter(TileCatalog.catalog_name == catalog).all()
+            tiles = db.query(TileCatalog).filter(TileCatalog.tenant_id == current_user.id, TileCatalog.catalog_name == catalog).all()
         else:
-            tiles = db.query(TileCatalog).all()
+            tiles = db.query(TileCatalog).filter(TileCatalog.tenant_id == current_user.id).all()
 
         count = 0
         cloudinary_urls_to_delete = []
@@ -477,8 +485,8 @@ REVIEW_PREFIXES = ("Tile Page", "Full Page", "PAGE-", "CELL-")
 
 
 @catalog_router.get("/review")
-def list_needs_review(db: Session = Depends(get_db)):
-    tiles = db.query(TileCatalog).order_by(TileCatalog.catalog_name, TileCatalog.page_number).all()
+def list_needs_review(db: Session = Depends(get_db), current_user: TokenUser = Depends(get_current_user)):
+    tiles = db.query(TileCatalog).filter(TileCatalog.tenant_id == current_user.id).order_by(TileCatalog.catalog_name, TileCatalog.page_number).all()
     flagged = []
     for t in tiles:
         needs_review = (
@@ -512,8 +520,9 @@ def update_tile(
     tile_id: int,
     body: TileUpdateBody,
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
-    tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id).first()
+    tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id, TileCatalog.tenant_id == current_user.id).first()
     if not tile:
         raise HTTPException(status_code=404, detail="Tile not found")
     if body.tile_name is not None:
@@ -583,6 +592,7 @@ def _safe_delete_image(relative_path: Optional[str], tile_id: int) -> bool:
 def delete_tile_by_id(
     tile_id: int,
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     """
     Delete a single tile by its database ID.
@@ -594,7 +604,7 @@ def delete_tile_by_id(
     logger.info(f"[DELETE TILE {tile_id}] Starting delete request.")
 
     # ── 1. Find tile in DB ────────────────────────────────────────────────────
-    tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id).first()
+    tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id, TileCatalog.tenant_id == current_user.id).first()
     if not tile:
         logger.warning(f"[DELETE TILE {tile_id}] Tile not found in DB.")
         raise HTTPException(status_code=404, detail=f"Tile with ID {tile_id} not found.")
@@ -641,6 +651,7 @@ class BatchDeleteRequest(BaseModel):
 def delete_tiles_batch(
     request: BatchDeleteRequest,
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     """
     Delete multiple tiles by their database IDs.
@@ -652,7 +663,7 @@ def delete_tiles_batch(
     errors = []
 
     for tile_id in request.tile_ids:
-        tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id).first()
+        tile = db.query(TileCatalog).filter(TileCatalog.id == tile_id, TileCatalog.tenant_id == current_user.id).first()
         if not tile:
             errors.append(f"Tile {tile_id} not found")
             continue
@@ -686,10 +697,11 @@ def delete_tile(
     tile_number: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    current_user: TokenUser = Depends(get_current_user),
 ):
     try:
         # Delete all tiles matching this number using the new safe helper
-        tiles = db.query(TileCatalog).filter(TileCatalog.tile_number == tile_number).all()
+        tiles = db.query(TileCatalog).filter(TileCatalog.tile_number == tile_number, TileCatalog.tenant_id == current_user.id).all()
         if not tiles:
             raise HTTPException(status_code=404, detail="Tile not found")
 

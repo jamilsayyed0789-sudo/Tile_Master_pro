@@ -8,6 +8,7 @@ class TileCatalog(Base):
     __tablename__ = "tile_catalog"
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(String(100), index=True, nullable=True)
     tile_name = Column(String(255), index=True)
     tile_number = Column(String(100), index=True)
     tile_size = Column(String(50), nullable=True)

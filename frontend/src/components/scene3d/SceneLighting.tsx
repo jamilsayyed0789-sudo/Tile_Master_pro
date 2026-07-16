@@ -58,14 +58,15 @@ export default function SceneLighting({
       {/* High Quality HDRI Environment for realistic reflections and ambient light */}
       <Environment preset={preset.preset} environmentIntensity={env} />
       
-      <ambientLight intensity={amb * 0.6} color="#f8f8f8" />
-      <hemisphereLight args={["#e8e8e8", "#b0b0b0", 0.25]} />
+      {/* Warm ambient light (2700K-3000K) */}
+      <ambientLight intensity={amb * 0.7} color="#FFEAC2" />
+      <hemisphereLight args={["#FFF0DB", "#CBB8A5", 0.3]} />
       
       {/* Primary Directional Sunlight with Soft Shadows */}
       <directionalLight
         position={sun}
-        intensity={0.55}
-        color="#fff8f4"
+        intensity={0.65}
+        color="#FFEDD9"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-roomW * 1.5}
@@ -78,9 +79,9 @@ export default function SceneLighting({
         shadow-radius={6}
       />
       
-      {/* Fill Lights — slightly warm neutral */}
-      <directionalLight position={[-roomW * 0.5, 8, -roomL * 0.5]} intensity={0.15} color="#f0f0f0" />
-      <pointLight position={[cx, 8, cz]} intensity={0.12} color="#f5f5f0" distance={40} decay={2} />
+      {/* Fill Lights — Warm neutral */}
+      <directionalLight position={[-roomW * 0.5, 8, -roomL * 0.5]} intensity={0.2} color="#FFEAD2" />
+      <pointLight position={[cx, 8, cz]} intensity={0.15} color="#FFEDD9" distance={40} decay={2} />
       
       {sceneKind === "bathroom" && (
         <pointLight position={[roomW * 0.75, 5, roomL * 0.2]} intensity={0.15} color="#e8f4ff" distance={15} decay={2} />

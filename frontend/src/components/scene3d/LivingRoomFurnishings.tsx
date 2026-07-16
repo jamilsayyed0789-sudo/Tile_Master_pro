@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import * as THREE from "three";
-import { useTexture } from "@react-three/drei";
+import { useTexture, useGLTF } from "@react-three/drei";
 import {
   woodMat,
   fabricMat,
@@ -17,6 +17,31 @@ import {
 import PremiumModel from "./PremiumModel";
 
 type Props = { roomW: number; roomL: number; roomH: number };
+
+function Curtain({ x, y, z, rotY = 0, scale = 1.0 }: { x: number, y: number, z: number, rotY?: number, scale?: number | [number, number, number] }) {
+  const { scene } = useGLTF("/models/hall/Curtain.glb");
+  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
+  const clone = useMemo(() => {
+    const c = scene.clone();
+    c.traverse((node: any) => {
+      if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+        // Apply light brown material
+        if (node.material) {
+          node.material = node.material.clone();
+          node.material.color = new THREE.Color("#A88E75"); // Light brown
+          node.material.roughness = 0.8;
+          node.material.metalness = 0.1;
+          node.material.side = THREE.DoubleSide;
+        }
+      }
+    });
+    return c;
+  }, [scene]);
+
+  return <primitive object={clone} position={[x, y, z]} rotation={[0, rotY, 0]} scale={s} />;
+}
 
 function WindowWall({
   x,
@@ -148,103 +173,183 @@ function ProceduralLShapedSofa() {
 function LShapedSofa({ x, z, rotY, scale = 1.0 }: { x: number; z: number; rotY: number; scale?: number }) {
   return (
     <PremiumModel 
-      url="/models/hall/sofa.glb?v=1.0.5" 
+      url="/models/hall/base.glb" 
       position={[x, 0, z]} 
       rotation={[0, rotY, 0]}
       scale={scale}
       center={false}
+      colorOverrides={{ '*': '#F3EEE4' }}
       fallback={null}
     />
   );
 }
 
-function ProceduralTVUnit({ wallW }: { wallW: number }) {
-  const cabinet = woodMat("wood-oak", [2, 1]);
-  const panel = paintMat("#c8a97a", 0.4);
-  const slat = woodMat("wood-oak", [3, 1], 0.5);
-  const screen = emissiveMat("#0a1420", 0.9);
-  const unitW = Math.min(3.5, wallW * 0.45);
-  return (
-    <group>
-      <mesh position={[0, 2.2, -0.06]} material={panel} castShadow>
-        <boxGeometry args={[unitW + 0.8, 3.5, 0.06]} />
-      </mesh>
-      {[-0.35, -0.12, 0.12, 0.35].map((ox, i) => (
-        <mesh key={i} position={[ox * unitW, 2.5, -0.02]} material={slat} castShadow>
-          <boxGeometry args={[0.04, 2.8, 0.02]} />
+function ProceduralBookshelfTVUnit({ wallW }: { wallW: number }) {
+  const charcoalMat = paintMat("#3B3B3B", 0.6); 
+  const walnutMat = woodMat("wood-oak", [2, 1], 0.3);
+  walnutMat.color.set("#4a3018");
+  const goldMat = chromeMat();
+  goldMat.color.set("#d4af37");
+  goldMat.roughness = 0.3;
+
+  const unitW = wallW * 0.45; // Central TV area width
+  const shelfW = 1.0; // Width of each side bookshelf
+  const height = 0.5; // Base cabinet height
+  const depth = 0.45;
+  const overallScale = 1.25; 
+
+  // Procedural books generator
+  const renderBooks = (yPos: number) => {
+    const bookColors = ["#8B0000", "#000080", "#2F4F4F", "#8B4513", "#F5F5DC", "#2E8B57"];
+    const books = [];
+    let currentX = -shelfW / 2 + 0.1;
+    for (let i = 0; i < 6; i++) {
+      const bWidth = 0.05 + Math.random() * 0.05;
+      const bHeight = 0.2 + Math.random() * 0.15;
+      const bDepth = 0.2 + Math.random() * 0.05;
+      const color = bookColors[Math.floor(Math.random() * bookColors.length)];
+      books.push(
+        <mesh key={i} position={[currentX + bWidth / 2, yPos + bHeight / 2, 0.05]} material={paintMat(color, 0.4)} castShadow>
+          <boxGeometry args={[bWidth, bHeight, bDepth]} />
         </mesh>
-      ))}
-      <mesh position={[0, 0.3, -0.02]} material={emissiveMat("#ffd080", 2)}>
-        <boxGeometry args={[unitW + 0.6, 0.03, 0.02]} />
+      );
+      currentX += bWidth + 0.01;
+    }
+    return books;
+  };
+
+  return (
+    <group position={[0, 0.4, 0]} scale={overallScale}>
+      {/* Central TV Cabinet */}
+      <mesh position={[0, height / 2, depth / 2]} material={charcoalMat} castShadow receiveShadow>
+        <boxGeometry args={[unitW, height, depth]} />
       </mesh>
-      <mesh position={[0, 0.35, 0.15]} material={cabinet} castShadow receiveShadow>
-        <boxGeometry args={[unitW, 0.7, 0.45]} />
+      <mesh position={[0, height + 0.01, depth / 2]} material={walnutMat} castShadow receiveShadow>
+        <boxGeometry args={[unitW + 0.04, 0.02, depth + 0.02]} />
       </mesh>
-      <mesh position={[-unitW * 0.3, 0.35, 0.38]} material={chromeMat()} castShadow>
-        <boxGeometry args={[0.02, 0.6, 0.02]} />
+      <mesh position={[0, height - 0.05, depth + 0.01]} material={goldMat} castShadow>
+        <boxGeometry args={[unitW, 0.02, 0.01]} />
       </mesh>
-      <mesh position={[unitW * 0.25, 0.35, 0.38]} material={chromeMat()} castShadow>
-        <boxGeometry args={[0.02, 0.6, 0.02]} />
+
+      {/* Large Flat Screen TV in the center */}
+      <mesh position={[0, height + 1.3, 0.1]} material={paintMat("#111111", 0.1)} castShadow>
+        <boxGeometry args={[unitW * 0.8, unitW * 0.45, 0.05]} />
       </mesh>
-      <mesh position={[0, 1.55, 0.08]} material={panel} castShadow>
-        <boxGeometry args={[unitW * 0.85, unitW * 0.48, 0.05]} />
+      <mesh position={[0, height + 1.3, 0.13]} material={emissiveMat("#0a1420", 0.8)}>
+        <boxGeometry args={[unitW * 0.78, unitW * 0.43, 0.01]} />
       </mesh>
-      <mesh position={[0, 1.55, 0.11]} material={screen}>
-        <planeGeometry args={[unitW * 0.8, unitW * 0.45]} />
-      </mesh>
-      <mesh position={[0, 0.78, 0.12]} material={chromeMat()} castShadow>
-        <boxGeometry args={[0.5, 0.04, 0.2]} />
-      </mesh>
+
+      {/* Left and Right Bookshelves */}
+      {[-1, 1].map((side, idx) => {
+        const shelfCenterX = side * (unitW / 2 + shelfW / 2 + 0.1);
+        const shelfLevels = [height + 0.4, height + 1.2, height + 2.0, height + 2.8];
+        return (
+          <group key={idx}>
+            {/* Bookshelf Backing */}
+            <mesh position={[shelfCenterX, height + 1.6, 0.02]} material={charcoalMat} castShadow>
+              <boxGeometry args={[shelfW, 3.2, 0.04]} />
+            </mesh>
+            {/* Bookshelf Frame Sides */}
+            <mesh position={[shelfCenterX - shelfW / 2, height + 1.6, depth / 2]} material={walnutMat} castShadow>
+              <boxGeometry args={[0.04, 3.2, depth]} />
+            </mesh>
+            <mesh position={[shelfCenterX + shelfW / 2, height + 1.6, depth / 2]} material={walnutMat} castShadow>
+              <boxGeometry args={[0.04, 3.2, depth]} />
+            </mesh>
+            
+            {/* Bookshelf Levels & Books */}
+            {shelfLevels.map((sy, i) => (
+              <group key={i}>
+                <mesh position={[shelfCenterX, sy, depth / 2]} material={walnutMat} castShadow>
+                  <boxGeometry args={[shelfW, 0.04, depth]} />
+                </mesh>
+                {/* Add procedural books on each shelf level */}
+                <group position={[shelfCenterX, sy + 0.02, 0]}>
+                  {renderBooks(0)}
+                </group>
+              </group>
+            ))}
+          </group>
+        );
+      })}
     </group>
   );
 }
 
-function TVUnit({ x, y = 0, z, rotX = 0, rotY, wallW, scale = 1.0 }: { x: number; y?: number; z: number; rotX?: number; rotY: number; wallW: number; scale?: number }) {
+function TVUnit({ x, y = 0, z, rotX = 0, rotY, wallW, scale = 3.0 }: { x: number; y?: number; z: number; rotX?: number; rotY: number; wallW: number; scale?: number }) {
+  const [marbleTex, setMarbleTex] = React.useState<any>(null);
+  
+  React.useEffect(() => {
+    // Dynamically load the user's custom marble image, ONLY apply if it exists
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      '/models/hall/custom_marble_2.jpg', 
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        // Adjust the UV scaling in case the model's UVs are too large/small
+        tex.repeat.set(2, 2);
+        setMarbleTex(tex);
+      },
+      undefined,
+      (err) => {
+        console.warn("Custom marble image not found yet at /models/hall/custom_marble_2.jpg. Falling back to Charcoal solid color.");
+      }
+    );
+  }, []);
+
+  return (
+    <group>
+      <PremiumModel 
+        url="/models/hall/uploads_files_3590708_tv+table.glb" 
+        position={[x, 6, 1.5]} 
+        rotation={[rotX, 11, 0]}
+        scale={scale}
+        center={true}
+        modelScale={1.2}
+        colorOverrides={{
+          'wood': '#4a3018',         // American Walnut
+          'wood 2': '#d4af37',       // Champagne Gold
+          'material.001': '#3B3B3B', // Matte Charcoal Grey
+          'material.002': '#3B3B3B',
+          '*': '#3B3B3B'
+        }}
+        textureOverrides={marbleTex ? {
+          'wood': null,
+          'wood 2': null,
+          'material.001': marbleTex,
+          'material.002': marbleTex,
+          '*': marbleTex // Apply to anything else that was supposed to be charcoal
+        } : undefined}
+        fallback={<ProceduralBookshelfTVUnit wallW={wallW} />}
+      />
+
+      {/* Warm LED Light Wash Behind TV Unit */}
+      <group position={[x, 1.7, 0.15]}>
+        {/* Top Wash */}
+        <pointLight position={[-1.5, 1.2, 0]} color="#FFD1A4" intensity={4} distance={4} decay={1.5} />
+        <pointLight position={[0, 1.2, 0]} color="#FFD1A4" intensity={4} distance={4} decay={1.5} />
+        <pointLight position={[1.5, 1.2, 0]} color="#FFD1A4" intensity={4} distance={4} decay={1.5} />
+        
+        {/* Underglow Wash */}
+        <pointLight position={[-1.5, -1.2, 0.3]} color="#FFD1A4" intensity={3} distance={3} decay={2} />
+        <pointLight position={[0, -1.2, 0.3]} color="#FFD1A4" intensity={3} distance={3} decay={2} />
+        <pointLight position={[1.5, -1.2, 0.3]} color="#FFD1A4" intensity={3} distance={3} decay={2} />
+      </group>
+    </group>
+  );
+}
+
+function NewTVUnit({ x, y = 0, z, rotX = 0, rotY = 0, scale = 1.0 }: { x: number; y?: number; z: number; rotX?: number; rotY?: number; scale?: number }) {
   return (
     <PremiumModel 
-      url="/models/hall/solid_wood_tv_cabinet_1_wood_textures.glb" 
+      url="/models/hall/Today_5602661_TV-unit-1.glb" 
       position={[x, y, z]} 
       rotation={[rotX, rotY, 0]}
       scale={scale}
       center={true}
       modelScale={1.0}
-      fallback={<ProceduralTVUnit wallW={wallW} />}
     />
-  );
-}
-
-function TV({ x, y = 2.6, z = 1.1, scale = 1.0 }: { x: number; y?: number; z?: number; scale?: number }) {
-  const texture = useTexture("/models/hall/tv.png");
-  
-  useMemo(() => {
-    if (texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-    }
-  }, [texture]);
-
-  // tv.glb:
-  // Height: 1.0, Width: 1.697, Depth: 0.151
-  // Scaled by 3.0: Height: 3.0, Width: 5.09, Depth: 0.453
-  // Placing a screen plane slightly in front of the TV's front face:
-  // Y offset centers the plane vertically since model is centered around Y=0.5
-  return (
-    <group position={[x, y, z]} scale={scale}>
-      <PremiumModel 
-        url="/models/hall/tv.glb?v=1.0.2" 
-        position={[0, 0, 0]} 
-        rotation={[0, 0, 0]}
-        scale={1.0}
-        center={false}
-        modelScale={1.0}
-        fallback={null}
-      />
-      {texture && (
-        <mesh position={[0, 0.45, 0.089]} castShadow>
-          <planeGeometry args={[1.81, 1.27]} />
-          <meshBasicMaterial map={texture} transparent={true} />
-        </mesh>
-      )}
-    </group>
   );
 }
 
@@ -304,10 +409,10 @@ function Plant({ x, y = 0, z, scale = 0.002 }: { x: number; y?: number; z: numbe
   );
 }
 
-function CoffeeTable({ x, y = 0, z, rotY = 0, scale = 1.0 }: { x: number; y?: number; z: number; rotY?: number; scale?: number }) {
+function CoffeeTable({ x, y = 0, z, rotY = 0, scale = 0.5 }: { x: number; y?: number; z: number; rotY?: number; scale?: number }) {
   return (
     <PremiumModel 
-      url="/models/hall/vintage_coffee_table_70s_03_freebie.glb" 
+      url="/models/hall/Coffee_table.glb" 
       position={[x, y, z]} 
       rotation={[0, rotY, 0]}
       scale={scale}
@@ -318,15 +423,35 @@ function CoffeeTable({ x, y = 0, z, rotY = 0, scale = 1.0 }: { x: number; y?: nu
   );
 }
 
-function Painting({ x, y, z, rotY, w, h, url }: { x: number; y: number; z: number; rotY: number; w: number; h: number; url: string }) {
-  const texture = useTexture(url);
-  
-  useMemo(() => {
-    if (texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-    }
-  }, [texture]);
+function Sofa2({ x, y = 0, z, rotY = 0, scale = 1.0 }: { x: number; y?: number; z: number; rotY?: number; scale?: number }) {
+  return (
+    <PremiumModel 
+      url="/models/hall/sofa_2.glb" 
+      position={[x, y, z]} 
+      rotation={[0, rotY, 0]}
+      scale={scale}
+      center={true}
+      modelScale={1.0}
+      fallback={null}
+    />
+  );
+}
 
+function DecorativeTable({ x, y = 0, z, rotY = 0, scale = 1.0 }: { x: number; y?: number; z: number; rotY?: number; scale?: number }) {
+  return (
+    <PremiumModel 
+      url="/models/hall/decorative_table.glb" 
+      position={[x, y, z]} 
+      rotation={[0, rotY, 0]}
+      scale={scale}
+      center={true}
+      modelScale={1.0}
+      fallback={null}
+    />
+  );
+}
+
+function Painting({ x, y, z, rotY, w, h }: { x: number; y: number; z: number; rotY: number; w: number; h: number; url: string }) {
   const frame = woodMat("wood-mahogany", [1, 1], 0.45);
   
   return (
@@ -337,10 +462,9 @@ function Painting({ x, y, z, rotY, w, h, url }: { x: number; y: number; z: numbe
       <mesh position={[0, 0, 0.025]} castShadow>
         <planeGeometry args={[w, h]} />
         <meshPhysicalMaterial 
-          map={texture} 
-          roughness={0.2} 
-          envMapIntensity={1.2} 
-          clearcoat={0.3} 
+          color="#eeeeee"
+          roughness={0.8} 
+          clearcoat={0.1} 
         />
       </mesh>
     </group>
@@ -498,6 +622,8 @@ export default function LivingRoomFurnishings({ roomW, roomL, roomH }: Props) {
     <group>
 
 
+      {/* === COMMENTED OUT ORIGINAL HALL FURNITURE === */}
+      {/* 
       <PremiumModel 
         url="/models/hall/carpet.glb?v=1.0.0" 
         position={[cx, 0.008, cz]} 
@@ -507,56 +633,77 @@ export default function LivingRoomFurnishings({ roomW, roomL, roomH }: Props) {
         modelScale={1.0}
         fallback={null}
       />
+      <LShapedSofa x={cx} z={roomL - 3.5} rotY={15} scale={2.3} />
+      <Sofa2 x={cx + 3} y={0} z={cz} scale={2.0} rotY={-Math.PI / 2} />
+      <CoffeeTable x={cx} y={0} z={cz - 1.5} scale={1.8} />
+      <DecorativeTable x={cx - 3} y={0} z={cz - 2} scale={1.5} />
+      <TVUnit x={cx} y={0} z={0.4} rotY={0} wallW={roomW} scale={3.0} />
+      */}
 
-      {/* Loading your sofa.glb! */}
-      <LShapedSofa x={cx} z={roomL - 2.5} rotY={Math.PI} scale={2.3} />
+      {/* ========================================================= */}
+      {/* ADD YOUR CUSTOM LIVING ROOM GLB COMPONENT HERE           */}
+      {/* Example:                                                 */}
+      {/* <PremiumModel                                            */}
+      {/*   url="/models/hall/room.glb"          */}
+      {/*   position={[cx, 0, cz]}                                 */}
+      {/*   scale={1.0}                                            */}
+      {/* />                                                       */}
+      {/* ========================================================= */}
 
-      {/* Loading abstract_book_shelf.glb to the right side of the sofa! */}
-      <AbstractBookshelf x={14}
-       y={3.70} 
-       z={1.5} 
-       rotY={-Math.PI / 4} 
-       scale={1.95} />
 
-      {/* Loading coffee table! */}
-      <CoffeeTable x={cx} y={0.3} z={cz} rotY={0} scale={3.0} />
+      {/* === COMMENTED OUT CHANDELIER === */}
+      {/* 
+      <group position={[cx, roomH - 0.5, cz]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0.4]} castShadow>
+          <torusGeometry args={[0.8, 0.02, 16, 100]} />
+          <meshPhysicalMaterial color="#D4AF37" metalness={1.0} roughness={0.2} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.07, 0.4]}>
+          <torusGeometry args={[0.8, 0.015, 16, 100]} />
+          <meshBasicMaterial color="#FFEAC2" />
+        </mesh>
 
-      {/* Loading your tvunit.glb! */}
-      <TVUnit x={cx} 
-      y={1.50} 
-      z={0.6} 
-      rotX={0} 
-      rotY={0} 
-      wallW={roomW} 
-      scale={0.6} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.4, -0.2, -0.2]} castShadow>
+          <torusGeometry args={[0.8, 0.02, 16, 100]} />
+          <meshPhysicalMaterial color="#D4AF37" metalness={1.0} roughness={0.2} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-0.4, -0.22, -0.2]}>
+          <torusGeometry args={[0.8, 0.015, 16, 100]} />
+          <meshBasicMaterial color="#FFEAC2" />
+        </mesh>
 
-      {/* Loading your tv.glb! */}
-      <TV x={cx}
-       y={2.2} 
-       z={0.1} 
-       scale={3.0} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.4, -0.35, -0.2]} castShadow>
+          <torusGeometry args={[0.8, 0.02, 16, 100]} />
+          <meshPhysicalMaterial color="#D4AF37" metalness={1.0} roughness={0.2} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.4, -0.37, -0.2]}>
+          <torusGeometry args={[0.8, 0.015, 16, 100]} />
+          <meshBasicMaterial color="#FFEAC2" />
+        </mesh>
 
-      {/* Loading wall shelf to the left side of the TV! */}
-      <WallShelf
-       x={cx - 4.8} 
-       y={4.5} 
-       z={0.07} 
-       rotY={0} 
-       modelScale={2.5} />
+        <mesh position={[0, 0.2, 0.4]}>
+          <cylinderGeometry args={[0.005, 0.005, 0.5]} />
+          <meshBasicMaterial color="#333333" />
+        </mesh>
+        <mesh position={[-0.4, 0.12, -0.2]}>
+          <cylinderGeometry args={[0.005, 0.005, 0.65]} />
+          <meshBasicMaterial color="#333333" />
+        </mesh>
+        <mesh position={[0.4, 0.05, -0.2]}>
+          <cylinderGeometry args={[0.005, 0.005, 0.8]} />
+          <meshBasicMaterial color="#333333" />
+        </mesh>
+        
+        <pointLight intensity={0.6} color="#FFEAC2" distance={8} decay={2} position={[0, -0.2, 0]} />
+      </group>
+      */}
 
-      {/* Loading your lamp.glb to the left of TV unit! */}
-      <Lamp x={0.6} y={0} z={1.3} scale={3.5} />
-
-      {/* Loading indoor plant next to the sofa on its left side! */}
-      <Plant x={cx - 3.9} y={0} z={roomL - 4.5} scale={0.003} />
-
-      {/* Painting on the right wall */}
-      <Painting x={roomW - 0.08} y={5.6} z={cz} rotY={-Math.PI / 2} w={2.9} h={6.2} url="/models/hall/art.png.jpg" />
-
-      {/* Opposite painting on the left wall */}
-      <Painting x={0.08} y={5.6} z={cz} rotY={Math.PI / 2} w={2.9} h={6.2} url="/models/hall/flower.jpg?v=1.0.0" />
-
+      {/* === COMMENTED OUT REMAINING HALL FEATURES === */}
+      {/* 
+      <Curtain x={15.5} y={0} z={cz} scale={[0.044, 0.028, 0.02]} rotY={-Math.PI / 2} />
+      <Painting x={0.08} y={5.6} z={cz} rotY={Math.PI / 2} w={2.9} h={6.2} url="/models/hall/art.png.jpg" />
       <CeilingLights roomW={roomW} roomL={roomL} roomH={roomH} />
+      */}
     </group>
   );
 }

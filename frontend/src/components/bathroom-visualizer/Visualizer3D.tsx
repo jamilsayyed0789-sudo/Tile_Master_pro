@@ -2,10 +2,24 @@
 
 import React, { useMemo, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, BakeShadows, useTexture, Environment } from "@react-three/drei";
+import { OrbitControls, BakeShadows, useTexture, Environment, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { TILE_WALL_PBR, TILE_FLOOR_PBR } from "@/components/scene3d/tilePbr";
 import BathroomFurnishings from "@/components/scene3d/BathroomFurnishings";
+import LoadingScreen from "@/components/scene3d/LoadingScreen";
+
+function PlaceholderScene() {
+  return (
+    <group>
+      <Environment preset="city" />
+      <Sparkles count={200} scale={12} size={2} speed={0.4} opacity={0.2} color="#ffffff" />
+      <mesh position={[5, 5, 6]}>
+        <boxGeometry args={[10, 10, 12]} />
+        <meshBasicMaterial color="#111111" wireframe transparent opacity={0.1} />
+      </mesh>
+    </group>
+  );
+}
 
 interface Visualizer3DProps {
   layoutId: string;
@@ -1393,25 +1407,28 @@ function LuxuryRoom({
 
 export default function Visualizer3D(props: Visualizer3DProps) {
   return (
-    <Canvas
-      shadows
-      camera={{ position: [5, 5, 14], fov: 60 }} // Camera start position centered at Y=5
-      gl={{ preserveDrawingBuffer: true, antialias: true }}
-    >
-      <color attach="background" args={["#111111"]} />
-      
-      <React.Suspense fallback={null}>
-        <LuxuryRoom {...props} />
-        <BakeShadows />
-      </React.Suspense>
+    <div className="relative w-full h-full bg-[#111111]">
+      <LoadingScreen />
+      <Canvas
+        shadows
+        camera={{ position: [5, 5, 14], fov: 60 }} // Camera start position centered at Y=5
+        gl={{ preserveDrawingBuffer: true, antialias: true }}
+      >
+        <color attach="background" args={["#111111"]} />
+        
+        <React.Suspense fallback={<PlaceholderScene />}>
+          <LuxuryRoom {...props} />
+          <BakeShadows />
+        </React.Suspense>
 
-      <OrbitControls 
-        makeDefault
-        target={[5, 5, 6]} // Target center of the room at Y=5, Z=6
-        minDistance={2}
-        maxDistance={25}    // Allow zooming out much further
-        maxPolarAngle={Math.PI / 2}
-      />
-    </Canvas>
+        <OrbitControls 
+          makeDefault
+          target={[5, 5, 6]} // Target center of the room at Y=5, Z=6
+          minDistance={2}
+          maxDistance={25}    // Allow zooming out much further
+          maxPolarAngle={Math.PI / 2}
+        />
+      </Canvas>
+    </div>
   );
 }

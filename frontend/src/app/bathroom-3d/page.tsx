@@ -14,6 +14,7 @@ import {
 import SceneLighting from "@/components/scene3d/SceneLighting";
 import BathroomFurnishings from "@/components/scene3d/BathroomFurnishings";
 import CameraController, { CameraPreset } from "@/components/scene3d/CameraController";
+import ClickToFocus from "@/components/scene3d/ClickToFocus";
 import HotspotSystem, { HotspotDef } from "@/components/scene3d/HotspotSystem";
 
 
@@ -977,9 +978,11 @@ export default function Bathroom3DPage() {
               <div ref={canvasRef} className="w-full h-full">
               <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [3, 6.4, 20], fov: 25, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
                 <Suspense fallback={null}>
-                <SceneLighting sceneKind="bathroom" roomW={roomLength} roomL={roomWidth} sunPosition={[roomLength + 4, 10, roomWidth + 2]} />
-                <Room
-                  roomW={roomLength} roomL={roomWidth} roomH={wallHeight}
+                <SceneLighting sceneKind="bathroom" roomW={roomLength} roomL={roomWidth} sunPosition={[roomLength + 6, 12, roomWidth + 2]} />
+              <ClickToFocus>
+                <Bathroom3D 
+                  roomW={roomLength} 
+                  roomL={roomWidth} roomH={wallHeight}
                   tileSize={tileSize}
                   floorTex={floorTex}
                   showerTex1={showerTex1} showerTex2={showerTex2}
@@ -1006,10 +1009,11 @@ export default function Bathroom3DPage() {
                     toiletRotY={toiletRotY}
                   />
                 )}
-                <OrbitControls
+              </ClickToFocus>
+              <OrbitControls
                   makeDefault
                   enableDamping dampingFactor={0.1}
-                  minDistance={3} maxDistance={30}
+                  minDistance={0.5} maxDistance={30}
                   minPolarAngle={Math.PI / 4}
                   maxPolarAngle={Math.PI / 2.05}
                   autoRotate={autoRotate} autoRotateSpeed={0.8}

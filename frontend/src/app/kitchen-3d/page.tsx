@@ -13,6 +13,7 @@ import KitchenFurnishings from "@/components/scene3d/KitchenFurnishings";
 import GlassWall from "@/components/scene3d/GlassWall";
 import { TILE_FLOOR_PBR, TILE_WALL_PBR, INTERIOR_PAINT_PBR, COUNTERTOP_PBR } from "@/components/scene3d/tilePbr";
 import CameraController, { CameraPreset } from "@/components/scene3d/CameraController";
+import ClickToFocus from "@/components/scene3d/ClickToFocus";
 import HotspotSystem, { HotspotDef } from "@/components/scene3d/HotspotSystem";
 import { woodMat } from "@/components/scene3d/materials";
 
@@ -324,6 +325,81 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
     );
   };
 
+  // Helper for drawing cabinet doors and drawers on a flat surface
+  const ProceduralCabinetFronts = ({ width, height, isDrawer = false }: { width: number; height: number; isDrawer?: boolean }) => {
+    // Determine how many cabinet sections to divide this width into
+    const sectionWidth = 2.0; // target width for one cabinet
+    const sections = Math.max(1, Math.round(width / sectionWidth));
+    const actualW = width / sections;
+
+    const gap = 0.05;
+    const doorW = actualW - gap;
+    const panelH = height - gap * 2;
+
+    const bodyMat = woodMat("wood-oak", [1, 1], 0.65);
+    const handleMat = new THREE.MeshStandardMaterial({ color: "#aaaaaa", metalness: 0.8, roughness: 0.2 });
+
+    const fronts = [];
+    for (let i = 0; i < sections; i++) {
+      const cx = -width / 2 + actualW * i + actualW / 2;
+      
+      if (isDrawer) {
+        // 3 drawers
+        const h1 = panelH * 0.2;
+        const h2 = panelH * 0.4;
+        const h3 = panelH * 0.4;
+        
+        fronts.push(
+          <group key={i} position={[cx, 0, 0]}>
+            {/* Top Drawer */}
+            <mesh position={[0, height/2 - gap - h1/2, 0]} material={bodyMat} castShadow receiveShadow>
+              <boxGeometry args={[doorW, h1 - gap, 0.04]} />
+            </mesh>
+            <mesh position={[0, height/2 - gap - h1/2, 0.03]} material={handleMat} castShadow>
+              <boxGeometry args={[doorW * 0.4, 0.04, 0.02]} />
+            </mesh>
+            
+            {/* Middle Drawer */}
+            <mesh position={[0, height/2 - gap - h1 - h2/2, 0]} material={bodyMat} castShadow receiveShadow>
+              <boxGeometry args={[doorW, h2 - gap, 0.04]} />
+            </mesh>
+            <mesh position={[0, height/2 - gap - h1 - h2/2, 0.03]} material={handleMat} castShadow>
+              <boxGeometry args={[doorW * 0.4, 0.04, 0.02]} />
+            </mesh>
+            
+            {/* Bottom Drawer */}
+            <mesh position={[0, -height/2 + gap + h3/2, 0]} material={bodyMat} castShadow receiveShadow>
+              <boxGeometry args={[doorW, h3 - gap, 0.04]} />
+            </mesh>
+            <mesh position={[0, -height/2 + gap + h3/2, 0.03]} material={handleMat} castShadow>
+              <boxGeometry args={[doorW * 0.4, 0.04, 0.02]} />
+            </mesh>
+          </group>
+        );
+      } else {
+        // Normal split door
+        fronts.push(
+          <group key={i} position={[cx, 0, 0]}>
+            <mesh position={[-doorW/4 - gap/4, 0, 0]} material={bodyMat} castShadow receiveShadow>
+              <boxGeometry args={[doorW/2 - gap/2, panelH, 0.04]} />
+            </mesh>
+            <mesh position={[-0.05, 0.8, 0.03]} material={handleMat} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.4, 8]} />
+            </mesh>
+
+            <mesh position={[doorW/4 + gap/4, 0, 0]} material={bodyMat} castShadow receiveShadow>
+              <boxGeometry args={[doorW/2 - gap/2, panelH, 0.04]} />
+            </mesh>
+            <mesh position={[0.05, 0.8, 0.03]} material={handleMat} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.4, 8]} />
+            </mesh>
+          </group>
+        );
+      }
+    }
+    return <group>{fronts}</group>;
+  };
+
   // Lower cabinets (L-shape)
   const cabinZ = 2.0;
   const counterZ = counterDepth;
@@ -340,24 +416,44 @@ function Kitchen3D({ roomW, roomL, roomH, backsplashTex, tileSize, countertopCol
       <group>
         {/* Back wall run (split around the sink hole) */}
         {x1 > cabinZ && (
-          <mesh position={[(cabinZ + x1) / 2, counterH / 2, cabinZ / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
-            <boxGeometry args={[x1 - cabinZ, counterH, cabinZ]} />
-          </mesh>
+          <group position={[(cabinZ + x1) / 2, counterH / 2, cabinZ / 2]}>
+            <mesh material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+              <boxGeometry args={[x1 - cabinZ, counterH, cabinZ]} />
+            </mesh>
+            <group position={[0, 0, cabinZ/2 + 0.01]}>
+               <ProceduralCabinetFronts width={x1 - cabinZ} height={counterH} isDrawer={true} />
+            </group>
+          </group>
         )}
         {x2 < roomW && (
-          <mesh position={[(x2 + roomW) / 2, counterH / 2, cabinZ / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
-            <boxGeometry args={[roomW - x2, counterH, cabinZ]} />
-          </mesh>
+          <group position={[(x2 + roomW) / 2, counterH / 2, cabinZ / 2]}>
+            <mesh material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+              <boxGeometry args={[roomW - x2, counterH, cabinZ]} />
+            </mesh>
+            <group position={[0, 0, cabinZ/2 + 0.01]}>
+               <ProceduralCabinetFronts width={roomW - x2} height={counterH} isDrawer={false} />
+            </group>
+          </group>
         )}
         {/* Front cabinet panel under the sink */}
-        <mesh position={[x_sink, counterH / 2, z_front]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
-          <boxGeometry args={[sinkW, counterH, d_front]} />
-        </mesh>
+        <group position={[x_sink, counterH / 2, z_front]}>
+          <mesh material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+            <boxGeometry args={[sinkW, counterH, d_front]} />
+          </mesh>
+          <group position={[0, 0, d_front/2 + 0.01]}>
+             <ProceduralCabinetFronts width={sinkW} height={counterH} isDrawer={false} />
+          </group>
+        </group>
 
         {/* Left wall run */}
-        <mesh position={[cabinZ / 2, counterH / 2, lDepth / 2]} material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
-          <boxGeometry args={[cabinZ, counterH, lDepth]} />
-        </mesh>
+        <group position={[cabinZ / 2, counterH / 2, (lDepth + cabinZ) / 2]}>
+          <mesh material={woodMat("wood-oak", [2, 1], 0.55)} castShadow receiveShadow>
+            <boxGeometry args={[cabinZ, counterH, lDepth - cabinZ]} />
+          </mesh>
+          <group position={[cabinZ/2 + 0.01, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+             <ProceduralCabinetFronts width={lDepth - cabinZ} height={counterH} isDrawer={true} />
+          </group>
+        </group>
       </group>
     );
   };
@@ -1049,9 +1145,11 @@ export default function Kitchen3DPage() {
             <div ref={canvasRef} className="w-full h-full">
             <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.8, roomHeight * 0.5, roomLength * 0.8], fov: 45, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
               <SceneLighting sceneKind="kitchen" roomW={roomWidth} roomL={roomLength} sunPosition={[roomWidth + 6, 12, roomLength + 2]} />
-              <Kitchen3D roomW={roomWidth} roomL={roomLength} roomH={roomHeight} backsplashTex={backsplashTex} tileSize={tileSize} countertopColor={countertopColor} countertopTex={countertopTex} tileRotation={tileRotation} counterDepth={counterDepth} slabMode={slabMode} highlighterTex={highlighterTex} highlighterRows={highlighterRows} floorTex={floorTex} floorTileSize={floorTileSize} stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval} showInterior={showInterior} />
-              {showInterior && <KitchenFurnishings roomW={roomWidth} roomL={roomLength} roomH={roomHeight} counterDepth={counterDepth} />}
-              <OrbitControls makeDefault enableDamping dampingFactor={0.1} minDistance={3} maxDistance={40} autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, roomHeight / 2, roomLength / 2]} />
+              <ClickToFocus>
+                <Kitchen3D roomW={roomWidth} roomL={roomLength} roomH={roomHeight} backsplashTex={backsplashTex} tileSize={tileSize} countertopColor={countertopColor} countertopTex={countertopTex} tileRotation={tileRotation} counterDepth={counterDepth} slabMode={slabMode} highlighterTex={highlighterTex} highlighterRows={highlighterRows} floorTex={floorTex} floorTileSize={floorTileSize} stripColor={stripEnabled ? stripColor : null} stripWidthMm={stripWidthMm} stripInterval={stripInterval} showInterior={showInterior} />
+                {showInterior && <KitchenFurnishings roomW={roomWidth} roomL={roomLength} roomH={roomHeight} counterDepth={counterDepth} />}
+              </ClickToFocus>
+              <OrbitControls makeDefault enableDamping dampingFactor={0.1} minDistance={0.5} maxDistance={40} autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, roomHeight / 2, roomLength / 2]} />
               <BakeShadows />
               <AdaptiveDpr pixelated />
               <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomWidth} roomLength={roomLength} roomHeight={roomHeight} />

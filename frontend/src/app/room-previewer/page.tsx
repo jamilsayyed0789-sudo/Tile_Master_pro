@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, AdaptiveDpr, AdaptiveEvents, BakeShadows } from "@react-three/drei";
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, BakeShadows, AdaptiveDpr, AdaptiveEvents, useTexture, Environment } from '@react-three/drei';
+import { EffectComposer, SSAO, Bloom } from '@react-three/postprocessing';
 import * as THREE from "three";
 import { useRoomPreviewerStore } from "@/store3d";
 import { useVolatileStore } from "@/volatileStore";
@@ -34,9 +35,10 @@ import SceneLighting from '@/components/scene3d/SceneLighting';
 import LivingRoomFurnishings from '@/components/scene3d/LivingRoomFurnishings';
 import BathroomFurnishings from '@/components/scene3d/BathroomFurnishings';
 import GlassWall from '@/components/scene3d/GlassWall';
-import { woodMat, marbleMat, concreteMat, texturedPaintMat, flutedPanelMat } from '@/components/scene3d/materials';
+import { woodMat, marbleMat, concreteMat, texturedPaintMat, backlitGroovedMarbleMat } from '@/components/scene3d/materials';
 import { TILE_FLOOR_PBR, INTERIOR_PAINT_PBR } from '@/components/scene3d/tilePbr';
 import CameraController, { CameraPreset } from '@/components/scene3d/CameraController';
+import ClickToFocus from '@/components/scene3d/ClickToFocus';
 import HotspotSystem, { HotspotDef } from '@/components/scene3d/HotspotSystem';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,7 +80,7 @@ const TILE_STYLES = [
   }
 ];
 
-const ROOM_HEIGHT_3D = 10.5;
+const ROOM_HEIGHT_3D = 9.0;
 
 
 
@@ -191,7 +193,7 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
       })()}
 
       {/* Back wall (TV unit wall) */}
-      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow material={flutedPanelMat(wallColor)}>
+      <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, 0]} receiveShadow material={backlitGroovedMarbleMat()}>
         <planeGeometry args={[roomWidth, ROOM_HEIGHT_3D]} />
       </mesh>
 
@@ -208,41 +210,149 @@ function ThreeJSView({ roomWidth, roomLength, wFeet, lFeet, patternSpan, groutWi
         <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
         <meshPhysicalMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d ?? undefined} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} transparent alphaTest={0.05} />
       </mesh>
-      {/* Right wall */}
-      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-        <planeGeometry args={[roomLength, ROOM_HEIGHT_3D]} />
+      {/* Right wall - Window Wall */}
+      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, 0.4]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[0.8, ROOM_HEIGHT_3D]} />
         <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
+      </mesh>
+      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength - 0.4]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[0.8, ROOM_HEIGHT_3D]} />
+        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
+      </mesh>
+      {/* Top and Bottom window frames */}
+      <mesh position={[roomWidth, ROOM_HEIGHT_3D - 0.2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[roomLength - 1.6, 0.4]} />
+        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
+      </mesh>
+      <mesh position={[roomWidth, 0.4, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <planeGeometry args={[roomLength - 1.6, 0.8]} />
+        <meshPhysicalMaterial color={wallColor} {...INTERIOR_PAINT_PBR} />
+      </mesh>
+      {/* Window Glass */}
+      <mesh position={[roomWidth, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[roomLength - 1.6, ROOM_HEIGHT_3D - 1.2]} />
+        <meshPhysicalMaterial color="#e6f2ff" transmission={0.9} opacity={1} transparent roughness={0.1} metalness={0.1} envMapIntensity={2.0} />
+      </mesh>
+      {/* Sheer Curtains */}
+      <mesh position={[roomWidth - 0.15, ROOM_HEIGHT_3D / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
+        <planeGeometry args={[roomLength - 1.4, ROOM_HEIGHT_3D]} />
+        <meshPhysicalMaterial color="#ffffff" transmission={0.6} opacity={0.8} transparent roughness={0.9} side={THREE.DoubleSide} />
       </mesh>
       <mesh position={[roomWidth - 0.02, Math.max(0.05, skirtingHeight) / 2, roomLength / 2]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[roomLength, Math.max(0.05, skirtingHeight)]} />
         <meshPhysicalMaterial key={skirtTex3d ? `skirt-${skirtTex3d.uuid}` : 'skirt-no-tex'} map={skirtTex3d ?? undefined} color={skirtTex3d ? "#ffffff" : skirtingColor} roughness={0.4} side={THREE.DoubleSide} transparent alphaTest={0.05} />
       </mesh>
-      {/* Ceiling */}
+      {/* Ceiling Base (Main Ceiling, 0 offset) */}
       <mesh position={[roomWidth / 2, ROOM_HEIGHT_3D, roomLength / 2]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[roomWidth, roomLength]} />
         <meshPhysicalMaterial color="#f8f9fa" roughness={0.9} metalness={0} />
       </mesh>
+
+      {/* Recessed Tray (Dropped 0.10m) */}
+      <group position={[0, ROOM_HEIGHT_3D - 0.10, 0]}>
+        <mesh position={[roomWidth/2, 0, 1.25]} receiveShadow castShadow>
+          <boxGeometry args={[roomWidth - 1.8, 0.10, 0.7]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[roomWidth/2, 0, roomLength - 1.25]} receiveShadow castShadow>
+          <boxGeometry args={[roomWidth - 1.8, 0.10, 0.7]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[1.25, 0, roomLength/2]} receiveShadow castShadow>
+          <boxGeometry args={[0.7, 0.10, roomLength - 3.2]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[roomWidth - 1.25, 0, roomLength/2]} receiveShadow castShadow>
+          <boxGeometry args={[0.7, 0.10, roomLength - 3.2]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+      </group>
       
-      {/* 8 Square Ceiling Lights */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const row = Math.floor(i / 4); // 2 rows
-        const col = i % 4;             // 4 cols
-        const x = (roomWidth / 5) * (col + 1); 
-        const z = (roomLength / 3) * (row + 1);
-        return (
-          <group key={`light-${i}`} position={[x, ROOM_HEIGHT_3D - 0.005, z]}>
+      {/* Outer Cove (Dropped 0.15m) */}
+      <group position={[0, ROOM_HEIGHT_3D - 0.15, 0]}>
+        <mesh position={[roomWidth/2, 0, 0.45]} receiveShadow castShadow>
+          <boxGeometry args={[roomWidth, 0.15, 0.9]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[roomWidth/2, 0, roomLength - 0.45]} receiveShadow castShadow>
+          <boxGeometry args={[roomWidth, 0.15, 0.9]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[0.45, 0, roomLength/2]} receiveShadow castShadow>
+          <boxGeometry args={[0.9, 0.15, roomLength - 1.8]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+        <mesh position={[roomWidth - 0.45, 0, roomLength/2]} receiveShadow castShadow>
+          <boxGeometry args={[0.9, 0.15, roomLength - 1.8]} />
+          <meshPhysicalMaterial color="#f8f9fa" roughness={0.8} />
+        </mesh>
+      </group>
+
+      {/* Cove Lighting LED Strips (With physical PointLights to cast guaranteed glow) */}
+      <group position={[0, ROOM_HEIGHT_3D - 0.11, 0]}>
+        {/* Top Edge */}
+        <mesh position={[roomWidth/2, 0, 0.92]}>
+          <boxGeometry args={[roomWidth - 1.84, 0.02, 0.04]} />
+          <meshStandardMaterial color="#ffffff" emissive="#FFD1A4" emissiveIntensity={5} toneMapped={false} />
+        </mesh>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <pointLight key={`cove-t-${i}`} position={[(roomWidth/7) * (i+1), 0.05, 0.95]} color="#FFD1A4" intensity={5.0} distance={6} decay={1.5} />
+        ))}
+
+        {/* Bottom Edge */}
+        <mesh position={[roomWidth/2, 0, roomLength - 0.92]}>
+          <boxGeometry args={[roomWidth - 1.84, 0.02, 0.04]} />
+          <meshStandardMaterial color="#ffffff" emissive="#FFD1A4" emissiveIntensity={5} toneMapped={false} />
+        </mesh>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <pointLight key={`cove-b-${i}`} position={[(roomWidth/7) * (i+1), 0.05, roomLength - 0.95]} color="#FFD1A4" intensity={5.0} distance={6} decay={1.5} />
+        ))}
+
+        {/* Left Edge */}
+        <mesh position={[0.92, 0, roomLength/2]}>
+          <boxGeometry args={[0.04, 0.02, roomLength - 1.84]} />
+          <meshStandardMaterial color="#ffffff" emissive="#FFD1A4" emissiveIntensity={5} toneMapped={false} />
+        </mesh>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <pointLight key={`cove-l-${i}`} position={[0.95, 0.05, (roomLength/9) * (i+1)]} color="#FFD1A4" intensity={5.0} distance={6} decay={1.5} />
+        ))}
+
+        {/* Right Edge */}
+        <mesh position={[roomWidth - 0.92, 0, roomLength/2]}>
+          <boxGeometry args={[0.04, 0.02, roomLength - 1.84]} />
+          <meshStandardMaterial color="#ffffff" emissive="#FFD1A4" emissiveIntensity={5} toneMapped={false} />
+        </mesh>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <pointLight key={`cove-r-${i}`} position={[roomWidth - 0.95, 0.05, (roomLength/9) * (i+1)]} color="#FFD1A4" intensity={5.0} distance={6} decay={1.5} />
+        ))}
+      </group>
+
+      {/* 10 Recessed Ceiling Spotlights (Warm White 2700K) */}
+      {[
+        // Top row (4 spots)
+        { x: roomWidth * 0.2, z: 0.8 },
+        { x: roomWidth * 0.4, z: 0.8 },
+        { x: roomWidth * 0.6, z: 0.8 },
+        { x: roomWidth * 0.8, z: 0.8 },
+        
+        // Bottom row (4 spots)
+        { x: roomWidth * 0.2, z: roomLength - 0.8 },
+        { x: roomWidth * 0.4, z: roomLength - 0.8 },
+        { x: roomWidth * 0.6, z: roomLength - 0.8 },
+        { x: roomWidth * 0.8, z: roomLength - 0.8 },
+        
+        // Middle spots (Left and Right)
+        { x: roomWidth * 0.2, z: roomLength * 0.5 },
+        { x: roomWidth * 0.8, z: roomLength * 0.5 },
+      ].map((pos, i) => (
+          <group key={`light-${i}`} position={[pos.x, ROOM_HEIGHT_3D - 0.155, pos.z]}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[0.6, 0.6]} />
-              <meshBasicMaterial color="#ffffff" />
+              <circleGeometry args={[0.06, 32]} />
+              <meshBasicMaterial color="#FFD1A4" />
             </mesh>
-            {/* Soft glow border */}
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
-              <planeGeometry args={[0.65, 0.65]} />
-              <meshBasicMaterial color="#e8e8e8" />
-            </mesh>
+            <spotLight position={[0, 0, 0]} target-position={[0, -3, 0]} intensity={0.8} color="#FFD1A4" angle={0.9} penumbra={0.6} distance={12} />
           </group>
-        );
-      })}
+      ))}
 
       {/* Glass front wall removed to prevent foggy camera reflections and allow clear zoom-in view */}
       {/* <GlassWall width={roomWidth} height={ROOM_HEIGHT_3D} position={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength]} rotation={[0, Math.PI, 0]} /> */}
@@ -1175,86 +1285,7 @@ export default function RoomPreviewer() {
             </div>
           </div>
 
-          {/* 6. Wall Paint Controls */}
-          <div className="glass-card rounded-3xl border border-white/5 p-6 shadow-xl relative">
-            <div className="flex items-center gap-3 mb-5 border-b border-white/5 pb-3">
-              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-white">Wall Paint Color</h3>
-                <p className="text-neutral-400 text-xs">Choose a warm, cozy color for the walls</p>
-              </div>
-            </div>
 
-            <div className="mb-4">
-              <label className="block text-xs font-bold text-neutral-400 mb-2.5 uppercase tracking-wider">
-                Select Wall Shade
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { color: "#e5e7eb", label: "Basic Grey", bg: "bg-[#e5e7eb]" },
-                  { color: "#d2c6b6", label: "Warm Sand", bg: "bg-[#d2c6b6]" },
-                  { color: "#c5b39c", label: "Soft Clay", bg: "bg-[#c5b39c]" },
-                  { color: "#9fa896", label: "Sage Green", bg: "bg-[#9fa896]" },
-                  { color: "#9a8b7c", label: "Cozy Taupe", bg: "bg-[#9a8b7c]" },
-                  { color: "#efeae1", label: "Cream", bg: "bg-[#efeae1]" },
-                  { color: "#dfdcd6", label: "Warm Grey", bg: "bg-[#dfdcd6]" },
-                  { color: "#2c2d30", label: "Charcoal", bg: "bg-[#2c2d30]" },
-                ].map(({ color, label, bg }) => (
-                  <button
-                    key={color}
-                    onClick={() => setWallColor(color)}
-                    title={label}
-                    className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition ${
-                      wallColor.toLowerCase() === color.toLowerCase()
-                        ? 'border-blue-500 bg-neutral-800 shadow-md scale-105'
-                        : 'border-neutral-800 bg-neutral-900 hover:border-neutral-600'
-                    }`}
-                  >
-                    <span className={`w-6 h-6 rounded-full ${bg} border border-white/10 shadow`} />
-                    <span className="text-[9px] font-bold text-neutral-400 truncate w-full text-center">{label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom Wall Color Picker */}
-            <div className="space-y-2 border-t border-neutral-850 pt-4">
-              <span className="block text-[10px] text-neutral-500 uppercase tracking-widest font-black">
-                Custom Wall Paint Color
-              </span>
-              <div className="flex items-center gap-2.5">
-                <div className="relative w-8 h-8 rounded-xl border border-neutral-750 overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:border-blue-500/50 transition">
-                  <input
-                    type="color"
-                    value={wallColor}
-                    onChange={(e) => setWallColor(e.target.value)}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer scale-150"
-                  />
-                  <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: wallColor }} />
-                </div>
-                <div className="relative flex-1 max-w-[120px]">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 text-xs font-mono font-bold">#</span>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={wallColor.replace('#', '')}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (/^[0-9A-Fa-f]{0,6}$/.test(val)) {
-                        if (val.length === 3 || val.length === 6) {
-                          setWallColor(`#${val}`);
-                        }
-                      }
-                    }}
-                    className="w-full bg-neutral-600 border border-neutral-850 rounded-xl pl-6 pr-3 py-1.5 text-xs text-white font-mono uppercase focus:outline-none focus:border-blue-500/50 transition-all font-semibold"
-                    placeholder="HEX"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
         </div>
 
@@ -1407,21 +1438,25 @@ export default function RoomPreviewer() {
               {is3DMode ? (
                 <div ref={canvasRef} className="w-full h-full">
                   <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 1.25]} performance={{ min: 0.5 }} camera={{ position: [roomWidth * 0.7, ROOM_HEIGHT_3D * 0.5, roomLength * 1.2], fov: 40, near: 0.1, far: 100 }} gl={{ antialias: true, powerPreference: "high-performance" }} style={{ width: "100%", height: "100%", touchAction: "none" }} onCreated={() => setTimeout(() => setIsLoading(false), 600)}>
+                    <color attach="background" args={["#0a0a0a"]} />
                     <AdaptiveDpr pixelated />
                     <AdaptiveEvents />
                     <BakeShadows />
                     <SceneLighting sceneKind={roomType === 'bathroom' ? 'bathroom' : roomType === 'kitchen' ? 'kitchen' : 'living'} roomW={roomWidth} roomL={roomLength} sunPosition={[roomWidth + 5, 11, roomLength + 3]} />
-                    <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />
-                    {showInterior && (
-                      roomType === 'bathroom' ? (
-                        <BathroomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
-                      ) : (
-                        <LivingRoomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
-                      )
-                    )}
-                    <OrbitControls makeDefault enableDamping dampingFactor={0.1} enableRotate enableZoom autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
+                    <ClickToFocus>
+                      <ThreeJSView roomWidth={roomWidth} roomLength={roomLength} wFeet={wFeet} lFeet={lFeet} patternSpan={patternSpan} groutWidth={groutWidth} groutColor={groutColor} floorTex={floorTex} skirtTex3d={skirtTex3d} skirtingHeight={skirtingHeight} skirtingColor={skirtingColor} wallColor={wallColor} styleTex={styleTex} bookmatchEnabled={bookmatchEnabled} selectedStyleId={selectedStyleId} />
+                      {showInterior && (
+                        roomType === 'bathroom' ? (
+                          <BathroomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
+                        ) : (
+                          <LivingRoomFurnishings roomW={roomWidth} roomL={roomLength} roomH={ROOM_HEIGHT_3D} />
+                        )
+                      )}
+                    </ClickToFocus>
+                    <OrbitControls makeDefault enableDamping dampingFactor={0.1} minDistance={0.5} enableRotate enableZoom autoRotate={autoRotate} autoRotateSpeed={0.8} target={[roomWidth / 2, ROOM_HEIGHT_3D / 2, roomLength / 2]} />
                     <CameraController preset={cameraPreset} onPresetComplete={() => setCameraPreset(null)} roomWidth={roomWidth} roomLength={roomLength} roomHeight={ROOM_HEIGHT_3D} />
                     <HotspotSystem hotspots={hotspots} />
+                    {/* Post-processing disabled to prevent NormalPass/WebGL crashes on target device */}
                   </Canvas>
                 </div>
               ) : (

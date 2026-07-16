@@ -4,10 +4,14 @@ import React, { Suspense, Component, ErrorInfo } from "react";
 import { useGLTF, Center } from "@react-three/drei";
 import * as THREE from "three";
 
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+
 try {
   useGLTF.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.7/");
+  // @ts-ignore
+  useGLTF.setMeshoptDecoder(MeshoptDecoder);
 } catch (e) {
-  console.warn("Failed to set Draco decoder path", e);
+  console.warn("Failed to set decoder paths", e);
 }
 
 // Global interceptor for absolute local paths inside poorly exported GLTF/GLB models
@@ -40,6 +44,8 @@ type PremiumModelProps = React.ComponentPropsWithoutRef<"group"> & {
   hideNodes?: string[];
   castShadows?: boolean;
   receiveShadows?: boolean;
+  colorOverrides?: Record<string, string>;
+  textureOverrides?: Record<string, THREE.Texture | null>;
 };
 
 class ErrorBoundary extends Component<{ fallback: React.ReactNode; children: React.ReactNode }, { hasError: boolean }> {
@@ -58,7 +64,12 @@ class ErrorBoundary extends Component<{ fallback: React.ReactNode; children: Rea
 
   render() {
     if (this.state.hasError) {
-      return <>{this.props.fallback}</>;
+      return (
+        <group>
+          {this.props.fallback}
+          {/* We rely on the HTML overlay for the Retry button since this is 3D space, or we can expose a retry callback if needed, but since we have a fallback, the fallback might be HTML via Html component. Let's just render the fallback. */}
+        </group>
+      );
     }
     return <>{this.props.children}</>;
   }
@@ -73,6 +84,8 @@ function ModelLoader({
   fallback, 
   castShadows = true, 
   receiveShadows = true, 
+  colorOverrides,
+  textureOverrides,
   ...props 
 }: PremiumModelProps) {
   const { scene } = useGLTF(url);
@@ -125,6 +138,7 @@ function ModelLoader({
       if (child.isMesh) {
         child.castShadow = castShadows;
         child.receiveShadow = receiveShadows;
+        child.frustumCulled = true; // Optimization
         
         if (child.material) {
           // Handle both single materials and array materials
@@ -146,7 +160,7 @@ function ModelLoader({
             // WebGL texture image unit count overflow fix:
             // Strip out non-essential texture maps (aoMap, displacementMap, bumpMap, lightMap)
             // to keep the sampler count low and prevent MAX_TEXTURE_IMAGE_UNITS compilation errors.
-            if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) {
+            if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial || mat.isMeshPhongMaterial || mat.isMeshBasicMaterial || mat.isMeshLambertMaterial || mat.type) {
               let changed = false;
               if (mat.displacementMap) { mat.displacementMap = null; changed = true; }
               if (mat.bumpMap) { mat.bumpMap = null; changed = true; }
@@ -162,17 +176,89 @@ function ModelLoader({
                 if (mat.metalnessMap) { mat.metalnessMap = null; changed = true; }
               }
               
+              // Enable texture anisotropy for remaining maps
+              const maps = [mat.map, mat.normalMap, mat.roughnessMap, mat.metalnessMap];
+              maps.forEach(m => {
+                if (m) {
+                  m.anisotropy = 16;
+                  changed = true;
+                }
+              });
+              
               if (changed) {
                 mat.needsUpdate = true;
+              }
+
+              // Apply color overrides if specified
+              if (colorOverrides) {
+                let matched = false;
+                for (const [key, color] of Object.entries(colorOverrides)) {
+                  if (key !== '*' && (matName.includes(key.toLowerCase()) || matName === key.toLowerCase())) {
+                    if (mat.color) mat.color.set(color);
+                    if (mat.map) { mat.map = null; mat.needsUpdate = true; }
+                    matched = true;
+                    break;
+                  }
+                }
+                // Fallback to wildcard if nothing specific matched
+                if (!matched && colorOverrides['*']) {
+                  if (mat.color) mat.color.set(colorOverrides['*']);
+                  if (mat.map) { mat.map = null; mat.needsUpdate = true; }
+                }
+              }
+
+              // Apply texture overrides if specified
+              if (textureOverrides) {
+                let texMatched = false;
+                for (const [key, tex] of Object.entries(textureOverrides)) {
+                  if (key !== '*' && (matName.includes(key.toLowerCase()) || matName === key.toLowerCase())) {
+                    if (tex) {
+                      mat.map = tex;
+                      if (mat.color) mat.color.set('#ffffff'); // Reset color so texture shows purely
+                      mat.needsUpdate = true;
+                    }
+                    texMatched = true;
+                    break;
+                  }
+                }
+                if (!texMatched && textureOverrides['*']) {
+                  const tex = textureOverrides['*'];
+                  if (tex) {
+                    mat.map = tex;
+                    if (mat.color) mat.color.set('#ffffff');
+                    mat.needsUpdate = true;
+                  }
+                }
               }
             }
           });
         }
       }
     });
-  }, [scene, hideNodes]);
+  }, [scene, hideNodes, colorOverrides, textureOverrides, castShadows, receiveShadows]);
 
   const clonedScene = React.useMemo(() => scene.clone(), [scene]);
+
+  React.useEffect(() => {
+    return () => {
+      // Memory cleanup on unmount
+      clonedScene.traverse((child: any) => {
+        if (child.isMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach((mat: any) => {
+              mat.dispose();
+              if (mat.map) mat.map.dispose();
+              if (mat.normalMap) mat.normalMap.dispose();
+              if (mat.roughnessMap) mat.roughnessMap.dispose();
+              if (mat.metalnessMap) mat.metalnessMap.dispose();
+            });
+          }
+        }
+      });
+    };
+  }, [clonedScene]);
 
   if (center) {
     return (
@@ -206,6 +292,8 @@ export default function PremiumModel({
   hideNodes, 
   castShadows = true, 
   receiveShadows = true, 
+  colorOverrides,
+  textureOverrides,
   ...props 
 }: PremiumModelProps) {
   const [status, setStatus] = React.useState<"checking" | "exists" | "missing">(
@@ -247,6 +335,8 @@ export default function PremiumModel({
           hideNodes={hideNodes} 
           castShadows={castShadows}
           receiveShadows={receiveShadows}
+          colorOverrides={colorOverrides}
+          textureOverrides={textureOverrides}
           fallback={fallback} 
           {...props} 
         />

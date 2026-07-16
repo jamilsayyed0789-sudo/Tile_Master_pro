@@ -26,6 +26,14 @@ import {
   Zap
 } from "lucide-react";
 import { useRef } from "react";
+import { useModelPrefetch } from "@/hooks/useModelPrefetch";
+
+const PREFETCH_MODELS = [
+  "/models/bathroom/uploads_files_4274264_cabinet+2.glb",
+  "/models/bathroom/shower.glb",
+  "/models/bathroom/toilet.glb",
+  "/models/bathroom/washing_machine.glb"
+];
 
 const LUXURY_BRANDS = [
   "Kajaria",
@@ -90,6 +98,7 @@ const TIMELINE = [
 ];
 
 export default function PremiumHome() {
+  useModelPrefetch(PREFETCH_MODELS);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: containerRef });
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
